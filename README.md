@@ -2,6 +2,8 @@
 
 A web app that teaches self-learning guitarists to read standard notation while training their ear. The app plays a short melody, shows it on a fretboard, and the learner writes it on a treble staff. Every mistake is graded and explained.
 
+Live: https://theaminstitute-commits.github.io/guitar-reading-trainer/ (installable as a PWA from the browser menu).
+
 ## Run
 
 ```bash
@@ -10,6 +12,8 @@ npm run dev        # http://localhost:5181
 npm test           # unit tests (Vitest)
 npm run typecheck  # TypeScript
 npm run build      # production build + PWA service worker in dist/
+npm run deploy     # build and publish dist/ to the gh-pages branch (GitHub Pages)
+node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
 ## Music rules baked into the code
