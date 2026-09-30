@@ -1,0 +1,5 @@
+# Shell scripts and Linux packaging files must keep LF endings.
+linux/* text eol=lf
+*.sh text eol=lf
+*.mjs text eol=lf
+*.yml text eol=lf

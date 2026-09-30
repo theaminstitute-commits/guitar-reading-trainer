@@ -15,6 +15,8 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.1.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+
 ## Music rules baked into the code
 
 - **Guitar is a transposing instrument.** Every pitch is stored as the *sounding* MIDI number. Written pitch is sounding plus one octave, computed only in `src/music/pitch.ts` (`writtenFromSounding` / `soundingFromWritten`). Audio and the fretboard use sounding pitch; the staff uses written pitch.
