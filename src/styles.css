@@ -600,3 +600,17 @@ button.undo span {
   font-size: 1.3rem;
   margin-right: 6px;
 }
+
+/* Pitch names beside notes on the feedback staff */
+.pitch-label {
+  font-family: inherit;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.pitch-label.ghost {
+  fill: var(--bad);
+}

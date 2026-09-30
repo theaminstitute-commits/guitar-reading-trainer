@@ -3,7 +3,7 @@ import type { GradeResult, GradedPair } from '../grading/grade';
 import { splitIntoBars } from '../melody/bars';
 import type { Melody } from '../melody/types';
 import { spellInKey, type Key } from '../music/key';
-import { staffStep, writtenFromSounding } from '../music/pitch';
+import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { ensureNotationFonts } from '../notation/fonts';
 import { yFromStep } from '../notation/hitTest';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
@@ -29,7 +29,18 @@ interface Marker {
   badgeY: number;
   numbers: string;
   ghostY: number | null;
+  /** What the learner wrote, shown beside the ghost head. */
+  ghostLabel: string | null;
 }
+
+interface NoteLabel {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+}
+
+const pitchLabel = (n: SpelledNote) => `${spelledName(n)}${n.octave}`;
 
 /**
  * The correct melody with the learner's answer laid over it: green notes were
@@ -43,6 +54,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
   const [fontsReady, setFontsReady] = useState(false);
   const [layout, setLayout] = useState<StaffLayout | null>(null);
   const [markers, setMarkers] = useState<Marker[]>([]);
+  const [labels, setLabels] = useState<NoteLabel[]>([]);
 
   useEffect(() => {
     ensureNotationFonts().then(() => setFontsReady(true));
@@ -96,6 +108,20 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
     });
     setLayout(next);
 
+    // Pitch names to the left of every target note, in the note's colour.
+    const colorOfTarget = new Map(bars.flatMap((b) => b.notes).map((n) => [n.id, n.style!.fill]));
+    setLabels(
+      next.notes.map((n) => {
+        const target = melody.notes[n.id]!;
+        return {
+          x: n.x,
+          y: n.y,
+          text: pitchLabel(spellInKey(writtenFromSounding(target.midi), musicKey)),
+          color: colorOfTarget.get(n.id) ?? COLORS.ink,
+        };
+      }),
+    );
+
     // Work out where each mistake marker goes.
     const xOfTarget = new Map(next.notes.map((n) => [n.id, n.x]));
     const list: Marker[] = [];
@@ -125,6 +151,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
         badgeY: stave.topLineY - stave.lineSpacing * 2.6,
         numbers: pair.mistakes.map((m) => m.number).join(','),
         ghostY,
+        ghostLabel: ghostY === null ? null : pitchLabel(pair.answer!.written),
       });
     });
     setMarkers(list);
@@ -132,16 +159,28 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
 
   const headRx = 5.2 * scale;
   const headRy = 3.6 * scale;
+  const labelGap = 9 * scale;
+  const labelSize = 8.5 * scale;
 
   return (
     <div ref={wrapRef} className="feedback-staff">
       <div ref={canvasRef} className="staff-canvas static" />
       {layout && (
         <svg className="feedback-overlay" width={width} height={layout.height} aria-hidden="true">
+          {labels.map((l, i) => (
+            <text key={`l${i}`} x={l.x - labelGap} y={l.y} textAnchor="end" dominantBaseline="central" className="pitch-label" fill={l.color} fontSize={labelSize}>
+              {l.text}
+            </text>
+          ))}
           {markers.map((m, i) => (
             <g key={i}>
               {m.ghostY !== null && (
-                <ellipse cx={m.x} cy={m.ghostY} rx={headRx} ry={headRy} transform={`rotate(-20 ${m.x} ${m.ghostY})`} className="ghost-head" />
+                <>
+                  <ellipse cx={m.x} cy={m.ghostY} rx={headRx} ry={headRy} transform={`rotate(-20 ${m.x} ${m.ghostY})`} className="ghost-head" />
+                  <text x={m.x - labelGap} y={m.ghostY} textAnchor="end" dominantBaseline="central" className="pitch-label ghost" fontSize={labelSize}>
+                    {m.ghostLabel}
+                  </text>
+                </>
               )}
               <g className="badge">
                 <circle cx={m.x} cy={m.badgeY} r={9 * Math.min(scale, 1.4)} />

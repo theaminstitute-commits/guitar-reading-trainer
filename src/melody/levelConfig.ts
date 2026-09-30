@@ -19,6 +19,8 @@ export interface LevelConfig {
   /** Consecutive weak rounds before the melody gets a bar shorter again. */
   demoteAfter: number;
   tempo: number;
+  /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
+  maxListens: number;
   /** Strings the melody may use, guitarist numbering (1 = high E). */
   strings: readonly number[];
   /** Inclusive fret range. */
@@ -41,6 +43,7 @@ export const LEVEL_1: LevelConfig = {
   promoteAfter: 3,
   demoteAfter: 2,
   tempo: 72,
+  maxListens: 3,
   strings: [1, 2, 3],
   fretRange: [0, 3],
   durations: ['q', 'h'],

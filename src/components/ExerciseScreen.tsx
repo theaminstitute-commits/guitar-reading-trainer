@@ -122,6 +122,7 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
   const played = activeIndex === null ? [] : melody.notes.slice(0, activeIndex + 1);
   const beatsInBar = beatsPerBar(melody.timeSignature);
   const written = noteCount(answer);
+  const listensLeft = Math.max(0, level.maxListens - plays);
 
   return (
     <section className="exercise">
@@ -138,8 +139,9 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
           </span>
         )}
         {status === 'playing' && activeIndex !== null && `Note ${activeIndex + 1} of ${melody.notes.length}`}
-        {status === 'idle' && plays === 0 && 'Tap Play to hear the melody. Watch the fretboard.'}
-        {status === 'idle' && plays > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. Replay as often as you like.`}
+        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. Watch the fretboard. You get ${level.maxListens} listens.`}
+        {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
+        {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
 
       <Fretboard active={active} played={played} />
@@ -149,10 +151,12 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
       <div className="controls">
         {!busy ? (
           <>
-            <button className="primary" onClick={() => play(1)}>
+            <button className="primary" onClick={() => play(1)} disabled={listensLeft === 0}>
               {plays === 0 ? 'Play' : 'Replay'}
             </button>
-            <button onClick={() => play(SLOW_RATE)}>Slow</button>
+            <button onClick={() => play(SLOW_RATE)} disabled={listensLeft === 0}>
+              Slow
+            </button>
           </>
         ) : (
           <button onClick={stop} disabled={status === 'loading'}>
