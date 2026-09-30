@@ -1,0 +1,181 @@
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { sharedPlayer } from '../audio/player';
+import type { LevelConfig } from '../melody/levelConfig';
+import type { Melody } from '../melody/types';
+import { beatsPerBar } from '../music/duration';
+import type { FretPosition } from '../music/fretboard';
+import { parseSpelled, staffStep } from '../music/pitch';
+import {
+  answerReducer,
+  createAnswer,
+  noteCount,
+  type AnswerAction,
+  type AnswerLimits,
+  type AnswerNote,
+  type AnswerState,
+} from '../notation/answer';
+import Fretboard from './Fretboard';
+import StaffInput from './StaffInput';
+
+export const SLOW_RATE = 0.7;
+
+/** Notes may be written from one ledger line below the staff to one above. */
+const INPUT_MIN_STEP = staffStep(parseSpelled('C4'));
+const INPUT_MAX_STEP = staffStep(parseSpelled('A5'));
+
+interface ExerciseScreenProps {
+  melody: Melody;
+  level: LevelConfig;
+  onCheck: (answerBars: AnswerNote[][]) => void;
+}
+
+type Status = 'idle' | 'loading' | 'counting' | 'playing';
+
+/**
+ * One exercise: hear the melody on the fretboard, write it on the staff, check.
+ */
+export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScreenProps) {
+  const [status, setStatus] = useState<Status>('idle');
+  const [countBeat, setCountBeat] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [plays, setPlays] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const limits = useMemo<AnswerLimits>(
+    () => ({ timeSignature: level.timeSignature, minStep: INPUT_MIN_STEP, maxStep: INPUT_MAX_STEP }),
+    [level.timeSignature],
+  );
+  const [answer, dispatchAnswer] = useReducer(
+    (state: AnswerState, action: AnswerAction) => answerReducer(state, action, limits),
+    melody.bars,
+    createAnswer,
+  );
+
+  // A new melody resets playback and the answer.
+  const melodyRef = useRef(melody);
+  useEffect(() => {
+    sharedPlayer().stop();
+    setActiveIndex(null);
+    setCountBeat(null);
+    setStatus('idle');
+    setPlays(0);
+    if (melodyRef.current !== melody) {
+      melodyRef.current = melody;
+      dispatchAnswer({ type: 'reset', bars: melody.bars });
+    }
+  }, [melody]);
+
+  useEffect(() => () => sharedPlayer().stop(), []);
+
+  // Leaving the page mid-playback (phone lock, tab switch) stops the melody
+  // rather than letting it run on unheard.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) sharedPlayer().stop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  const play = useCallback(
+    async (rate: number) => {
+      setError(null);
+      const p = sharedPlayer();
+      if (!p.isLoaded) setStatus('loading');
+      try {
+        await p.load();
+      } catch (e) {
+        setStatus('idle');
+        setError(`Could not start audio: ${(e as Error).message}`);
+        return;
+      }
+      setActiveIndex(null);
+      setCountBeat(null);
+      setStatus('counting');
+      setPlays((n) => n + 1);
+      await p.play(
+        melody.notes,
+        { tempo: melody.tempo, rate, timeSignature: melody.timeSignature, countIn: true },
+        {
+          onCountIn: (beat) => setCountBeat(beat),
+          onNote: (index) => {
+            setStatus('playing');
+            setCountBeat(null);
+            setActiveIndex(index);
+          },
+          onEnd: () => {
+            setStatus('idle');
+            setCountBeat(null);
+            setActiveIndex(null);
+          },
+        },
+      );
+    },
+    [melody],
+  );
+
+  const stop = () => sharedPlayer().stop();
+
+  const busy = status === 'counting' || status === 'playing' || status === 'loading';
+  const active: FretPosition | null =
+    activeIndex === null ? null : { string: melody.notes[activeIndex]!.string, fret: melody.notes[activeIndex]!.fret };
+  const played = activeIndex === null ? [] : melody.notes.slice(0, activeIndex + 1);
+  const beatsInBar = beatsPerBar(melody.timeSignature);
+  const written = noteCount(answer);
+
+  return (
+    <section className="exercise">
+      <div className="status-line" aria-live="polite">
+        {status === 'loading' && 'Loading guitar sounds…'}
+        {status === 'counting' && countBeat !== null && (
+          <span className="count-in">
+            Count-in{' '}
+            {Array.from({ length: beatsInBar }, (_, i) => (
+              <span key={i} className={i === countBeat ? 'beat on' : 'beat'}>
+                {i + 1}
+              </span>
+            ))}
+          </span>
+        )}
+        {status === 'playing' && activeIndex !== null && `Note ${activeIndex + 1} of ${melody.notes.length}`}
+        {status === 'idle' && plays === 0 && 'Tap Play to hear the melody. Watch the fretboard.'}
+        {status === 'idle' && plays > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. Replay as often as you like.`}
+      </div>
+
+      <Fretboard active={active} played={played} />
+
+      {error && <p className="error">{error}</p>}
+
+      <div className="controls">
+        {!busy ? (
+          <>
+            <button className="primary" onClick={() => play(1)}>
+              {plays === 0 ? 'Play' : 'Replay'}
+            </button>
+            <button onClick={() => play(SLOW_RATE)}>Slow</button>
+          </>
+        ) : (
+          <button onClick={stop} disabled={status === 'loading'}>
+            Stop
+          </button>
+        )}
+      </div>
+
+      <h2 className="section-title">Write what you heard</h2>
+      <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} />
+
+      <div className="controls">
+        <button
+          className="primary big"
+          onClick={() => {
+            stop();
+            onCheck(answer.bars.map((b) => [...b]));
+          }}
+          disabled={written === 0}
+        >
+          Check my answer
+        </button>
+      </div>
+    </section>
+  );
+}
