@@ -1,0 +1,51 @@
+# Stage ladder
+
+Agreed on 2026-09-30. One ladder, one dimension changes per stage. Inside every stage the melody length
+grows from short to four bars exactly as it does today. Clean rounds are the only
+thing that moves a learner up.
+
+## Rules that apply to every stage
+
+- **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
+- **Length inside a stage**: stage 1 starts at 1 bar; every later stage starts at 2 bars. Three clean rounds in a row add a bar, two weak rounds in a row remove one, up to 4 bars.
+- **Move up a stage**: three clean rounds in a row at 4 bars.
+- **Move down a stage**: two weak rounds in a row while already at the stage's starting length.
+- **Keys are random within the unlocked set**, so the key signature must be read every time. New keys come in cycle-of-fifths order, one sharp key and one flat key per stage.
+- **Tonal reference**: from stage 3 on, the tonic note (or tonic chord) sounds before the count-in. The key name and key signature are always shown.
+- **Listens**: 3 per melody in Part A, 2 in Part B.
+
+## Part A: major keys
+
+| Stage | Adds | Keys | Rhythm | Range | Teaches |
+|---|---|---|---|---|---|
+| 1 | Starting point (as built today) | C | quarter, half | strings 1-3, frets 0-3 (written G4-G5) | Staff positions, two note lengths, the guitar octave |
+| 2 | One more fret, leaps up to a 4th | C | quarter, half | strings 1-3, frets 0-4 | Same pitch in two places; wider leaps |
+| 3 | First key signatures | C, G, F | quarter, half | strings 1-3, frets 0-4 | Reading one sharp or one flat; plain F on the line means F# in G |
+| 4 | Two accidentals | + D, Bb | quarter, half | same | Key signature order of sharps and flats |
+| 5 | Eighth notes (beamed pairs) | C, G, F, D, Bb | + eighths | same | Subdividing the beat |
+| 6 | Three accidentals | + A, Eb | quarter, half, eighths | same | Cumulative key reading |
+| 7 | Whole notes and dotted quarter + eighth | same keys | + whole, dotted quarter | same | Ties of attention across beats, dots |
+| 8 | Four accidentals | + E, Ab | all so far | same | More remote keys |
+| 9 | Five accidentals | + B, Db | all so far | same | Keys with many accidentals |
+| 10 | Six accidentals, enharmonic pair | + F#, Gb | all so far | same | Same sound, two spellings; strict spelling decides |
+| 11 | Seven accidentals (optional expert stage) | + C#, Cb | all so far | same | E#, B#, Fb, Cb as ordinary notes |
+| 12 | Low strings | all majors | all so far | strings 1-4, frets 0-4 (written from D4, ledger lines) | Ledger lines below the staff |
+| 13 | Fifth position | all majors | all so far | frets 5-9, strings 1-4 | Reading away from the nut |
+
+## Part B: minor keys
+
+| Stage | Adds | Keys | Rhythm | Range | Teaches |
+|---|---|---|---|---|---|
+| 14 | Natural minor | A, E, D minor | all | as stage 12 | Same signature as the relative major, different centre |
+| 15 | Natural minor, more keys | + B, G, F#, C minor | all | same | Reading minor across the cycle |
+| 16 | Harmonic minor | all unlocked minors | all | same | The raised 7th written as an accidental, and how an accidental lasts for the bar |
+| 17 | Melodic minor | all unlocked minors | all | same | Raised 6 and 7 rising, natural falling; spelling graded strictly |
+| 18 | Free reading | any major or minor key | all | full range so far | Everything mixed, no hints beyond the key name |
+
+## Decisions
+
+1. The key signature is always given; the learner never has to write it.
+2. Tonal reference: the tonic note, played twice, before the count-in (from stage 3).
+3. Listens drop from 3 to 2 in Part B.
+4. Eighth notes arrive early (stage 5) so rhythm and keys grow together and sessions stay varied.
+5. Stage 11 (seven accidentals) is optional: skipped by default, switchable in settings.
