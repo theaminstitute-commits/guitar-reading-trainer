@@ -2,11 +2,11 @@
  * Turn a graded mistake into a short teaching explanation.
  */
 import { beatsInWords, DURATIONS, type DurationId } from '../music/duration';
-import { keyName, keySignatureAccidental, spellInKey, type Key } from '../music/key';
+import { keyName, keySignatureAccidental, keySignatureCount, spellInKey, type Key } from '../music/key';
 import { soundingFromWritten, spelledFromStaffStep, spelledName, staffStep, type SpelledNote } from '../music/pitch';
 import type { GradedPair, Mistake } from './grade';
 
-export type ExplainerId = 'staff-basics' | 'durations' | 'guitar-octave';
+export type ExplainerId = 'staff-basics' | 'key-signatures' | 'minor-keys' | 'ledger-lines' | 'durations' | 'guitar-octave';
 
 export interface Explanation {
   number: number;
@@ -46,6 +46,20 @@ function durationWords(id: DurationId): string {
   return `${info.label.toLowerCase()} (${beatsInWords(info.beats)})`;
 }
 
+/** The card that helps most with a pitch slip: ledger lines off the staff, otherwise staff basics. */
+function pitchCard(written: SpelledNote): ExplainerId {
+  const s = staffStep(written);
+  const bottom = staffStep({ letter: 'E', accidental: 0, octave: 4 });
+  const top = staffStep({ letter: 'F', accidental: 0, octave: 5 });
+  return s < bottom || s > top ? 'ledger-lines' : 'staff-basics';
+}
+
+/** The card that helps most with a sign slip: minor keys when a raised degree is involved, else key signatures. */
+function signCard(key: Key, target: SpelledNote): ExplainerId {
+  if (key.mode !== 'major' && keySignatureAccidental(target.letter, key) !== target.accidental) return 'minor-keys';
+  return key.mode === 'major' && keySignatureCount(key) === 0 ? 'staff-basics' : 'key-signatures';
+}
+
 export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, notesInBar: (bar: number) => number): Explanation {
   const t = pair.target;
   const a = pair.answer;
@@ -58,7 +72,7 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
         ...base,
         title: `Wrong note: ${name(a!)} instead of ${name(t!)}`,
         text: `You wrote ${name(a!)}, but this note is ${name(t!)}, ${describeStaffPosition(t!.written)}. Listen to the two versions and hear the difference.`,
-        explainer: 'staff-basics',
+        explainer: pitchCard(t!.written),
       };
     }
     case 'wrong-accidental': {
@@ -73,7 +87,7 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
         ...base,
         title: `Wrong accidental: ${name(a!)} instead of ${name(t!)}`,
         text: `Right line, wrong sign. The melody has ${name(t!)} here, you wrote ${name(a!)}.${hint}`,
-        explainer: 'staff-basics',
+        explainer: signCard(key, t!.written),
       };
     }
     case 'octave': {
@@ -90,7 +104,7 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
         ...base,
         title: `Spelling: ${name(a!)} instead of ${name(t!)}`,
         text: `${name(a!)} sounds the same as ${name(t!)}, but in ${keyName(key)} the note is written ${name(t!)}. Spelling counts: use the letter the key uses.`,
-        explainer: 'staff-basics',
+        explainer: signCard(key, t!.written),
       };
     }
     case 'wrong-duration': {

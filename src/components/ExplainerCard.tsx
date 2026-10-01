@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { ensureNotationFonts } from '../notation/fonts';
+import { keySignatureCount, keySignatureSpec } from '../music/key';
 import { renderStaff } from '../notation/renderStaff';
 
 interface ExplainerCardProps {
@@ -48,6 +49,8 @@ export default function ExplainerCard({ id, onClose }: ExplainerCardProps) {
       scale: width < 480 ? 1.2 : 1.4,
       ink: '#f1ece4',
       showTimeSignature: false,
+      keySignature: explainer.example.key ? keySignatureSpec(explainer.example.key) : undefined,
+      keySignatureAccidentals: explainer.example.key ? Math.abs(keySignatureCount(explainer.example.key)) : 0,
     });
   }, [explainer, fontsReady, width]);
 

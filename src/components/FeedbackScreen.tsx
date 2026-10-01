@@ -24,6 +24,9 @@ interface FeedbackScreenProps {
 
 const EXPLAINER_LABEL: Record<ExplainerId, string> = {
   'staff-basics': 'Staff basics',
+  'key-signatures': 'Key signatures',
+  'minor-keys': 'Minor keys',
+  'ledger-lines': 'Ledger lines',
   durations: 'Note lengths',
   'guitar-octave': 'Guitar octave',
 };
