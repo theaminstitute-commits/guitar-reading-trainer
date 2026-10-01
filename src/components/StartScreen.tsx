@@ -1,7 +1,7 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import type { Stage } from '../melody/stages';
-import type { Progress } from '../session/progression';
+import type { ExerciseMode, Progress } from '../session/progression';
 
 export interface SessionStats {
   exercises: number;
@@ -17,13 +17,14 @@ interface StartScreenProps {
   onLength: (bars: number) => void;
   onStage: (index: number) => void;
   onIncludeOptional: (include: boolean) => void;
+  onMode: (mode: ExerciseMode) => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onExplainer, onReset }: StartScreenProps) {
+export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onMode, onExplainer, onReset }: StartScreenProps) {
   const lengths = Array.from({ length: level.bars }, (_, i) => i + 1);
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
@@ -50,6 +51,21 @@ export default function StartScreen({ stages, level, progress, session, onStart,
           </span>
         </div>
       </div>
+
+      <div className="length-picker" role="group" aria-label="Mode">
+        <span className="muted">Mode</span>
+        <button className={`chip${progress.mode === 'watch' ? ' selected' : ''}`} aria-pressed={progress.mode === 'watch'} onClick={() => onMode('watch')}>
+          Watch and write
+        </button>
+        <button className={`chip${progress.mode === 'listen' ? ' selected' : ''}`} aria-pressed={progress.mode === 'listen'} onClick={() => onMode('listen')}>
+          Listen only
+        </button>
+      </div>
+      <p className="muted small-note">
+        {progress.mode === 'watch'
+          ? 'The fretboard lights up each note as it plays.'
+          : 'Dictation by ear: no fretboard. The key note still sounds first from stage 3.'}
+      </p>
 
       <div className="length-picker" role="group" aria-label="Stage">
         <span className="muted">Stage</span>

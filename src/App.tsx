@@ -10,7 +10,7 @@ import { generateMelody } from './melody/generator';
 import { STAGES, type Stage } from './melody/stages';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
-import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ProgressChange, type Progress } from './session/progression';
+import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ExerciseMode, type ProgressChange, type Progress } from './session/progression';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -80,6 +80,7 @@ export default function App() {
   const onLength = (n: number) => updateProgress(withBars(progress, n, STAGES));
   const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
   const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
+  const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
 
   const onReset = () => {
     store.clear();
@@ -94,7 +95,7 @@ export default function App() {
         <p className="muted">
           {screen === 'start'
             ? level.title
-            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'}`}
+            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'}${progress.mode === 'listen' ? ' · listen only' : ''}`}
         </p>
       </header>
 
@@ -108,12 +109,13 @@ export default function App() {
           onLength={onLength}
           onStage={onStage}
           onIncludeOptional={onIncludeOptional}
+          onMode={onMode}
           onExplainer={setExplainer}
           onReset={onReset}
         />
       )}
 
-      {screen === 'exercise' && <ExerciseScreen melody={melody} level={level} onCheck={onCheck} />}
+      {screen === 'exercise' && <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} onCheck={onCheck} />}
 
       {screen === 'feedback' && checked && (
         <FeedbackScreen

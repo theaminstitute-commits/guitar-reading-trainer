@@ -15,6 +15,8 @@ export interface Progress {
   stage: number;
   /** Walk through stages marked optional (the seven-accidental stage). */
   includeOptional: boolean;
+  /** 'watch': the fretboard shows each note as it plays. 'listen': ear only, no fretboard. */
+  mode: ExerciseMode;
   /** Current melody length in bars. */
   bars: number;
   cleanStreak: number;
@@ -25,11 +27,13 @@ export interface Progress {
   accuracySum: number;
 }
 
+export type ExerciseMode = 'watch' | 'listen';
+
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 2, stage: 0, includeOptional: false, bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+  return { version: 2, stage: 0, includeOptional: false, mode: 'watch', bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
 }
 
 /** One number for "how did that go": the mean of pitch and rhythm scores. */

@@ -30,6 +30,8 @@ const INPUT_MAX_STEP = staffStep(parseSpelled('D6'));
 interface ExerciseScreenProps {
   melody: Melody;
   level: LevelConfig;
+  /** Listen-only dictation hides the fretboard: the ear does all the work. */
+  showFretboard: boolean;
   onCheck: (answerBars: AnswerNote[][]) => void;
 }
 
@@ -38,7 +40,7 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, onCheck }: ExerciseScreenProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [countBeat, setCountBeat] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -155,12 +157,22 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
           </span>
         )}
         {status === 'playing' && activeIndex !== null && `Note ${activeIndex + 1} of ${melody.notes.length}`}
-        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. Watch the fretboard. You get ${level.maxListens} listens.`}
+        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only, no fretboard. '}You get ${level.maxListens} listens.`}
         {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
 
-      <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} />
+      {showFretboard ? (
+        <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} />
+      ) : (
+        <div className="listen-only" aria-hidden="true">
+          <span className={`ear${status === 'playing' ? ' on' : ''}`}>
+            {Array.from({ length: melody.notes.length }, (_, i) => (
+              <span key={i} className={`pip${activeIndex !== null && i <= activeIndex ? ' on' : ''}`} />
+            ))}
+          </span>
+        </div>
+      )}
 
       {error && <p className="error">{error}</p>}
 

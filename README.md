@@ -46,6 +46,10 @@ tools/single-file.mjs  turns dist/ into one self-contained HTML file
 
 Target and answer are aligned with an edit-distance pass so an extra or missing note shifts the comparison instead of failing everything after it. Pitch and rhythm are scored separately over target notes plus extras. Mistakes are classified as wrong letter, wrong accidental, octave error, enharmonic spelling, wrong duration, missing or extra, each with a short explanation and a link to an explainer card.
 
+## Modes
+
+**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. The choice is on the start screen and is remembered with the rest of the progress.
+
 ## Progression
 
 The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.ts` (configs) and `src/session/progression.ts` (rules). Inside a stage, three clean rounds in a row (pitch and rhythm both at 90% or better) add a bar and two weak rounds (under 60%) remove one; clean rounds at the stage maximum of four bars unlock the next stage, weak rounds at the stage starting length drop back a stage. All eighteen stages of the ladder are configured: majors added two keys per stage in cycle-of-fifths order (stage 11 with seven accidentals is optional), eighths at stage 5, whole and dotted notes at stage 7, the fourth string at 12, fifth position at 13, then natural, harmonic and melodic minor (14-17) and free reading (18). Part B allows two listens. The stage, length and lifetime counts persist in localStorage; the start screen lets you pick a stage and length by hand.

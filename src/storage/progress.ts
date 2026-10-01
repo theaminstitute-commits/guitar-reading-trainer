@@ -29,6 +29,7 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
     version: 2,
     stage: stageIndex,
     includeOptional: value.includeOptional === true,
+    mode: value.mode === 'listen' ? 'listen' : 'watch',
     bars: Math.max(1, Math.min(maxBars, value.bars as number)),
     cleanStreak: value.cleanStreak as number,
     weakStreak: value.weakStreak as number,
