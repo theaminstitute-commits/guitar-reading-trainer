@@ -5,7 +5,7 @@ import type { GradeResult } from '../grading/grade';
 import type { LevelConfig } from '../melody/levelConfig';
 import { splitIntoBars } from '../melody/bars';
 import type { Melody } from '../melody/types';
-import { answerNoteToSounding, type AnswerNote } from '../notation/answer';
+import { answerBarToSounding, type AnswerNote } from '../notation/answer';
 import type { LengthChange } from '../session/progression';
 import FeedbackStaff from './FeedbackStaff';
 
@@ -28,7 +28,7 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, level, answerBars, result, lengthChange, nextBars, onNext, onExplainer }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, answerBars, result, lengthChange, nextBars, onNext, onExplainer }: FeedbackScreenProps) {
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -40,7 +40,10 @@ export default function FeedbackScreen({ melody, level, answerBars, result, leng
     const notes: PlayableNote[] =
       which === 'correct'
         ? melody.notes
-        : answerBars.flat().map((n) => ({ midi: answerNoteToSounding(n), duration: n.duration }));
+        : answerBars.flatMap((bar) => {
+            const sounding = answerBarToSounding(bar, melody.key);
+            return bar.map((n, i) => ({ midi: sounding[i]!, duration: n.duration }));
+          });
     if (notes.length === 0) return;
     setPlaying(which);
     setActiveIndex(null);
@@ -62,7 +65,7 @@ export default function FeedbackScreen({ melody, level, answerBars, result, leng
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const targetBars = splitIntoBars(melody.notes, melody.timeSignature);
   const notesInBar = (bar: number) => targetBars[bar]?.notes.length ?? 0;
-  const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, level.key, notesInBar));
+  const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, melody.key, notesInBar));
   const perfect = result.mistakes.length === 0;
 
   return (
@@ -90,7 +93,7 @@ export default function FeedbackScreen({ melody, level, answerBars, result, leng
           : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at. Compare the two versions by ear, then read the notes below.`}
       </p>
 
-      <FeedbackStaff melody={melody} musicKey={level.key} result={result} activeIndex={activeIndex} />
+      <FeedbackStaff melody={melody} musicKey={melody.key} result={result} activeIndex={activeIndex} />
 
       <div className="controls">
         {playing ? (

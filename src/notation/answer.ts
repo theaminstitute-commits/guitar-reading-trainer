@@ -1,22 +1,22 @@
 /**
  * The learner's answer: notes placed on the staff, bar by bar.
  *
- * Notes are stored by WRITTEN staff position (see `staffStep` in music/pitch),
- * because that is what the learner sees and taps. Converting to sounding pitch
- * for playback or grading goes through `answerNoteToSounding`.
+ * Notes are stored by WRITTEN staff position (see `staffStep` in music/pitch)
+ * plus the sign drawn in front of them, exactly as on the page. What pitch a
+ * note means depends on the key signature and the signs earlier in its bar;
+ * `resolveAnswerBar` works that out with the rules in notation/accidentals.
  */
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
+import type { Key } from '../music/key';
 import { midiFromSpelled, soundingFromWritten, spelledFromStaffStep, type Midi, type SpelledNote } from '../music/pitch';
-
-export type InputAccidental = -1 | 0 | 1;
+import { resolveBar, type Sign } from './accidentals';
 
 export interface AnswerNote {
   id: number;
   /** Written staff step (C4 = 28, F5 = 38). */
   step: number;
-  accidental: InputAccidental;
-  /** Draw an explicit natural sign (the learner tapped ♮). */
-  showNatural: boolean;
+  /** The sign drawn in front of the note, if any. */
+  sign: Sign;
   duration: DurationId;
 }
 
@@ -36,7 +36,8 @@ export interface AnswerLimits {
 
 export type AnswerAction =
   | { type: 'add'; bar: number; step: number; duration: DurationId }
-  | { type: 'setAccidental'; id: number; accidental: InputAccidental }
+  /** Draw a sign in front of a note; the same sign again removes it. */
+  | { type: 'setSign'; id: number; sign: Exclude<Sign, 'none'> }
   | { type: 'nudge'; id: number; delta: number }
   | { type: 'setDuration'; id: number; duration: DurationId }
   | { type: 'delete'; id: number }
@@ -111,23 +112,12 @@ export function answerReducer(state: AnswerState, action: AnswerAction, limits: 
       if (!bar) return state;
       if (addRejection(bar, action.duration, limits.timeSignature)) return state;
       if (action.step < limits.minStep || action.step > limits.maxStep) return state;
-      const note: AnswerNote = {
-        id: state.nextId,
-        step: action.step,
-        accidental: 0,
-        showNatural: false,
-        duration: action.duration,
-      };
+      const note: AnswerNote = { id: state.nextId, step: action.step, sign: 'none', duration: action.duration };
       const bars = state.bars.map((b, i) => (i === action.bar ? [...b, note] : b));
       return withBars(state, bars, state.nextId + 1);
     }
-    case 'setAccidental':
-      return replaceNote(state, action.id, (n) => ({
-        ...n,
-        accidental: action.accidental,
-        // Tapping ♮ on a plain note shows the sign; tapping ♯/♭ hides it.
-        showNatural: action.accidental === 0 ? !(n.accidental === 0 && n.showNatural) : false,
-      }));
+    case 'setSign':
+      return replaceNote(state, action.id, (n) => ({ ...n, sign: n.sign === action.sign ? 'none' : action.sign }));
     case 'nudge': {
       const found = findNote(state, action.id);
       if (!found) return state;
@@ -173,12 +163,17 @@ export function noteCount(state: AnswerState): number {
   return state.bars.reduce((n, b) => n + b.length, 0);
 }
 
-/** The written pitch the learner wrote. */
-export function answerNoteToSpelled(note: AnswerNote): SpelledNote {
-  return spelledFromStaffStep(note.step, note.accidental);
+/** The written pitches a bar of answer notes means, under the key signature and bar rules. */
+export function resolveAnswerBar(bar: readonly AnswerNote[], key: Key): SpelledNote[] {
+  const written = bar.map((n) => {
+    const s = spelledFromStaffStep(n.step);
+    return { letter: s.letter, octave: s.octave, sign: n.sign };
+  });
+  const accidentals = resolveBar(written, key);
+  return written.map((w, i) => ({ letter: w.letter, octave: w.octave, accidental: accidentals[i]! }));
 }
 
-/** Sounding MIDI of what the learner wrote (guitar sounds an octave below the page). */
-export function answerNoteToSounding(note: AnswerNote): Midi {
-  return soundingFromWritten(midiFromSpelled(answerNoteToSpelled(note)));
+/** Sounding MIDI of each note in a bar (guitar sounds an octave below the page). */
+export function answerBarToSounding(bar: readonly AnswerNote[], key: Key): Midi[] {
+  return resolveAnswerBar(bar, key).map((s) => soundingFromWritten(midiFromSpelled(s)));
 }

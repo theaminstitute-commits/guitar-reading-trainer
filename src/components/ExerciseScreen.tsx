@@ -4,6 +4,7 @@ import type { LevelConfig } from '../melody/levelConfig';
 import type { Melody } from '../melody/types';
 import { beatsPerBar } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
+import { keyName } from '../music/key';
 import { parseSpelled, staffStep } from '../music/pitch';
 import {
   answerReducer,
@@ -165,8 +166,10 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
         )}
       </div>
 
-      <h2 className="section-title">Write what you heard</h2>
-      <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} />
+      <h2 className="section-title">
+        Write what you heard <span className="muted key-name">· {keyName(melody.key)}</span>
+      </h2>
+      <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
 
       <div className="controls">
         <button

@@ -2,7 +2,7 @@
  * Turn a graded mistake into a short teaching explanation.
  */
 import { DURATIONS, type DurationId } from '../music/duration';
-import { spellInKey, type Key } from '../music/key';
+import { keyName, keySignatureAccidental, spellInKey, type Key } from '../music/key';
 import { soundingFromWritten, spelledFromStaffStep, spelledName, staffStep, type SpelledNote } from '../music/pitch';
 import type { GradedPair, Mistake } from './grade';
 
@@ -63,13 +63,17 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
       };
     }
     case 'wrong-accidental': {
-      const keyHasNoAccidentals = key.tonic === 'C' && key.tonicAccidental === 0;
+      const keyGives = keySignatureAccidental(t!.written.letter, key);
+      const inKey = keyGives === t!.written.accidental;
+      const hint = inKey
+        ? keyGives === 0
+          ? ` In ${keyName(key)} ${t!.written.letter} is natural; a plain note already means ${name(t!)}, so no sign is needed.`
+          : ` The key signature of ${keyName(key)} already makes every ${t!.written.letter} a ${spelledName(t!.written)}, so a plain note on that line means ${name(t!)}. Write a sign only for a note outside the key.`
+        : ` ${name(t!)} is outside ${keyName(key)}, so it needs its sign, and the sign lasts for the rest of the bar on that pitch.`;
       return {
         ...base,
         title: `Wrong accidental: ${name(a!)} instead of ${name(t!)}`,
-        text: `Right line, wrong sign. The melody has ${name(t!)} here, you wrote ${name(a!)}.${
-          keyHasNoAccidentals ? ' In C major every note is natural unless you clearly hear a note outside the key.' : ''
-        }`,
+        text: `Right line, wrong sign. The melody has ${name(t!)} here, you wrote ${name(a!)}.${hint}`,
         explainer: 'staff-basics',
       };
     }
@@ -86,7 +90,7 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
       return {
         ...base,
         title: `Spelling: ${name(a!)} instead of ${name(t!)}`,
-        text: `${name(a!)} sounds the same as ${name(t!)}, but in this key the note is written ${name(t!)}. Spelling counts: use the letter the key uses.`,
+        text: `${name(a!)} sounds the same as ${name(t!)}, but in ${keyName(key)} the note is written ${name(t!)}. Spelling counts: use the letter the key uses.`,
         explainer: 'staff-basics',
       };
     }

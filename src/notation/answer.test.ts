@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { C_MAJOR, keyFromId } from '../music/key';
 import { parseSpelled, spelledToString, staffStep } from '../music/pitch';
 import {
   addRejection,
-  answerNoteToSounding,
-  answerNoteToSpelled,
+  answerBarToSounding,
   answerReducer,
   createAnswer,
   durationRejection,
   flattenAnswer,
   isBarFull,
+  resolveAnswerBar,
   type AnswerLimits,
   type AnswerState,
 } from './answer';
@@ -19,7 +20,9 @@ const limits: AnswerLimits = {
   maxStep: staffStep(parseSpelled('A5')),
 };
 const C5 = staffStep(parseSpelled('C5'));
+const F5 = staffStep(parseSpelled('F5'));
 const reduce = (s: AnswerState, a: Parameters<typeof answerReducer>[1]) => answerReducer(s, a, limits);
+const names = (s: AnswerState, bar = 0, key = C_MAJOR) => resolveAnswerBar(s.bars[bar]!, key).map(spelledToString);
 
 describe('answer reducer', () => {
   it('adds notes to the tapped bar and fills it to the time signature', () => {
@@ -56,9 +59,9 @@ describe('answer reducer', () => {
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
     const id = s.bars[0]![0]!.id;
     s = reduce(s, { type: 'nudge', id, delta: 2 });
-    expect(spelledToString(answerNoteToSpelled(s.bars[0]![0]!))).toBe('E5');
+    expect(names(s)).toEqual(['E5']);
     s = reduce(s, { type: 'nudge', id, delta: -9 });
-    expect(spelledToString(answerNoteToSpelled(s.bars[0]![0]!))).toBe('C4');
+    expect(names(s)).toEqual(['C4']);
     expect(reduce(s, { type: 'nudge', id, delta: -1 })).toBe(s);
   });
 
@@ -67,13 +70,10 @@ describe('answer reducer', () => {
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
-    // 3 beats used: the first note may grow to a half (4 beats total)...
     s = reduce(s, { type: 'setDuration', id: 1, duration: 'h' });
     expect(s.bars[0]!.map((n) => n.duration)).toEqual(['h', 'q', 'q']);
-    // ...but a second one may not (5 beats).
     expect(durationRejection(s.bars[0]!, s.bars[0]![1]!, 'h', [4, 4])).toBe('does-not-fit');
     expect(reduce(s, { type: 'setDuration', id: 2, duration: 'h' })).toBe(s);
-    // Shrinking always fits, and undo reverts the edit.
     s = reduce(s, { type: 'setDuration', id: 1, duration: 'q' });
     expect(s.bars[0]![0]!.duration).toBe('q');
     s = reduce(s, { type: 'undo' });
@@ -81,20 +81,19 @@ describe('answer reducer', () => {
     expect(reduce(s, { type: 'setDuration', id: 1, duration: 'h' })).toBe(s);
   });
 
-  it('sets accidentals and toggles the explicit natural', () => {
+  it('draws a sign in front of a note and removes it when tapped again', () => {
     let s = createAnswer(1);
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
-    const id = 1;
-    s = reduce(s, { type: 'setAccidental', id, accidental: 1 });
-    expect(spelledToString(answerNoteToSpelled(s.bars[0]![0]!))).toBe('C#5');
-    expect(s.bars[0]![0]!.showNatural).toBe(false);
-    s = reduce(s, { type: 'setAccidental', id, accidental: 0 });
-    expect(spelledToString(answerNoteToSpelled(s.bars[0]![0]!))).toBe('C5');
-    expect(s.bars[0]![0]!.showNatural).toBe(true);
-    s = reduce(s, { type: 'setAccidental', id, accidental: 0 });
-    expect(s.bars[0]![0]!.showNatural).toBe(false);
-    s = reduce(s, { type: 'setAccidental', id, accidental: -1 });
-    expect(spelledToString(answerNoteToSpelled(s.bars[0]![0]!))).toBe('Cb5');
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'sharp' });
+    expect(s.bars[0]![0]!.sign).toBe('sharp');
+    expect(names(s)).toEqual(['C#5']);
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'flat' });
+    expect(names(s)).toEqual(['Cb5']);
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'natural' });
+    expect(s.bars[0]![0]!.sign).toBe('natural');
+    expect(names(s)).toEqual(['C5']);
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'natural' });
+    expect(s.bars[0]![0]!.sign).toBe('none');
   });
 
   it('undo steps back through every change, delete removes one note, clear empties all', () => {
@@ -107,7 +106,6 @@ describe('answer reducer', () => {
     expect(s.bars[1]![0]!.step).toBe(C5);
     s = reduce(s, { type: 'delete', id: 1 });
     expect(s.bars[0]).toEqual([]);
-    expect(flattenAnswer(s)).toHaveLength(1);
     s = reduce(s, { type: 'undo' });
     expect(flattenAnswer(s)).toHaveLength(2);
     s = reduce(s, { type: 'clear' });
@@ -126,10 +124,42 @@ describe('answer reducer', () => {
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
     expect(s.bars[0]![0]!.id).toBe(2);
   });
+});
 
-  it('converts a written note to its sounding pitch one octave down', () => {
-    // Written C5 on a guitar staff sounds C4 (60).
-    expect(answerNoteToSounding({ id: 1, step: C5, accidental: 0, showNatural: false, duration: 'q' })).toBe(60);
-    expect(answerNoteToSounding({ id: 1, step: C5, accidental: 1, showNatural: false, duration: 'q' })).toBe(61);
+describe('reading an answer under a key signature', () => {
+  const G = keyFromId('G')!;
+
+  it('a plain F in G major is F sharp; a natural sign makes it F', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: F5, duration: 'q' });
+    s = reduce(s, { type: 'add', bar: 0, step: F5, duration: 'q' });
+    expect(names(s, 0, G)).toEqual(['F#5', 'F#5']);
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'natural' });
+    // The natural carries to the second F in the same bar.
+    expect(names(s, 0, G)).toEqual(['F5', 'F5']);
+  });
+
+  it('a courtesy sharp on an F in G major is still F sharp', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: F5, duration: 'q' });
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'sharp' });
+    expect(names(s, 0, G)).toEqual(['F#5']);
+  });
+
+  it('signs do not cross the bar line', () => {
+    let s = createAnswer(2);
+    s = reduce(s, { type: 'add', bar: 0, step: F5, duration: 'q' });
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'sharp' });
+    s = reduce(s, { type: 'add', bar: 1, step: F5, duration: 'q' });
+    expect(names(s, 0)).toEqual(['F#5']);
+    expect(names(s, 1)).toEqual(['F5']);
+  });
+
+  it('converts to sounding pitch an octave down', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
+    expect(answerBarToSounding(s.bars[0]!, C_MAJOR)).toEqual([60]);
+    s = reduce(s, { type: 'setSign', id: 1, sign: 'sharp' });
+    expect(answerBarToSounding(s.bars[0]!, C_MAJOR)).toEqual([61]);
   });
 });

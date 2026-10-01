@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GradeResult, GradedPair } from '../grading/grade';
 import { splitIntoBars } from '../melody/bars';
 import type { Melody } from '../melody/types';
-import { spellInKey, type Key } from '../music/key';
+import { keyId, spellInKey, type Key } from '../music/key';
+import { displaySignsForBars } from '../notation/accidentals';
 import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { ensureNotationFonts } from '../notation/fonts';
 import { yFromStep } from '../notation/hitTest';
@@ -79,12 +80,15 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
     const pairByTarget = new Map<number, GradedPair>();
     for (const p of result.pairs) if (p.target) pairByTarget.set(p.target.index, p);
 
+    const targetBars = splitIntoBars(melody.notes, melody.timeSignature);
+    const writtenBars = targetBars.map((bar) => bar.notes.map((n) => spellInKey(writtenFromSounding(n.midi), musicKey)));
+    const signs = displaySignsForBars(writtenBars, musicKey);
     let targetIndex = 0;
-    const bars: RenderBar[] = splitIntoBars(melody.notes, melody.timeSignature).map((bar) => ({
-      notes: bar.notes.map((n) => {
+    const bars: RenderBar[] = targetBars.map((bar, barIndex) => ({
+      notes: bar.notes.map((n, noteIndex) => {
         const index = targetIndex++;
         const pair = pairByTarget.get(index);
-        const written = spellInKey(writtenFromSounding(n.midi), musicKey);
+        const written = writtenBars[barIndex]![noteIndex]!;
         let color = COLORS.good;
         if (!pair || !pair.answer) color = COLORS.missing;
         else if (pair.mistakes.length > 0) color = COLORS.bad;
@@ -92,7 +96,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
         return {
           id: index,
           step: staffStep(written),
-          accidental: written.accidental,
+          sign: signs[barIndex]![noteIndex]!,
           duration: n.duration,
           style: { fill: color, stroke: color },
         };
@@ -105,6 +109,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
       barsPerRow: 2,
       scale,
       ink: COLORS.ink,
+      keySignature: keyId(musicKey),
     });
     setLayout(next);
 

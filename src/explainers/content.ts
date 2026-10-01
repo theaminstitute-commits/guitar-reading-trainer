@@ -14,7 +14,7 @@ const step = (name: string) => staffStep(parseSpelled(name));
 const note = (id: number, name: string, duration: RenderNote['duration'], label: string): RenderNote => ({
   id,
   step: step(name),
-  accidental: 0,
+  sign: 'none',
   duration,
   label,
 });
@@ -26,7 +26,8 @@ export const EXPLAINERS: Record<ExplainerId, Explainer> = {
     paragraphs: [
       'The staff has five lines and four spaces. Every line and every space is a letter, and the letters run up the alphabet from A to G and start again.',
       'The lines, from the bottom up, are E G B D F. The spaces, from the bottom up, spell F A C E. Notes that go higher or lower than the staff sit on short extra lines called ledger lines.',
-      'A sharp (♯) raises a note by a half step, a flat (♭) lowers it, and a natural (♮) cancels one. An accidental lasts until the end of the bar. Spelling matters: in C major the notes are the plain letters, so F is written F, never E♯.',
+      'A sharp (♯) raises a note by a half step, a flat (♭) lowers it, and a natural (♮) cancels one. A sign lasts until the end of the bar for that exact note, and must be written again in the next bar. Spelling matters: in C major the notes are the plain letters, so F is written F, never E♯.',
+      'The key signature sits between the clef and the time signature. Its sharps or flats apply to every note of those letters, in every octave, for the whole piece, so in G major a plain F on the line is F♯ and you write nothing in front of it. A sign is only needed for a note outside the key, or to cancel one earlier in the bar.',
     ],
     example: {
       notes: [

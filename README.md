@@ -20,7 +20,9 @@ Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.1.1 sh linux
 ## Music rules baked into the code
 
 - **Guitar is a transposing instrument.** Every pitch is stored as the *sounding* MIDI number. Written pitch is sounding plus one octave, computed only in `src/music/pitch.ts` (`writtenFromSounding` / `soundingFromWritten`). Audio and the fretboard use sounding pitch; the staff uses written pitch.
-- **Spelling is strict.** A note is spelled by `spellInKey` in `src/music/key.ts`: diatonic notes take the key's spelling, chromatic notes use sharps in C major and sharp keys, flats in flat keys. An enharmonic answer (E♯ for F) is graded as a pitch mistake.
+- **Spelling is strict.** A note is spelled by `spellInKey` in `src/music/key.ts`: diatonic notes take the key's spelling; a chromatic note that merely cancels the key signature is written with a natural (F♮ in G major); other chromatic notes use sharps in C major and sharp keys, flats in flat keys. An enharmonic answer (E♯ for F) is graded as a pitch mistake.
+- **Signs follow standard engraving rules** (`src/notation/accidentals.ts`, after Alfred's *Essential Dictionary of Music Notation*): a plain note takes the key signature; a written sign applies to that pitch for the rest of the bar until another sign on it; it must be rewritten in the next bar; other octaves are separate; a courtesy sign that restates what already applies is legal, not a mistake. The learner's answer stores the sign drawn in front of each note and is read with these rules before grading.
+- **Keys.** Every melody carries a key drawn from its level's `keys`; all fifteen major keys of the circle of fifths exist in `MAJOR_KEYS`. Level 1 still uses C major only; append `?key=G` (or `Bb`, `F#`, ...) to the URL to force a key while the stage ladder is being built.
 - **Position is separate from pitch.** A melody note carries `midi` plus the `string`/`fret` chosen for display (`src/melody/types.ts`).
 
 ## Layout

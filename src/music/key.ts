@@ -87,11 +87,19 @@ export function spellInKey(midi: Midi, key: Key): SpelledNote {
   const degrees = scaleDegrees(key);
   let degree = degrees.find((d) => d.pitchClass === pc);
   if (!degree) {
-    const useSharps = keySignatureCount(key) >= 0;
-    const neighbourPc = pitchClass(useSharps ? pc - 1 : pc + 1);
-    const neighbour = degrees.find((d) => d.pitchClass === neighbourPc)!;
-    const accidental = (neighbour.accidental + (useSharps ? 1 : -1)) as Accidental;
-    degree = { letter: neighbour.letter, accidental, pitchClass: pc };
+    // A chromatic note that is simply the natural of a letter the key signature
+    // alters is written with a natural sign (F natural in G major, B natural in
+    // F major), never as an enharmonic of another letter.
+    const cancelled = degrees.find((d) => d.accidental !== 0 && LETTER_PITCH_CLASS[d.letter] === pc);
+    if (cancelled) {
+      degree = { letter: cancelled.letter, accidental: 0, pitchClass: pc };
+    } else {
+      const useSharps = keySignatureCount(key) >= 0;
+      const neighbourPc = pitchClass(useSharps ? pc - 1 : pc + 1);
+      const neighbour = degrees.find((d) => d.pitchClass === neighbourPc)!;
+      const accidental = (neighbour.accidental + (useSharps ? 1 : -1)) as Accidental;
+      degree = { letter: neighbour.letter, accidental, pitchClass: pc };
+    }
   }
   // The octave belongs to the letter, so take the octave of the natural note the
   // accidental is applied to (B#3 = 60, Cb4 = 59).
@@ -101,3 +109,46 @@ export function spellInKey(midi: Midi, key: Key): SpelledNote {
 
 /** All letters, for iteration in UI palettes. */
 export const ALL_LETTERS = LETTERS;
+
+/**
+ * The fifteen major keys of the circle of fifths: C, then the sharp keys
+ * clockwise, then the flat keys counter-clockwise. B/Cb, F#/Gb and C#/Db are
+ * enharmonic equivalents and all appear.
+ */
+export const MAJOR_KEYS: readonly Key[] = [
+  { tonic: 'C', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'G', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'D', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'A', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'E', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'B', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'F', tonicAccidental: 1, mode: 'major' },
+  { tonic: 'C', tonicAccidental: 1, mode: 'major' },
+  { tonic: 'F', tonicAccidental: 0, mode: 'major' },
+  { tonic: 'B', tonicAccidental: -1, mode: 'major' },
+  { tonic: 'E', tonicAccidental: -1, mode: 'major' },
+  { tonic: 'A', tonicAccidental: -1, mode: 'major' },
+  { tonic: 'D', tonicAccidental: -1, mode: 'major' },
+  { tonic: 'G', tonicAccidental: -1, mode: 'major' },
+  { tonic: 'C', tonicAccidental: -1, mode: 'major' },
+];
+
+/** Short id such as "Bb" or "F#", also the VexFlow key signature spec. */
+export function keyId(key: Key): string {
+  return `${key.tonic}${{ [-2]: 'bb', [-1]: 'b', 0: '', 1: '#', 2: '##' }[key.tonicAccidental]}`;
+}
+
+/** Display name such as "B♭ major". */
+export function keyName(key: Key): string {
+  const glyph = { [-2]: '𝄫', [-1]: '♭', 0: '', 1: '♯', 2: '𝄪' }[key.tonicAccidental];
+  return `${key.tonic}${glyph} ${key.mode}`;
+}
+
+export function keyFromId(id: string): Key | null {
+  return MAJOR_KEYS.find((k) => keyId(k) === id) ?? null;
+}
+
+/** The accidental the key signature gives a letter: 0 for a natural, 1 for a sharp, -1 for a flat. */
+export function keySignatureAccidental(letter: Letter, key: Key): Accidental {
+  return scaleDegrees(key).find((d) => d.letter === letter)!.accidental;
+}

@@ -2,15 +2,17 @@
  * Grade a learner's answer against the target melody.
  *
  * Both sides are compared as WRITTEN pitches (what is on the page), because
- * that is what the learner produced. Spelling is strict: E# for F is a mistake
- * even though it sounds the same.
+ * that is what the learner produced. The learner's signs are read under the
+ * key signature with the bar rules (notation/accidentals), so a plain F in G
+ * major is F sharp and a courtesy sign is not a mistake. Spelling is strict:
+ * E# for F is a mistake even though it sounds the same.
  */
 import type { Melody } from '../melody/types';
 import { splitIntoBars } from '../melody/bars';
 import { beatsOf, type DurationId } from '../music/duration';
 import { spellInKey, type Key } from '../music/key';
 import { midiFromSpelled, spelledEquals, writtenFromSounding, type Midi, type SpelledNote } from '../music/pitch';
-import { answerNoteToSpelled, type AnswerNote } from '../notation/answer';
+import { resolveAnswerBar, type AnswerNote } from '../notation/answer';
 import { align } from './align';
 
 export type MistakeKind =
@@ -100,10 +102,11 @@ export function gradeAnswer(melody: Melody, answerBars: readonly (readonly Answe
 
   const answers: GradedAnswer[] = [];
   answerBars.forEach((bar, barIndex) => {
-    for (const note of bar) {
-      const written = answerNoteToSpelled(note);
+    const resolved = resolveAnswerBar(bar, key);
+    bar.forEach((note, i) => {
+      const written = resolved[i]!;
       answers.push({ index: answers.length, id: note.id, bar: barIndex, written, midi: midiFromSpelled(written), duration: note.duration });
-    }
+    });
   });
 
   const aligned = align(targets, answers, pairCost);

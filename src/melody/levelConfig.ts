@@ -8,7 +8,8 @@ import { C_MAJOR, type Key } from '../music/key';
 export interface LevelConfig {
   id: string;
   title: string;
-  key: Key;
+  /** Keys a melody may be in; one is picked per melody. */
+  keys: readonly Key[];
   timeSignature: readonly [number, number];
   /** Longest melody in this level, in bars. */
   bars: number;
@@ -36,7 +37,7 @@ export interface LevelConfig {
 export const LEVEL_1: LevelConfig = {
   id: 'level-1',
   title: 'Level 1: C major, first position, strings 1-3',
-  key: C_MAJOR,
+  keys: [C_MAJOR],
   timeSignature: [4, 4],
   bars: 4,
   startBars: 1,

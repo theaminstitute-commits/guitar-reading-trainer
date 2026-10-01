@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Dispatch, type PointerEvent } from 'react';
 import { beatsOf, DURATIONS, type DurationId } from '../music/duration';
+import { keyId, type Key } from '../music/key';
+import type { Sign } from '../notation/accidentals';
 import {
   addRejection,
   durationRejection,
@@ -8,7 +10,6 @@ import {
   type AnswerAction,
   type AnswerLimits,
   type AnswerState,
-  type InputAccidental,
 } from '../notation/answer';
 import { ensureNotationFonts } from '../notation/fonts';
 import { noteAt, staveAt, stepFromY } from '../notation/hitTest';
@@ -20,6 +21,8 @@ interface StaffInputProps {
   limits: AnswerLimits;
   /** Durations offered in the palette, in the order shown. */
   durations: readonly DurationId[];
+  /** Key whose signature is drawn on the staff. */
+  musicKey: Key;
   disabled?: boolean;
 }
 
@@ -45,7 +48,7 @@ function NoteIcon({ duration }: { duration: DurationId }) {
  * space with the selected duration; tap a note to select it, then use the
  * accidental and nudge buttons. Undo, delete and clear as usual.
  */
-export default function StaffInput({ answer, dispatch, limits, durations, disabled = false }: StaffInputProps) {
+export default function StaffInput({ answer, dispatch, limits, durations, musicKey, disabled = false }: StaffInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<StaffLayout | null>(null);
   const [width, setWidth] = useState(0);
@@ -96,8 +99,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, disabl
       notes: bar.map((n) => ({
         id: n.id,
         step: n.step,
-        accidental: n.accidental,
-        showNatural: n.showNatural,
+        sign: n.sign,
         duration: n.duration,
         style: n.id === selectedId ? { fill: COLORS.selected, stroke: COLORS.selected } : undefined,
       })),
@@ -108,8 +110,9 @@ export default function StaffInput({ answer, dispatch, limits, durations, disabl
       barsPerRow: 2,
       scale,
       ink: COLORS.ink,
+      keySignature: keyId(musicKey),
     });
-  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.timeSignature]);
+  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.timeSignature, musicKey]);
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
@@ -172,8 +175,9 @@ export default function StaffInput({ answer, dispatch, limits, durations, disabl
     dispatch({ type: 'setDuration', id: selectedId, duration: d });
     setMessage(`Changed the selected note to a ${DURATIONS[d].label.toLowerCase()}.`);
   };
-  const setAccidental = (accidental: InputAccidental) => {
-    if (selectedId !== null) dispatch({ type: 'setAccidental', id: selectedId, accidental });
+  const selectedSign: Sign | null = selectedId === null ? null : (findNote(answer, selectedId)?.note.sign ?? null);
+  const setSign = (sign: Exclude<Sign, 'none'>) => {
+    if (selectedId !== null) dispatch({ type: 'setSign', id: selectedId, sign });
   };
   const nudge = (delta: number) => {
     if (selectedId !== null) dispatch({ type: 'nudge', id: selectedId, delta });
@@ -210,13 +214,13 @@ export default function StaffInput({ answer, dispatch, limits, durations, disabl
           </button>
         ))}
         <span className="palette-gap" />
-        <button className="icon-button glyph" onClick={() => setAccidental(1)} disabled={disabled || !hasSelection} aria-label="Sharp">
+        <button className={`icon-button glyph${selectedSign === 'sharp' ? ' selected' : ''}`} onClick={() => setSign('sharp')} disabled={disabled || !hasSelection} aria-label="Sharp" aria-pressed={selectedSign === 'sharp'}>
           ♯
         </button>
-        <button className="icon-button glyph" onClick={() => setAccidental(-1)} disabled={disabled || !hasSelection} aria-label="Flat">
+        <button className={`icon-button glyph${selectedSign === 'flat' ? ' selected' : ''}`} onClick={() => setSign('flat')} disabled={disabled || !hasSelection} aria-label="Flat" aria-pressed={selectedSign === 'flat'}>
           ♭
         </button>
-        <button className="icon-button glyph" onClick={() => setAccidental(0)} disabled={disabled || !hasSelection} aria-label="Natural">
+        <button className={`icon-button glyph${selectedSign === 'natural' ? ' selected' : ''}`} onClick={() => setSign('natural')} disabled={disabled || !hasSelection} aria-label="Natural" aria-pressed={selectedSign === 'natural'}>
           ♮
         </button>
       </div>

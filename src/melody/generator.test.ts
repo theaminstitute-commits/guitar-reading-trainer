@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { beatsOf, beatsPerBar } from '../music/duration';
 import { midiAt } from '../music/fretboard';
-import { degreeOf, isDiatonic, spellInKey } from '../music/key';
+import { degreeOf, isDiatonic, keyId, MAJOR_KEYS, spellInKey } from '../music/key';
 import { staffStep } from '../music/pitch';
 import { splitIntoBars, totalBeats } from './bars';
 import { generateMelody, generateRhythm, pitchPool } from './generator';
@@ -12,14 +12,14 @@ const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
 
 describe('pitchPool', () => {
   it('Level 1 gives the eight naturals G3..G4, one position each', () => {
-    const pool = pitchPool(LEVEL_1);
+    const pool = pitchPool(LEVEL_1, LEVEL_1.keys[0]!);
     expect(pool.map((p) => p.midi)).toEqual([55, 57, 59, 60, 62, 64, 65, 67]);
     expect(pool.every((p) => p.positions.length === 1)).toBe(true);
     expect(pool.find((p) => p.midi === 59)!.positions).toEqual([{ string: 2, fret: 0 }]);
   });
 
   it('is sorted and consecutive entries are one diatonic step apart', () => {
-    const pool = pitchPool(LEVEL_1);
+    const pool = pitchPool(LEVEL_1, LEVEL_1.keys[0]!);
     for (let i = 1; i < pool.length; i++) {
       expect(pool[i]!.step - pool[i - 1]!.step).toBe(1);
     }
@@ -74,7 +74,7 @@ describe('generateMelody', () => {
         // In range, in key, on the allowed strings and frets.
         expect(note.midi).toBeGreaterThanOrEqual(55);
         expect(note.midi).toBeLessThanOrEqual(67);
-        expect(isDiatonic(note.midi, LEVEL_1.key)).toBe(true);
+        expect(isDiatonic(note.midi, melody.key)).toBe(true);
         expect(LEVEL_1.strings).toContain(note.string);
         expect(note.fret).toBeGreaterThanOrEqual(lowFret);
         expect(note.fret).toBeLessThanOrEqual(highFret);
@@ -84,16 +84,16 @@ describe('generateMelody', () => {
 
       // Leaps no bigger than a third.
       for (let i = 1; i < melody.notes.length; i++) {
-        const a = staffStep(spellInKey(melody.notes[i - 1]!.midi, LEVEL_1.key));
-        const b = staffStep(spellInKey(melody.notes[i]!.midi, LEVEL_1.key));
+        const a = staffStep(spellInKey(melody.notes[i - 1]!.midi, melody.key));
+        const b = staffStep(spellInKey(melody.notes[i]!.midi, melody.key));
         expect(Math.abs(a - b)).toBeLessThanOrEqual(LEVEL_1.maxLeapSteps);
       }
 
       // Starts and ends on a chord tone.
       const first = melody.notes[0]!;
       const last = melody.notes[melody.notes.length - 1]!;
-      expect(LEVEL_1.startDegrees).toContain(degreeOf(first.midi, LEVEL_1.key));
-      expect(LEVEL_1.endDegrees).toContain(degreeOf(last.midi, LEVEL_1.key));
+      expect(LEVEL_1.startDegrees).toContain(degreeOf(first.midi, melody.key));
+      expect(LEVEL_1.endDegrees).toContain(degreeOf(last.midi, melody.key));
     }
   });
 
@@ -117,8 +117,8 @@ describe('generateMelody', () => {
         expect(melody.bars).toBe(bars);
         expect(totalBeats(melody.notes)).toBe(bars * 4);
         expect(splitIntoBars(melody.notes, melody.timeSignature)).toHaveLength(bars);
-        expect(LEVEL_1.startDegrees).toContain(degreeOf(melody.notes[0]!.midi, LEVEL_1.key));
-        expect(LEVEL_1.endDegrees).toContain(degreeOf(melody.notes[melody.notes.length - 1]!.midi, LEVEL_1.key));
+        expect(LEVEL_1.startDegrees).toContain(degreeOf(melody.notes[0]!.midi, melody.key));
+        expect(LEVEL_1.endDegrees).toContain(degreeOf(melody.notes[melody.notes.length - 1]!.midi, melody.key));
       }
     }
     expect(generateMelody(LEVEL_1, 5).bars).toBe(LEVEL_1.bars);
@@ -126,9 +126,30 @@ describe('generateMelody', () => {
     expect(() => generateMelody(LEVEL_1, 5, LEVEL_1.bars + 1)).toThrow();
   });
 
+  it('works in every major key once the fret window covers a full octave', () => {
+    const allKeys: LevelConfig = { ...LEVEL_1, id: 'test-keys', fretRange: [0, 4], keys: MAJOR_KEYS };
+    const seen = new Set<string>();
+    for (const seed of SEEDS) {
+      const melody = generateMelody(allKeys, seed, 2);
+      seen.add(keyId(melody.key));
+      expect(MAJOR_KEYS).toContain(melody.key);
+      // Every scale degree is reachable in frets 0-4, so the pool has all seven.
+      expect(new Set(pitchPool(allKeys, melody.key).map((p) => p.degree)).size).toBe(7);
+      for (const note of melody.notes) {
+        expect(isDiatonic(note.midi, melody.key)).toBe(true);
+        expect(midiAt({ string: note.string, fret: note.fret })).toBe(note.midi);
+      }
+      expect(allKeys.startDegrees).toContain(degreeOf(melody.notes[0]!.midi, melody.key));
+      expect(allKeys.endDegrees).toContain(degreeOf(melody.notes[melody.notes.length - 1]!.midi, melody.key));
+    }
+    expect(seen.size).toBe(MAJOR_KEYS.length);
+    // Same seed, same key.
+    expect(generateMelody(allKeys, 77, 2).key).toBe(generateMelody(allKeys, 77, 2).key);
+  });
+
   it('honours a wider fret window with alternative positions', () => {
     const wide: LevelConfig = { ...LEVEL_1, id: 'test-wide', fretRange: [0, 5] };
-    const pool = pitchPool(wide);
+    const pool = pitchPool(wide, wide.keys[0]!);
     // B3 and E4 now have two positions each.
     expect(pool.find((p) => p.midi === 59)!.positions).toHaveLength(2);
     expect(pool.find((p) => p.midi === 64)!.positions).toHaveLength(2);

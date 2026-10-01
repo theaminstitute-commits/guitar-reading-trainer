@@ -1,4 +1,5 @@
 import type { DurationId } from '../music/duration';
+import type { Key } from '../music/key';
 import type { Midi } from '../music/pitch';
 
 /**
@@ -15,6 +16,8 @@ export interface MelodyNote {
 export interface Melody {
   seed: number;
   levelId: string;
+  /** The key this melody is written in, chosen from the level's keys. */
+  key: Key;
   tempo: number;
   timeSignature: readonly [number, number];
   bars: number;

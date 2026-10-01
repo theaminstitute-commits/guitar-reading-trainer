@@ -7,7 +7,8 @@ import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
 import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
-import { LEVEL_1 } from './melody/levelConfig';
+import { LEVEL_1, type LevelConfig } from './melody/levelConfig';
+import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
 import { accuracyOf, applyResult, initialProgress, withBars, type LengthChange, type Progress } from './session/progression';
 import { localProgressStore } from './storage/progress';
@@ -24,7 +25,17 @@ interface Checked {
   lengthChange: LengthChange;
 }
 
-const level = LEVEL_1;
+/**
+ * Until the stage ladder is in, `?key=G` (or Bb, F#, ...) forces every melody
+ * into that key so key signatures can be tried out.
+ */
+function levelWithKeyOverride(base: LevelConfig): LevelConfig {
+  const id = new URLSearchParams(window.location.search).get('key');
+  const key = id ? keyFromId(id) : null;
+  return key ? { ...base, keys: [key], fretRange: [0, 4] } : base;
+}
+
+const level = levelWithKeyOverride(LEVEL_1);
 const store = localProgressStore;
 
 /**
@@ -59,7 +70,7 @@ export default function App() {
   );
 
   const onCheck = (answerBars: AnswerNote[][]) => {
-    const result = gradeAnswer(melody, answerBars, level.key);
+    const result = gradeAnswer(melody, answerBars, melody.key);
     const { progress: next, change } = applyResult(progress, result, level);
     updateProgress(next);
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
@@ -82,7 +93,7 @@ export default function App() {
         <p className="muted">
           {screen === 'start'
             ? level.title
-            : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${bars} ${bars === 1 ? 'bar' : 'bars'} · ${melody.tempo} bpm`}
+            : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'} · ${melody.tempo} bpm`}
         </p>
       </header>
 

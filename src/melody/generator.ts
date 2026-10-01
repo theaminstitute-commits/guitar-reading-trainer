@@ -9,7 +9,7 @@
  */
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
-import { degreeOf, isDiatonic, spellInKey } from '../music/key';
+import { degreeOf, isDiatonic, spellInKey, type Key } from '../music/key';
 import { staffStep, type Midi } from '../music/pitch';
 import type { LevelConfig } from './levelConfig';
 import { createRng, type Rng } from './random';
@@ -24,13 +24,13 @@ interface PoolNote {
 }
 
 /** All in-key pitches reachable in the level's fret window, ascending, with their positions. */
-export function pitchPool(config: LevelConfig): PoolNote[] {
+export function pitchPool(config: LevelConfig, key: Key): PoolNote[] {
   const byMidi = new Map<Midi, FretPosition[]>();
   const [low, high] = config.fretRange;
   for (const string of config.strings) {
     for (let fret = low; fret <= high; fret++) {
       const midi = midiAt({ string, fret });
-      if (!isDiatonic(midi, config.key)) continue;
+      if (!isDiatonic(midi, key)) continue;
       const list = byMidi.get(midi) ?? [];
       list.push({ string, fret });
       byMidi.set(midi, list);
@@ -40,8 +40,8 @@ export function pitchPool(config: LevelConfig): PoolNote[] {
     .sort((a, b) => a[0] - b[0])
     .map(([midi, positions]) => ({
       midi,
-      step: staffStep(spellInKey(midi, config.key)),
-      degree: degreeOf(midi, config.key)!,
+      step: staffStep(spellInKey(midi, key)),
+      degree: degreeOf(midi, key)!,
       positions,
     }));
 }
@@ -93,7 +93,9 @@ function choosePosition(candidate: PoolNote, previous: FretPosition | null): Fre
 export function generateMelody(config: LevelConfig, seed: number, bars: number = config.bars): Melody {
   if (bars < 1 || bars > config.bars) throw new Error(`Level ${config.id}: ${bars} bars is outside 1..${config.bars}`);
   const rng = createRng(seed);
-  const pool = pitchPool(config);
+  // The key is drawn first so a seed fixes the key as well as the notes.
+  const key = rng.pick(config.keys);
+  const pool = pitchPool(config, key);
   if (pool.length === 0) throw new Error(`Level ${config.id}: no playable in-key pitches`);
 
   const rhythm = generateRhythm(config, rng, bars);
@@ -102,7 +104,7 @@ export function generateMelody(config: LevelConfig, seed: number, bars: number =
   const starts = pool.filter((p) => config.startDegrees.includes(p.degree));
   const ends = pool.filter((p) => config.endDegrees.includes(p.degree));
   if (starts.length === 0 || ends.length === 0) {
-    throw new Error(`Level ${config.id}: start/end degrees are not playable in the fret window`);
+    throw new Error(`Level ${config.id}: start/end degrees of ${key.tonic} are not playable in the fret window`);
   }
 
   const chosen: PoolNote[] = [rng.pick(starts)];
@@ -130,6 +132,7 @@ export function generateMelody(config: LevelConfig, seed: number, bars: number =
   return {
     seed,
     levelId: config.id,
+    key,
     tempo: config.tempo,
     timeSignature: config.timeSignature,
     bars,

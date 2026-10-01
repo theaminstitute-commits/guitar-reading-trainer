@@ -7,6 +7,11 @@ import {
   keySignatureCount,
   scaleDegrees,
   spellInKey,
+  MAJOR_KEYS,
+  keyId,
+  keyName,
+  keyFromId,
+  keySignatureAccidental,
   type Key,
 } from './key';
 import { midiFromSpelled, parseSpelled, spelledToString } from './pitch';
@@ -68,6 +73,13 @@ describe('spellInKey', () => {
     expect(spell('Eb4', G_MAJOR)).toBe('D#4');
   });
 
+  it('writes a cancelled key-signature note with a natural, not an enharmonic', () => {
+    expect(spell('F4', G_MAJOR)).toBe('F4'); // not E#4
+    expect(spell('B4', F_MAJOR)).toBe('B4'); // not Cb5
+    expect(spell('C5', D_MAJOR)).toBe('C5'); // not B#4
+    expect(spell('E4', Bb_MAJOR)).toBe('E4'); // not Fb4
+  });
+
   it('spells chromatic notes with flats in flat keys', () => {
     expect(spell('C#4', F_MAJOR)).toBe('Db4');
     expect(spell('G#4', Bb_MAJOR)).toBe('Ab4');
@@ -84,5 +96,30 @@ describe('spellInKey', () => {
     const expected = ['G3', 'A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4'];
     const actual = [55, 57, 59, 60, 62, 64, 65, 67].map((m) => spelledToString(spellInKey(m, C_MAJOR)));
     expect(actual).toEqual(expected);
+  });
+});
+
+describe('major keys', () => {
+  it('lists the fifteen keys of the circle of fifths with correct signatures', () => {
+    expect(MAJOR_KEYS.map(keyId)).toEqual([
+      'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
+      'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb',
+    ]);
+    expect(MAJOR_KEYS.map(keySignatureCount)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, -1, -2, -3, -4, -5, -6, -7]);
+  });
+
+  it('names keys and looks them up by id', () => {
+    expect(keyName(keyFromId('Bb')!)).toBe('B♭ major');
+    expect(keyName(keyFromId('F#')!)).toBe('F♯ major');
+    expect(keyName(C_MAJOR)).toBe('C major');
+    expect(keyFromId('H')).toBeNull();
+  });
+
+  it('gives each letter its key signature accidental', () => {
+    expect(keySignatureAccidental('F', G_MAJOR)).toBe(1);
+    expect(keySignatureAccidental('C', G_MAJOR)).toBe(0);
+    expect(keySignatureAccidental('B', F_MAJOR)).toBe(-1);
+    expect(keySignatureAccidental('E', keyFromId('C#')!)).toBe(1); // E# in C# major
+    expect(keySignatureAccidental('F', keyFromId('Cb')!)).toBe(-1); // Fb in Cb major
   });
 });

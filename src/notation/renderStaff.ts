@@ -6,7 +6,8 @@
  */
 import { Accidental, Annotation, BarlineType, Formatter, Renderer, Stave, StaveNote, type RenderContext } from 'vexflow/core';
 import { DURATIONS, type DurationId } from '../music/duration';
-import { spelledFromStaffStep, type Accidental as AccidentalValue } from '../music/pitch';
+import { spelledFromStaffStep } from '../music/pitch';
+import type { Sign } from './accidentals';
 import type { NoteGeometry, StaveGeometry } from './hitTest';
 
 export interface RenderNoteStyle {
@@ -17,8 +18,8 @@ export interface RenderNoteStyle {
 export interface RenderNote {
   id: number;
   step: number;
-  accidental: AccidentalValue;
-  showNatural?: boolean;
+  /** The sign drawn in front of the note. */
+  sign: Sign;
   duration: DurationId;
   style?: RenderNoteStyle;
   /** Text drawn under the note (explainer cards). */
@@ -42,6 +43,8 @@ export interface RenderOptions {
   ink: string;
   showClef?: boolean;
   showTimeSignature?: boolean;
+  /** VexFlow key spec such as 'G', 'Bb', 'F#'; omitted or 'C' draws none. */
+  keySignature?: string;
 }
 
 export interface StaffLayout {
@@ -59,12 +62,18 @@ const CLEF_EXTRA = 42;
 const TIME_SIG_EXTRA = 24;
 const SIDE_PAD = 2;
 
-const ACCIDENTAL_GLYPH: Record<AccidentalValue, string> = { [-2]: 'bb', [-1]: 'b', 0: 'n', 1: '#', 2: '##' };
+const SIGN_GLYPH: Record<Exclude<Sign, 'none'>, string> = { sharp: '#', flat: 'b', natural: 'n' };
 
-function vexKey(step: number, accidental: AccidentalValue): string {
-  const spelled = spelledFromStaffStep(step, accidental);
-  const acc = { [-2]: 'bb', [-1]: 'b', 0: '', 1: '#', 2: '##' }[accidental];
-  return `${spelled.letter.toLowerCase()}${acc}/${spelled.octave}`;
+/** Count of sharps or flats in a key spec, for the extra stave width it needs. */
+function keySignatureSize(spec: string | undefined): number {
+  const sizes: Record<string, number> = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, 'F#': 6, 'C#': 7, F: 1, Bb: 2, Eb: 3, Ab: 4, Db: 5, Gb: 6, Cb: 7 };
+  return spec ? (sizes[spec] ?? 0) : 0;
+}
+
+/** VexFlow key for a staff position; the pitch comes from letter and octave only, signs are modifiers. */
+function vexKey(step: number): string {
+  const spelled = spelledFromStaffStep(step);
+  return `${spelled.letter.toLowerCase()}/${spelled.octave}`;
 }
 
 export function renderStaff(container: HTMLDivElement, bars: RenderBar[], options: RenderOptions): StaffLayout {
@@ -72,6 +81,8 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
   const { scale, barsPerRow, timeSignature, ink } = options;
   const showClef = options.showClef ?? true;
   const showTimeSignature = options.showTimeSignature ?? true;
+  const keySpec = options.keySignature && options.keySignature !== 'C' ? options.keySignature : undefined;
+  const keyExtra = keySpec ? 8 + keySignatureSize(keySpec) * 10 : 0;
   // A melody shorter than one row spreads its bars across the full width.
   const perRow = Math.max(1, Math.min(barsPerRow, bars.length));
   const rows = Math.ceil(bars.length / perRow);
@@ -91,7 +102,7 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
   for (let row = 0; row < rows; row++) {
     const rowBars = bars.slice(row * perRow, (row + 1) * perRow);
     const firstInRow = row * perRow;
-    const extra = (showClef ? CLEF_EXTRA : 0) + (showTimeSignature && row === 0 ? TIME_SIG_EXTRA : 0);
+    const extra = (showClef ? CLEF_EXTRA : 0) + keyExtra + (showTimeSignature && row === 0 ? TIME_SIG_EXTRA : 0);
     const baseWidth = (logicalWidth - SIDE_PAD * 2 - extra) / perRow;
     let x = SIDE_PAD;
     const y = row * ROW_HEIGHT + STAVE_TOP;
@@ -101,7 +112,9 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       const isFirst = i === 0;
       const width = baseWidth + (isFirst ? extra : 0);
       const stave = new Stave(x, y, width);
+      // Order on the stave: clef, key signature, time signature.
       if (isFirst && showClef) stave.addClef('treble');
+      if (isFirst && keySpec) stave.addKeySignature(keySpec);
       if (isFirst && row === 0 && showTimeSignature) stave.addTimeSignature(`${beats}/${beatValue}`);
       if (barIndex === bars.length - 1) stave.setEndBarType(BarlineType.END);
       stave.setContext(ctx);
@@ -118,13 +131,13 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
 
       const staveNotes = bar.notes.map((n) => {
         const note = new StaveNote({
-          keys: [vexKey(n.step, n.accidental)],
+          keys: [vexKey(n.step)],
           duration: DURATIONS[n.duration].vexflow,
           clef: 'treble',
           autoStem: true,
         });
-        if (n.accidental !== 0 || n.showNatural) {
-          note.addModifier(new Accidental(ACCIDENTAL_GLYPH[n.accidental]), 0);
+        if (n.sign !== 'none') {
+          note.addModifier(new Accidental(SIGN_GLYPH[n.sign]), 0);
         }
         if (n.style) note.setStyle({ fillStyle: n.style.fill, strokeStyle: n.style.stroke });
         if (n.label) {

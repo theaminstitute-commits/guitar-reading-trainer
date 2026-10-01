@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Melody } from '../melody/types';
-import { C_MAJOR } from '../music/key';
+import { C_MAJOR, keyFromId } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { describeStaffPosition, explainMistake } from './explain';
@@ -11,6 +11,7 @@ function melody(...written: string[]): Melody {
   return {
     seed: 0,
     levelId: 'test',
+    key: C_MAJOR,
     tempo: 72,
     timeSignature: [4, 4],
     bars: 1,
@@ -22,18 +23,17 @@ function melody(...written: string[]): Melody {
 }
 
 let nextId = 1;
-/** Answer notes from written names like "C5", "F#4", "E5:h". */
+/**
+ * Answer notes as the learner writes them: "C5" is a plain note, "F#5" has a
+ * sharp sign drawn, "Fn5" a natural sign, "E5:h" is a half note.
+ */
 function answer(...written: string[]): AnswerNote[] {
   return written.map((w) => {
     const [name, dur = 'q'] = w.split(':');
-    const spelled = parseSpelled(name!);
-    return {
-      id: nextId++,
-      step: staffStep(spelled),
-      accidental: spelled.accidental as -1 | 0 | 1,
-      showNatural: false,
-      duration: dur as 'q' | 'h',
-    };
+    const m = /^([A-G])(#|b|n|)(\d)$/.exec(name!)!;
+    const sign = ({ '': 'none', '#': 'sharp', b: 'flat', n: 'natural' } as const)[m[2] as '' | '#' | 'b' | 'n'];
+    const spelled = parseSpelled(`${m[1]}${m[3]}`);
+    return { id: nextId++, step: staffStep(spelled), sign, duration: dur as 'q' | 'h' };
   });
 }
 
@@ -115,6 +115,48 @@ describe('gradeAnswer', () => {
       [2, 'wrong-duration'],
     ]);
     expect(r.pairs.find((p) => p.mistakes.length > 0)!.target!.bar).toBe(1);
+  });
+});
+
+describe('grading under a key signature', () => {
+  const G = keyFromId('G')!;
+  const inG = (...written: string[]): Melody => ({ ...melody(...written), key: G });
+
+  it('a plain F in G major is read as F sharp and matches the key', () => {
+    const r = gradeAnswer(inG('F#5', 'G5'), [answer('F5', 'G5')], G);
+    expect(kinds(r)).toEqual([]);
+    expect(r.pitchScore).toBe(1);
+  });
+
+  it('a courtesy sharp is not a mistake', () => {
+    const r = gradeAnswer(inG('F#5', 'G5'), [answer('F#5', 'G5')], G);
+    expect(kinds(r)).toEqual([]);
+  });
+
+  it('a natural sign on an F in G major is a wrong accidental', () => {
+    const r = gradeAnswer(inG('F#5', 'G5'), [answer('Fn5', 'G5')], G);
+    expect(kinds(r)).toEqual(['wrong-accidental']);
+    const e = explainMistake(r.mistakes[0]!, r.pairs[0]!, G, () => 2);
+    expect(e.text).toContain('key signature of G major');
+  });
+
+  it('a sign carries through the bar: one natural covers both Fs', () => {
+    const r = gradeAnswer(inG('F5', 'F5'), [answer('Fn5', 'F5')], G);
+    expect(kinds(r)).toEqual([]);
+  });
+
+  it('a sign does not cross the bar line', () => {
+    const m: Melody = { ...inG('F#5', 'G5', 'A5', 'B5', 'F#5', 'G5', 'A5', 'B5'), bars: 2 };
+    // Learner writes a natural on the first F only; bar 2's plain F is F# again.
+    const r = gradeAnswer(m, [answer('Fn5', 'G5', 'A5', 'B5'), answer('F5', 'G5', 'A5', 'B5')], G);
+    expect(kinds(r)).toEqual(['wrong-accidental']);
+    expect(r.pairs[0]!.mistakes).toHaveLength(1);
+  });
+
+  it('strict spelling holds in flat keys too: A# for Bb', () => {
+    const F = keyFromId('F')!;
+    const r = gradeAnswer({ ...melody('Bb4', 'C5'), key: F }, [answer('A#4', 'C5')], F);
+    expect(kinds(r)).toEqual(['enharmonic']);
   });
 });
 
