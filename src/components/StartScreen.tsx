@@ -1,7 +1,7 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import type { Stage } from '../melody/stages';
-import type { ExerciseMode, Progress } from '../session/progression';
+import type { ExerciseMode, Handedness, Progress } from '../session/progression';
 
 export interface SessionStats {
   exercises: number;
@@ -18,13 +18,14 @@ interface StartScreenProps {
   onStage: (index: number) => void;
   onIncludeOptional: (include: boolean) => void;
   onMode: (mode: ExerciseMode) => void;
+  onHandedness: (handedness: Handedness) => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onMode, onExplainer, onReset }: StartScreenProps) {
+export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onMode, onHandedness, onExplainer, onReset }: StartScreenProps) {
   const lengths = Array.from({ length: level.bars }, (_, i) => i + 1);
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
@@ -66,6 +67,16 @@ export default function StartScreen({ stages, level, progress, session, onStart,
           ? 'The fretboard lights up each note as it plays.'
           : 'Dictation by ear: no fretboard. The key note still sounds first from stage 3.'}
       </p>
+
+      <div className="length-picker" role="group" aria-label="Handedness">
+        <span className="muted">Guitar</span>
+        <button className={`chip${progress.handedness === 'right' ? ' selected' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
+          Right-handed
+        </button>
+        <button className={`chip${progress.handedness === 'left' ? ' selected' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
+          Left-handed
+        </button>
+      </div>
 
       <div className="length-picker" role="group" aria-label="Stage">
         <span className="muted">Stage</span>

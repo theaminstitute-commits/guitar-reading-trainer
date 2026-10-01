@@ -7,6 +7,8 @@ interface FretboardProps {
   active: FretPosition | null;
   /** Notes already played this pass, drawn faintly so the shape of the melody stays visible. */
   played?: readonly FretPosition[];
+  /** Left-handed view: the whole board mirrored, nut on the right. */
+  mirrored?: boolean;
 }
 
 const STRING_NAMES = ['E', 'B', 'G', 'D', 'A', 'E'];
@@ -16,7 +18,7 @@ const MARKER_FRETS = [3, 5, 7, 9];
  * Horizontal fretboard, high E string at the top, nut on the left. Pure SVG so it
  * scales to any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ fretCount = 5, active, played = [] }: FretboardProps) {
+export default function Fretboard({ fretCount = 5, active, played = [], mirrored = false }: FretboardProps) {
   const left = 34;
   const top = 26;
   const fretWidth = 62;
@@ -30,20 +32,24 @@ export default function Fretboard({ fretCount = 5, active, played = [] }: Fretbo
   const noteX = (fret: number) => (fret === 0 ? nutX - 14 : fretX(fret) - fretWidth / 2);
 
   const same = (a: FretPosition, b: FretPosition) => a.string === b.string && a.fret === b.fret;
+  // Mirror the drawing as a whole; flip each label back so it still reads left to right.
+  const boardTransform = mirrored ? `translate(${width} 0) scale(-1 1)` : undefined;
+  const label = (x: number) => (mirrored ? `translate(${2 * x} 0) scale(-1 1)` : undefined);
 
   return (
     <svg
       className="fretboard"
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label={active ? `String ${active.string}, fret ${active.fret}` : 'Fretboard'}
+      aria-label={active ? `String ${active.string}, fret ${active.fret}${mirrored ? ', left-handed view' : ''}` : 'Fretboard'}
     >
+      <g transform={boardTransform}>
       {/* Wood */}
       <rect x={nutX} y={top - 8} width={fretWidth * fretCount} height={stringGap * 5 + 16} rx={3} className="fb-wood" />
 
       {/* Fret numbers */}
       {Array.from({ length: fretCount }, (_, i) => i + 1).map((fret) => (
-        <text key={fret} x={fretX(fret) - fretWidth / 2} y={top - 13} className="fb-fret-number" textAnchor="middle">
+        <text key={fret} x={fretX(fret) - fretWidth / 2} y={top - 13} className="fb-fret-number" textAnchor="middle" transform={label(fretX(fret) - fretWidth / 2)}>
           {fret}
         </text>
       ))}
@@ -72,7 +78,7 @@ export default function Fretboard({ fretCount = 5, active, played = [] }: Fretbo
               className="fb-string"
               strokeWidth={1 + i * 0.35}
             />
-            <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle">
+            <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle" transform={label(nutX - 24)}>
               {name}
             </text>
           </g>
@@ -93,6 +99,7 @@ export default function Fretboard({ fretCount = 5, active, played = [] }: Fretbo
           <circle cx={noteX(active.fret)} cy={stringY(active.string)} r={9} className="fb-active-dot" />
         </g>
       )}
+      </g>
     </svg>
   );
 }

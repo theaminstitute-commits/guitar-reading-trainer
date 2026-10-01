@@ -10,7 +10,7 @@ import { generateMelody } from './melody/generator';
 import { STAGES, type Stage } from './melody/stages';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
-import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ExerciseMode, type ProgressChange, type Progress } from './session/progression';
+import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ExerciseMode, type Handedness, type ProgressChange, type Progress } from './session/progression';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -81,6 +81,7 @@ export default function App() {
   const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
   const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
+  const onHandedness = (handedness: Handedness) => updateProgress({ ...progress, handedness });
 
   const onReset = () => {
     store.clear();
@@ -110,12 +111,15 @@ export default function App() {
           onStage={onStage}
           onIncludeOptional={onIncludeOptional}
           onMode={onMode}
+          onHandedness={onHandedness}
           onExplainer={setExplainer}
           onReset={onReset}
         />
       )}
 
-      {screen === 'exercise' && <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} onCheck={onCheck} />}
+      {screen === 'exercise' && (
+        <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} leftHanded={progress.handedness === 'left'} onCheck={onCheck} />
+      )}
 
       {screen === 'feedback' && checked && (
         <FeedbackScreen

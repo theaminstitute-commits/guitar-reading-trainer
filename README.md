@@ -48,7 +48,7 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ## Modes
 
-**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. The choice is on the start screen and is remembered with the rest of the progress.
+**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. The choice is on the start screen and is remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
 
 ## Progression
 

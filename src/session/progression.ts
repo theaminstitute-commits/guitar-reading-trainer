@@ -17,6 +17,8 @@ export interface Progress {
   includeOptional: boolean;
   /** 'watch': the fretboard shows each note as it plays. 'listen': ear only, no fretboard. */
   mode: ExerciseMode;
+  /** Left-handed players see the fretboard mirrored, nut on the right. */
+  handedness: Handedness;
   /** Current melody length in bars. */
   bars: number;
   cleanStreak: number;
@@ -28,12 +30,13 @@ export interface Progress {
 }
 
 export type ExerciseMode = 'watch' | 'listen';
+export type Handedness = 'right' | 'left';
 
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 2, stage: 0, includeOptional: false, mode: 'watch', bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+  return { version: 2, stage: 0, includeOptional: false, mode: 'watch', handedness: 'right', bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
 }
 
 /** One number for "how did that go": the mean of pitch and rhythm scores. */

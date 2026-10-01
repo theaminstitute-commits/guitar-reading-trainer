@@ -32,6 +32,8 @@ interface ExerciseScreenProps {
   level: LevelConfig;
   /** Listen-only dictation hides the fretboard: the ear does all the work. */
   showFretboard: boolean;
+  /** Mirror the fretboard for left-handed players. */
+  leftHanded: boolean;
   onCheck: (answerBars: AnswerNote[][]) => void;
 }
 
@@ -40,7 +42,7 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, showFretboard, onCheck }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, onCheck }: ExerciseScreenProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [countBeat, setCountBeat] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -163,7 +165,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, onCheck }
       </div>
 
       {showFretboard ? (
-        <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} />
+        <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} mirrored={leftHanded} />
       ) : (
         <div className="listen-only" aria-hidden="true">
           <span className={`ear${status === 'playing' ? ' on' : ''}`}>
