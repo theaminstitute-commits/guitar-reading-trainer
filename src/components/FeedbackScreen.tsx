@@ -4,6 +4,7 @@ import { explainMistake, type ExplainerId } from '../grading/explain';
 import type { GradeResult } from '../grading/grade';
 import type { LevelConfig } from '../melody/levelConfig';
 import { splitIntoBars } from '../melody/bars';
+import { barBeatsForCounts, describeMeter } from '../melody/meter';
 import type { Melody } from '../melody/types';
 import { answerBarToSounding, type AnswerNote } from '../notation/answer';
 import type { Stage } from '../melody/stages';
@@ -17,7 +18,8 @@ interface FeedbackScreenProps {
   result: GradeResult;
   change: ProgressChange;
   nextStage: Stage;
-  nextBars: number;
+  /** Melody length after this result, in counts. */
+  nextCounts: number;
   onNext: () => void;
   onExplainer: (id: ExplainerId) => void;
 }
@@ -33,7 +35,8 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, answerBars, result, change, nextStage, nextBars, onNext, onExplainer }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, answerBars, result, change, nextStage, nextCounts, onNext, onExplainer }: FeedbackScreenProps) {
+  const nextMeter = describeMeter(barBeatsForCounts(nextCounts));
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -68,7 +71,7 @@ export default function FeedbackScreen({ melody, answerBars, result, change, nex
   const stop = () => sharedPlayer().stop();
 
   const pct = (v: number) => `${Math.round(v * 100)}%`;
-  const targetBars = splitIntoBars(melody.notes, melody.timeSignature);
+  const targetBars = splitIntoBars(melody.notes, melody.barBeats);
   const notesInBar = (bar: number) => targetBars[bar]?.notes.length ?? 0;
   const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, melody.key, notesInBar));
   const perfect = result.mistakes.length === 0;
@@ -118,10 +121,10 @@ export default function FeedbackScreen({ melody, answerBars, result, change, nex
 
       {change && (
         <p className={`length-change ${change === 'longer' || change === 'stage-up' ? 'longer' : 'shorter'}`}>
-          {change === 'longer' && `Three clean rounds in a row. Melodies are now ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} long.`}
-          {change === 'shorter' && `Back to ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} for a while. Short and right beats long and shaky.`}
-          {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies start at ${nextBars} bars again.`}
-          {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextBars} bars. Build the streak up again.`}
+          {change === 'longer' && `Three clean rounds in a row. Melodies are now ${nextCounts} counts long: ${nextMeter}.`}
+          {change === 'shorter' && `Back to ${nextCounts} counts (${nextMeter}) for a while. Short and right beats long and shaky.`}
+          {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies start at ${nextCounts} counts (${nextMeter}) again.`}
+          {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Build the streak up again.`}
         </p>
       )}
 

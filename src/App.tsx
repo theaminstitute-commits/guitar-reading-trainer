@@ -9,8 +9,9 @@ import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
 import { STAGES, type Stage } from './melody/stages';
 import { keyFromId, keyName } from './music/key';
+import { describeMeter } from './melody/meter';
 import type { AnswerNote } from './notation/answer';
-import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ExerciseMode, type Handedness, type ProgressChange, type Progress } from './session/progression';
+import { accuracyOf, applyResult, initialProgress, withCounts, withStage, withUnlocked, type ExerciseMode, type Handedness, type ProgressChange, type Progress } from './session/progression';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -43,15 +44,20 @@ const store = localProgressStore;
  */
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
-  const [progress, setProgress] = useState<Progress>(() => store.load(STAGES));
+  const [progress, setProgress] = useState<Progress>(() => {
+    const loaded = store.load(STAGES);
+    // `?unlock=18` opens every stage up to that number, for trying stages out.
+    const unlock = Number(new URLSearchParams(window.location.search).get('unlock'));
+    return unlock >= 1 ? withUnlocked(loaded, unlock - 1, STAGES) : loaded;
+  });
   const level = withKeyOverride(STAGES[progress.stage]!);
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const [seed, setSeed] = useState(randomSeed);
-  const [bars, setBars] = useState(progress.bars);
+  const [counts, setCounts] = useState(progress.counts);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
 
-  const melody = generateMelody(level, seed, bars);
+  const melody = generateMelody(level, seed, counts);
 
   const updateProgress = useCallback((next: Progress) => {
     setProgress(next);
@@ -60,7 +66,7 @@ export default function App() {
 
   const startExercise = useCallback(
     (length: number) => {
-      setBars(length);
+      setCounts(length);
       setSeed(randomSeed());
       setChecked(null);
       setScreen('exercise');
@@ -77,7 +83,7 @@ export default function App() {
     setScreen('feedback');
   };
 
-  const onLength = (n: number) => updateProgress(withBars(progress, n, STAGES));
+  const onCounts = (n: number) => updateProgress(withCounts(progress, n, STAGES));
   const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
   const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
@@ -96,7 +102,7 @@ export default function App() {
         <p className="muted">
           {screen === 'start'
             ? level.title
-            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'}${progress.mode === 'listen' ? ' · listen only' : ''}`}
+            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${counts} counts (${describeMeter(melody.barBeats)})${progress.mode === 'listen' ? ' · listen only' : ''}`}
         </p>
       </header>
 
@@ -106,8 +112,8 @@ export default function App() {
           level={level}
           progress={progress}
           session={session}
-          onStart={() => startExercise(progress.bars)}
-          onLength={onLength}
+          onStart={() => startExercise(progress.counts)}
+          onCounts={onCounts}
           onStage={onStage}
           onIncludeOptional={onIncludeOptional}
           onMode={onMode}
@@ -129,8 +135,8 @@ export default function App() {
           result={checked.result}
           change={checked.change}
           nextStage={checked.stageAfter}
-          nextBars={progress.bars}
-          onNext={() => startExercise(progress.bars)}
+          nextCounts={progress.counts}
+          onNext={() => startExercise(progress.counts)}
           onExplainer={setExplainer}
         />
       )}

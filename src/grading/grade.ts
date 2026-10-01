@@ -91,7 +91,7 @@ function pitchMistake(t: GradedTarget, a: GradedAnswer): MistakeKind | null {
 }
 
 export function gradeAnswer(melody: Melody, answerBars: readonly (readonly AnswerNote[])[], key: Key): GradeResult {
-  const targetBars = splitIntoBars(melody.notes, melody.timeSignature);
+  const targetBars = splitIntoBars(melody.notes, melody.barBeats);
   const targets: GradedTarget[] = [];
   targetBars.forEach((bar, barIndex) => {
     for (const note of bar.notes) {

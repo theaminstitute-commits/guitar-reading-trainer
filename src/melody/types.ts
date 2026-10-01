@@ -19,7 +19,13 @@ export interface Melody {
   /** The key this melody is written in, chosen from the level's keys. */
   key: Key;
   tempo: number;
+  /** Beats in each bar, e.g. [4, 5] for a bar of 4/4 then a bar of 5/4 (see melody/meter). */
+  barBeats: number[];
+  /** Time signature of the first bar; the count-in is one bar of it. */
   timeSignature: readonly [number, number];
+  /** Number of bars (barBeats.length). */
   bars: number;
+  /** Total beats. */
+  counts: number;
   notes: MelodyNote[];
 }

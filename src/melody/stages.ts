@@ -33,7 +33,7 @@ const STAGE_2: Stage = {
   summary: 'Frets 0 to 4, so the same pitch can sit in two places. Leaps up to a fourth.',
   fretRange: [0, 4],
   maxLeapSteps: 3,
-  startBars: 2,
+  startCounts: 8,
 };
 
 const STAGE_3: Stage = {

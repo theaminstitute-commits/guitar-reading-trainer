@@ -1,5 +1,6 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
+import { barBeatsForCounts, describeMeter, MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress } from '../session/progression';
 
@@ -14,7 +15,7 @@ interface StartScreenProps {
   progress: Progress;
   session: SessionStats;
   onStart: () => void;
-  onLength: (bars: number) => void;
+  onCounts: (counts: number) => void;
   onStage: (index: number) => void;
   onIncludeOptional: (include: boolean) => void;
   onMode: (mode: ExerciseMode) => void;
@@ -25,8 +26,7 @@ interface StartScreenProps {
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onMode, onHandedness, onExplainer, onReset }: StartScreenProps) {
-  const lengths = Array.from({ length: level.bars }, (_, i) => i + 1);
+export default function StartScreen({ stages, level, progress, session, onStart, onCounts, onStage, onIncludeOptional, onMode, onHandedness, onExplainer, onReset }: StartScreenProps) {
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
 
@@ -80,15 +80,25 @@ export default function StartScreen({ stages, level, progress, session, onStart,
 
       <div className="length-picker" role="group" aria-label="Stage">
         <span className="muted">Stage</span>
-        {stages.map((s, i) => (
+        {stages.slice(0, progress.unlocked + 1).map((s, i) => (
           <button key={s.id} className={`chip${i === progress.stage ? ' selected' : ''}`} aria-pressed={i === progress.stage} onClick={() => onStage(i)} title={s.name}>
             {s.number}
           </button>
         ))}
+        {progress.unlocked < stages.length - 1 && (
+          <span className="chip locked" title={`Stage ${stages[progress.unlocked + 1]!.number} unlocks after clean rounds at ${stages[progress.unlocked]!.maxCounts} counts`} aria-label="Next stage locked">
+            {stages[progress.unlocked + 1]!.number} 🔒
+          </span>
+        )}
       </div>
       <p className="stage-summary">
         <strong>{level.name}.</strong> {level.summary}
       </p>
+      {progress.unlocked < stages.length - 1 && (
+        <p className="muted small-note">
+          Stage {stages[progress.unlocked + 1]!.number} unlocks after {level.promoteAfter} clean rounds in a row at {level.maxCounts} counts on stage {stages[progress.unlocked]!.number}.
+        </p>
+      )}
       {stages.some((s) => s.optional) && (
         <label className="toggle muted">
           <input type="checkbox" checked={progress.includeOptional} onChange={(e) => onIncludeOptional(e.target.checked)} /> Include the optional
@@ -98,14 +108,18 @@ export default function StartScreen({ stages, level, progress, session, onStart,
 
       <div className="length-picker" role="group" aria-label="Melody length">
         <span className="muted">Length</span>
-        {lengths.map((n) => (
-          <button key={n} className={`chip${n === progress.bars ? ' selected' : ''}`} aria-pressed={n === progress.bars} onClick={() => onLength(n)}>
-            {n} {n === 1 ? 'bar' : 'bars'}
-          </button>
-        ))}
+        <button className="chip" onClick={() => onCounts(progress.counts - 1)} disabled={progress.counts <= MIN_COUNTS} aria-label="One count shorter">
+          −
+        </button>
+        <span className="counts-readout">
+          {progress.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(progress.counts))}</span>
+        </span>
+        <button className="chip" onClick={() => onCounts(progress.counts + 1)} disabled={progress.counts >= level.maxCounts} aria-label="One count longer">
+          +
+        </button>
       </div>
       <p className="muted small-note">
-        Grows by a bar after {level.promoteAfter} clean rounds in a row, shrinks after {level.demoteAfter} weak ones. Clean rounds at {level.bars} bars unlock the next stage.
+        Grows by one count after {level.promoteAfter} clean rounds in a row, shrinks after {level.demoteAfter} weak ones. The extra counts form a short last bar until it fills up. Clean rounds at {level.maxCounts} counts unlock the next stage.
       </p>
 
       <div className="controls">

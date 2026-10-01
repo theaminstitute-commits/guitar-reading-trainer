@@ -34,6 +34,8 @@ export interface RenderBar {
 
 export interface RenderOptions {
   timeSignature: readonly [number, number];
+  /** Time signature of each bar; drawn on the first bar and wherever it changes. Defaults to `timeSignature`. */
+  barTimeSignatures?: readonly (readonly [number, number])[];
   /** Container width in CSS pixels. */
   width: number;
   barsPerRow: number;
@@ -93,25 +95,29 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
   ctx.setStrokeStyle(ink);
 
   const layout: StaffLayout = { staves: [], notes: [], height };
-  const [beats, beatValue] = timeSignature;
+  const tsAt = (b: number): readonly [number, number] => options.barTimeSignatures?.[b] ?? timeSignature;
+  const tsShown = (b: number, firstOfRow: boolean, row: number) =>
+    showTimeSignature && ((firstOfRow && row === 0) || (b > 0 && (tsAt(b)[0] !== tsAt(b - 1)[0] || tsAt(b)[1] !== tsAt(b - 1)[1])));
 
   for (let row = 0; row < rows; row++) {
     const rowBars = bars.slice(row * perRow, (row + 1) * perRow);
     const firstInRow = row * perRow;
-    const extra = (showClef ? CLEF_EXTRA : 0) + keyExtra + (showTimeSignature && row === 0 ? TIME_SIG_EXTRA : 0);
-    const baseWidth = (logicalWidth - SIDE_PAD * 2 - extra) / perRow;
+    const extra = (showClef ? CLEF_EXTRA : 0) + keyExtra;
+    const tsExtraTotal = rowBars.reduce((s, _, i) => s + (tsShown(firstInRow + i, i === 0, row) ? TIME_SIG_EXTRA : 0), 0);
+    const baseWidth = (logicalWidth - SIDE_PAD * 2 - extra - tsExtraTotal) / perRow;
     let x = SIDE_PAD;
     const y = row * ROW_HEIGHT + STAVE_TOP;
 
     rowBars.forEach((bar, i) => {
       const barIndex = firstInRow + i;
       const isFirst = i === 0;
-      const width = baseWidth + (isFirst ? extra : 0);
+      const showTs = tsShown(barIndex, isFirst, row);
+      const width = baseWidth + (isFirst ? extra : 0) + (showTs ? TIME_SIG_EXTRA : 0);
       const stave = new Stave(x, y, width);
       // Order on the stave: clef, key signature, time signature.
       if (isFirst && showClef) stave.addClef('treble');
       if (isFirst && keySpec) stave.addKeySignature(keySpec);
-      if (isFirst && row === 0 && showTimeSignature) stave.addTimeSignature(`${beats}/${beatValue}`);
+      if (showTs) stave.addTimeSignature(`${tsAt(barIndex)[0]}/${tsAt(barIndex)[1]}`);
       if (barIndex === bars.length - 1) stave.setEndBarType(BarlineType.END);
       stave.setContext(ctx);
 

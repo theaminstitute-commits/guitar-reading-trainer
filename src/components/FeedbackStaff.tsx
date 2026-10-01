@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GradeResult, GradedPair } from '../grading/grade';
 import { splitIntoBars } from '../melody/bars';
+import { timeSignaturesFor } from '../melody/meter';
 import type { Melody } from '../melody/types';
 import { keySignatureCount, keySignatureSpec, spellInKey, type Key } from '../music/key';
 import { displaySignsForBars } from '../notation/accidentals';
@@ -80,7 +81,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
     const pairByTarget = new Map<number, GradedPair>();
     for (const p of result.pairs) if (p.target) pairByTarget.set(p.target.index, p);
 
-    const targetBars = splitIntoBars(melody.notes, melody.timeSignature);
+    const targetBars = splitIntoBars(melody.notes, melody.barBeats);
     const writtenBars = targetBars.map((bar) => bar.notes.map((n) => spellInKey(writtenFromSounding(n.midi), musicKey)));
     const signs = displaySignsForBars(writtenBars, musicKey);
     let targetIndex = 0;
@@ -105,6 +106,7 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
 
     const next = renderStaff(el, bars, {
       timeSignature: melody.timeSignature,
+      barTimeSignatures: timeSignaturesFor(melody.barBeats),
       width,
       barsPerRow: 2,
       scale,

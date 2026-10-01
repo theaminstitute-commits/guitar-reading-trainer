@@ -6,7 +6,7 @@
  * note means depends on the key signature and the signs earlier in its bar;
  * `resolveAnswerBar` works that out with the rules in notation/accidentals.
  */
-import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
+import { beatsOf, type DurationId } from '../music/duration';
 import type { Key } from '../music/key';
 import { midiFromSpelled, soundingFromWritten, spelledFromStaffStep, type Midi, type SpelledNote } from '../music/pitch';
 import { resolveBar, type Sign } from './accidentals';
@@ -28,7 +28,8 @@ export interface AnswerState {
 }
 
 export interface AnswerLimits {
-  timeSignature: readonly [number, number];
+  /** Beats each bar holds, e.g. [4, 4, 1] for 4/4 + 4/4 + 1/4. */
+  barBeats: readonly number[];
   /** Lowest and highest staff steps a note may sit on. */
   minStep: number;
   maxStep: number;
@@ -54,21 +55,22 @@ export function barBeats(bar: readonly AnswerNote[]): number {
   return bar.reduce((sum, n) => sum + beatsOf(n.duration), 0);
 }
 
-export function barRemaining(bar: readonly AnswerNote[], timeSignature: readonly [number, number]): number {
-  return beatsPerBar(timeSignature) - barBeats(bar);
+/** Beats still free in a bar that holds `capacity` beats. */
+export function barRemaining(bar: readonly AnswerNote[], capacity: number): number {
+  return capacity - barBeats(bar);
 }
 
-export function isBarFull(bar: readonly AnswerNote[], timeSignature: readonly [number, number]): boolean {
-  return barRemaining(bar, timeSignature) <= 1e-9;
+export function isBarFull(bar: readonly AnswerNote[], capacity: number): boolean {
+  return barRemaining(bar, capacity) <= 1e-9;
 }
 
 /** Why a note cannot be added, or null if it can. */
 export function addRejection(
   bar: readonly AnswerNote[],
   duration: DurationId,
-  timeSignature: readonly [number, number],
+  capacity: number,
 ): 'bar-full' | 'does-not-fit' | null {
-  const remaining = barRemaining(bar, timeSignature);
+  const remaining = barRemaining(bar, capacity);
   if (remaining <= 1e-9) return 'bar-full';
   if (beatsOf(duration) > remaining + 1e-9) return 'does-not-fit';
   return null;
@@ -79,10 +81,15 @@ export function durationRejection(
   bar: readonly AnswerNote[],
   note: AnswerNote,
   duration: DurationId,
-  timeSignature: readonly [number, number],
+  capacity: number,
 ): 'does-not-fit' | null {
   const others = barBeats(bar) - beatsOf(note.duration);
-  return others + beatsOf(duration) > beatsPerBar(timeSignature) + 1e-9 ? 'does-not-fit' : null;
+  return others + beatsOf(duration) > capacity + 1e-9 ? 'does-not-fit' : null;
+}
+
+/** Beats a bar may hold; bars past the list repeat the last capacity. */
+export function capacityOf(limits: AnswerLimits, bar: number): number {
+  return limits.barBeats[Math.min(bar, limits.barBeats.length - 1)] ?? 4;
 }
 
 export function findNote(state: AnswerState, id: number): { bar: number; index: number; note: AnswerNote } | null {
@@ -110,7 +117,7 @@ export function answerReducer(state: AnswerState, action: AnswerAction, limits: 
     case 'add': {
       const bar = state.bars[action.bar];
       if (!bar) return state;
-      if (addRejection(bar, action.duration, limits.timeSignature)) return state;
+      if (addRejection(bar, action.duration, capacityOf(limits, action.bar))) return state;
       if (action.step < limits.minStep || action.step > limits.maxStep) return state;
       const note: AnswerNote = { id: state.nextId, step: action.step, sign: 'none', duration: action.duration };
       const bars = state.bars.map((b, i) => (i === action.bar ? [...b, note] : b));
@@ -129,7 +136,7 @@ export function answerReducer(state: AnswerState, action: AnswerAction, limits: 
       const found = findNote(state, action.id);
       if (!found) return state;
       if (found.note.duration === action.duration) return state;
-      if (durationRejection(state.bars[found.bar]!, found.note, action.duration, limits.timeSignature)) return state;
+      if (durationRejection(state.bars[found.bar]!, found.note, action.duration, capacityOf(limits, found.bar))) return state;
       return replaceNote(state, action.id, (n) => ({ ...n, duration: action.duration }));
     }
     case 'delete': {

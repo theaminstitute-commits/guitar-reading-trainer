@@ -1,5 +1,6 @@
 import type { DurationId } from '../music/duration';
 import { C_MAJOR, type Key } from '../music/key';
+import { MAX_COUNTS, MIN_COUNTS } from './meter';
 
 /**
  * Everything the generator needs to know about a level. New levels are new
@@ -10,14 +11,13 @@ export interface LevelConfig {
   title: string;
   /** Keys a melody may be in; one is picked per melody. */
   keys: readonly Key[];
-  timeSignature: readonly [number, number];
-  /** Longest melody in this level, in bars. */
-  bars: number;
-  /** Length of the first exercises. Length grows towards `bars` as the learner succeeds. */
-  startBars: number;
-  /** Consecutive clean rounds (see grading) needed before the melody gets a bar longer. */
+  /** Longest melody in this level, in counts (beats). 16 = four bars of 4/4. */
+  maxCounts: number;
+  /** Length of the first exercises, in counts. Length grows one count at a time towards `maxCounts`. */
+  startCounts: number;
+  /** Consecutive clean rounds (see grading) needed before the melody gets a count longer. */
   promoteAfter: number;
-  /** Consecutive weak rounds before the melody gets a bar shorter again. */
+  /** Consecutive weak rounds before the melody gets a count shorter again. */
   demoteAfter: number;
   tempo: number;
   /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
@@ -40,9 +40,8 @@ export const LEVEL_1: LevelConfig = {
   id: 'level-1',
   title: 'Stage 1: C major, first position',
   keys: [C_MAJOR],
-  timeSignature: [4, 4],
-  bars: 4,
-  startBars: 1,
+  maxCounts: MAX_COUNTS,
+  startCounts: MIN_COUNTS,
   promoteAfter: 3,
   demoteAfter: 2,
   tempo: 72,

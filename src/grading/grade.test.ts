@@ -13,8 +13,10 @@ function melody(...written: string[]): Melody {
     levelId: 'test',
     key: C_MAJOR,
     tempo: 72,
+    barBeats: [4],
     timeSignature: [4, 4],
     bars: 1,
+    counts: 4,
     notes: written.map((w) => {
       const [name, dur = 'q'] = w.split(':');
       return { midi: midiFromSpelled(parseSpelled(name!)) - 12, duration: dur as 'q' | 'h', string: 1, fret: 0 };
@@ -108,7 +110,7 @@ describe('gradeAnswer', () => {
   });
 
   it('numbers mistakes in melody order across bars', () => {
-    const m: Melody = { ...melody('C5', 'D5', 'E5', 'F5', 'G5:h', 'E5:h'), bars: 2 };
+    const m: Melody = { ...melody('C5', 'D5', 'E5', 'F5', 'G5:h', 'E5:h'), barBeats: [4, 4], bars: 2, counts: 8 };
     const r = gradeAnswer(m, [answer('C5', 'D5', 'E5', 'F5'), answer('A5:h', 'E5')], C_MAJOR);
     expect(r.mistakes.map((x) => [x.number, x.kind])).toEqual([
       [1, 'wrong-letter'],
@@ -146,7 +148,7 @@ describe('grading under a key signature', () => {
   });
 
   it('a sign does not cross the bar line', () => {
-    const m: Melody = { ...inG('F#5', 'G5', 'A5', 'B5', 'F#5', 'G5', 'A5', 'B5'), bars: 2 };
+    const m: Melody = { ...inG('F#5', 'G5', 'A5', 'B5', 'F#5', 'G5', 'A5', 'B5'), barBeats: [4, 4], bars: 2, counts: 8 };
     // Learner writes a natural on the first F only; bar 2's plain F is F# again.
     const r = gradeAnswer(m, [answer('Fn5', 'G5', 'A5', 'B5'), answer('F5', 'G5', 'A5', 'B5')], G);
     expect(kinds(r)).toEqual(['wrong-accidental']);

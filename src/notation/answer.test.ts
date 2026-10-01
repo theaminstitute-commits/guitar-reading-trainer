@@ -15,7 +15,7 @@ import {
 } from './answer';
 
 const limits: AnswerLimits = {
-  timeSignature: [4, 4],
+  barBeats: [4, 4, 4, 4],
   minStep: staffStep(parseSpelled('C4')),
   maxStep: staffStep(parseSpelled('A5')),
 };
@@ -31,20 +31,20 @@ describe('answer reducer', () => {
     s = reduce(s, { type: 'add', bar: 1, step: C5 + 1, duration: 'q' });
     expect(s.bars[1]!.map((n) => n.duration)).toEqual(['h', 'q']);
     expect(s.bars[0]).toEqual([]);
-    expect(isBarFull(s.bars[1]!, [4, 4])).toBe(false);
+    expect(isBarFull(s.bars[1]!, 4)).toBe(false);
     s = reduce(s, { type: 'add', bar: 1, step: C5, duration: 'q' });
-    expect(isBarFull(s.bars[1]!, [4, 4])).toBe(true);
+    expect(isBarFull(s.bars[1]!, 4)).toBe(true);
   });
 
   it('rejects notes that do not fit and returns the same state object', () => {
     let s = createAnswer(1);
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'h' });
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
-    expect(addRejection(s.bars[0]!, 'h', [4, 4])).toBe('does-not-fit');
+    expect(addRejection(s.bars[0]!, 'h', 4)).toBe('does-not-fit');
     const rejected = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'h' });
     expect(rejected).toBe(s);
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
-    expect(addRejection(s.bars[0]!, 'q', [4, 4])).toBe('bar-full');
+    expect(addRejection(s.bars[0]!, 'q', 4)).toBe('bar-full');
     expect(reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' })).toBe(s);
   });
 
@@ -72,7 +72,7 @@ describe('answer reducer', () => {
     s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
     s = reduce(s, { type: 'setDuration', id: 1, duration: 'h' });
     expect(s.bars[0]!.map((n) => n.duration)).toEqual(['h', 'q', 'q']);
-    expect(durationRejection(s.bars[0]!, s.bars[0]![1]!, 'h', [4, 4])).toBe('does-not-fit');
+    expect(durationRejection(s.bars[0]!, s.bars[0]![1]!, 'h', 4)).toBe('does-not-fit');
     expect(reduce(s, { type: 'setDuration', id: 2, duration: 'h' })).toBe(s);
     s = reduce(s, { type: 'setDuration', id: 1, duration: 'q' });
     expect(s.bars[0]![0]!.duration).toBe('q');

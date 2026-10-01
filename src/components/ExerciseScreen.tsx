@@ -50,8 +50,8 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
   const [error, setError] = useState<string | null>(null);
 
   const limits = useMemo<AnswerLimits>(
-    () => ({ timeSignature: level.timeSignature, minStep: INPUT_MIN_STEP, maxStep: INPUT_MAX_STEP }),
-    [level.timeSignature],
+    () => ({ barBeats: melody.barBeats, minStep: INPUT_MIN_STEP, maxStep: INPUT_MAX_STEP }),
+    [melody.barBeats],
   );
   const [answer, dispatchAnswer] = useReducer(
     (state: AnswerState, action: AnswerAction) => answerReducer(state, action, limits),

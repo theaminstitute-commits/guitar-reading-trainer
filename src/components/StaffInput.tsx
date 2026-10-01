@@ -4,6 +4,7 @@ import { keySignatureCount, keySignatureSpec, type Key } from '../music/key';
 import type { Sign } from '../notation/accidentals';
 import {
   addRejection,
+  capacityOf,
   durationRejection,
   findNote,
   isBarFull,
@@ -114,7 +115,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
     const el = canvasRef.current;
     if (!el || !fontsReady || width === 0) return;
     const bars: RenderBar[] = answer.bars.map((bar, i) => ({
-      fill: rejectedBar === i ? COLORS.rejectedBar : isBarFull(bar, limits.timeSignature) ? COLORS.fullBar : undefined,
+      fill: rejectedBar === i ? COLORS.rejectedBar : isBarFull(bar, capacityOf(limits, i)) ? COLORS.fullBar : undefined,
       notes: bar.map((n) => ({
         id: n.id,
         step: n.step,
@@ -124,7 +125,8 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       })),
     }));
     layoutRef.current = renderStaff(el, bars, {
-      timeSignature: limits.timeSignature,
+      timeSignature: [capacityOf(limits, 0), 4],
+      barTimeSignatures: limits.barBeats.map((b) => [b, 4] as const),
       width,
       barsPerRow: 2,
       scale,
@@ -137,14 +139,14 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
     setSlots(
       layout.staves.flatMap((stave) => {
         const bar = answer.bars[stave.barIndex]!;
-        if (isBarFull(bar, limits.timeSignature)) return [];
+        if (isBarFull(bar, capacityOf(limits, stave.barIndex))) return [];
         const last = layout.notes.filter((n) => n.barIndex === stave.barIndex).pop();
         const w = 20 * scale;
         const x = Math.min(last ? last.x + 24 * scale : stave.noteStartX + 6 * scale, stave.x + stave.width - w - 4 * scale);
         return [{ bar: stave.barIndex, x, y: stave.topLineY - stave.lineSpacing * 1.5, width: w, height: stave.lineSpacing * 7 }];
       }),
     );
-  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.timeSignature, musicKey]);
+  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.barBeats, musicKey]);
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
@@ -178,14 +180,14 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         return;
       }
       const bar = answer.bars[stave.barIndex]!;
-      const rejection = addRejection(bar, duration, limits.timeSignature);
+      const rejection = addRejection(bar, duration, capacityOf(limits, stave.barIndex));
       if (rejection) {
         setRejectedBar(stave.barIndex);
         setMessage(
           rejection === 'bar-full'
             ? `Bar ${stave.barIndex + 1} is full.`
             : `A ${DURATIONS[duration].label.toLowerCase()} does not fit: bar ${stave.barIndex + 1} has ${
-                limits.timeSignature[0] - bar.reduce((s, n) => s + beatsOf(n.duration), 0)
+                capacityOf(limits, stave.barIndex) - bar.reduce((s, n) => s + beatsOf(n.duration), 0)
               } beat left.`,
         );
         return;
@@ -208,10 +210,10 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
     if (selectedId === null) return;
     const found = findNote(answer, selectedId);
     if (!found || found.note.duration === d) return;
-    const rejection = durationRejection(answer.bars[found.bar]!, found.note, d, limits.timeSignature);
+    const rejection = durationRejection(answer.bars[found.bar]!, found.note, d, capacityOf(limits, found.bar));
     if (rejection) {
       setRejectedBar(found.bar);
-      setMessage(`A ${DURATIONS[d].label.toLowerCase()} does not fit there: bar ${found.bar + 1} would go over ${limits.timeSignature[0]} beats.`);
+      setMessage(`A ${DURATIONS[d].label.toLowerCase()} does not fit there: bar ${found.bar + 1} would go over ${capacityOf(limits, found.bar)} beats.`);
       return;
     }
     dispatch({ type: 'setDuration', id: selectedId, duration: d });

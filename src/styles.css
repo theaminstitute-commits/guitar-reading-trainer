@@ -686,3 +686,20 @@ button.undo span {
   background: rgba(224, 168, 74, 0.14);
   opacity: 1;
 }
+
+.counts-readout {
+  min-width: 9em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.chip.locked {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+}

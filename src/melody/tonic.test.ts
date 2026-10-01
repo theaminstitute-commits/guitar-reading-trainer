@@ -12,8 +12,10 @@ describe('tonicReference', () => {
       levelId: 't',
       key: keyFromId('G')!,
       tempo: 72,
+      barBeats: [4],
       timeSignature: [4, 4],
       bars: 1,
+      counts: 4,
       notes: [
         { midi: 59, duration: 'q', string: 2, fret: 0 }, // B3
         { midi: 62, duration: 'q', string: 2, fret: 3 }, // D4
@@ -27,7 +29,7 @@ describe('tonicReference', () => {
   it('is in the melody key for every stage 3 melody', () => {
     const stage3 = STAGES[2]!;
     for (let seed = 1; seed < 60; seed++) {
-      const melody = generateMelody(stage3, seed, 2);
+      const melody = generateMelody(stage3, seed, 8);
       const tonic = tonicReference(melody);
       const lowest = Math.min(...melody.notes.map((n) => n.midi));
       expect(tonic).toBeLessThanOrEqual(lowest);

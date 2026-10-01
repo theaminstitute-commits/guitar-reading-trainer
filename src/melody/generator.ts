@@ -7,9 +7,11 @@
  *  - consecutive notes never leap more than `maxLeapSteps` diatonic steps
  *  - the first note is on a start degree, the last note on an end degree
  */
-import { beatsOf, beatsPerBar, cellBeats, DURATIONS, type DurationId } from '../music/duration';
+import { beatsOf, cellBeats, DURATIONS, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
-import { degreeInfoOf, degreeOf, isDiatonic, spellInKey, type Key } from '../music/key';
+import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, spellInKey, type Key } from '../music/key';
+import { pitchClass } from '../music/pitch';
+import { barBeatsForCounts, MIN_COUNTS } from './meter';
 import { staffStep, type Midi } from '../music/pitch';
 import type { LevelConfig } from './levelConfig';
 import { createRng, type Rng } from './random';
@@ -54,11 +56,10 @@ export function pitchPool(config: LevelConfig, key: Key): PoolNote[] {
  * exactly. Each pick writes its rhythm cell (an eighth brings its pair, a
  * dotted quarter brings its eighth), so eighths always sit on a beat.
  */
-export function generateRhythm(config: LevelConfig, rng: Rng, bars: number = config.bars): DurationId[] {
-  const perBar = beatsPerBar(config.timeSignature);
+export function generateRhythm(config: LevelConfig, rng: Rng, barBeats: readonly number[]): DurationId[] {
   const out: DurationId[] = [];
-  for (let bar = 0; bar < bars; bar++) {
-    let remaining = perBar;
+  for (const beats of barBeats) {
+    let remaining = beats;
     while (remaining > 1e-9) {
       const fits = config.durations.filter((d) => cellBeats(d) <= remaining + 1e-9);
       if (fits.length === 0) {
@@ -110,16 +111,38 @@ function choosePosition(candidate: PoolNote, previous: FretPosition | null): Fre
  * @param bars How many bars to generate; defaults to the level maximum. Shorter
  * melodies are used while the learner is starting out.
  */
-export function generateMelody(config: LevelConfig, seed: number, bars: number = config.bars): Melody {
-  if (bars < 1 || bars > config.bars) throw new Error(`Level ${config.id}: ${bars} bars is outside 1..${config.bars}`);
+export function generateMelody(config: LevelConfig, seed: number, counts: number = config.maxCounts): Melody {
+  if (counts < MIN_COUNTS || counts > config.maxCounts) {
+    throw new Error(`Level ${config.id}: ${counts} counts is outside ${MIN_COUNTS}..${config.maxCounts}`);
+  }
+  const barBeats = barBeatsForCounts(counts);
   const rng = createRng(seed);
   // The key is drawn first so a seed fixes the key as well as the notes.
   const key = rng.pick(config.keys);
   const pool = pitchPool(config, key);
   if (pool.length === 0) throw new Error(`Level ${config.id}: no playable in-key pitches`);
 
-  const rhythm = generateRhythm(config, rng, bars);
+  const rhythm = generateRhythm(config, rng, barBeats);
   const count = rhythm.length;
+
+  // Which notes fall on the first beat of a bar: those prefer chord tones so the
+  // melody keeps its footing in the key, whatever the meter.
+  const barStarts = new Set<number>();
+  {
+    let position = 0;
+    let barIndex = 0;
+    let barEnd = barBeats[0]!;
+    rhythm.forEach((d, i) => {
+      if (Math.abs(position - (barEnd - barBeats[barIndex]!)) < 1e-9) barStarts.add(i);
+      position += beatsOf(d);
+      if (position >= barEnd - 1e-9 && barIndex < barBeats.length - 1) {
+        barIndex++;
+        barEnd += barBeats[barIndex]!;
+      }
+    });
+  }
+  const chordTones = chordTonePitchClasses(key);
+  const isChordTone = (p: PoolNote) => chordTones.includes(pitchClass(p.midi));
 
   const starts = pool.filter((p) => config.startDegrees.includes(p.degree));
   const ends = pool.filter((p) => config.endDegrees.includes(p.degree));
@@ -132,6 +155,10 @@ export function generateMelody(config: LevelConfig, seed: number, bars: number =
     const previous = chosen[i - 1]!;
     let candidates = withinLeap(pool, previous, config.maxLeapSteps).filter((c) => allowedByMode(key, previous, c));
     if (candidates.length === 0) candidates = withinLeap(pool, previous, config.maxLeapSteps);
+    if (barStarts.has(i) && i !== count - 1) {
+      const strong = candidates.filter(isChordTone);
+      if (strong.length > 0) candidates = strong;
+    }
     if (i === count - 1) {
       const endCandidates = candidates.filter((p) => config.endDegrees.includes(p.degree));
       candidates = endCandidates.length > 0 ? endCandidates : [nearest(ends, previous)];
@@ -155,8 +182,10 @@ export function generateMelody(config: LevelConfig, seed: number, bars: number =
     levelId: config.id,
     key,
     tempo: config.tempo,
-    timeSignature: config.timeSignature,
-    bars,
+    barBeats,
+    timeSignature: [barBeats[0]!, 4],
+    bars: barBeats.length,
+    counts,
     notes,
   };
 }
