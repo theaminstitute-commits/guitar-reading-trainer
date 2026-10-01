@@ -1,14 +1,18 @@
 /**
- * How melody length grows and shrinks with the learner's results.
+ * How the learner moves along the stage ladder (docs/stage-ladder.md).
  *
- * A clean round (high pitch and rhythm scores) adds to a streak; enough clean
- * rounds in a row make the melody a bar longer. Weak rounds do the reverse.
+ * Inside a stage the melody length grows from the stage's starting length to
+ * its maximum. Clean rounds add a bar, weak rounds remove one. Three clean
+ * rounds at the maximum length unlock the next stage; two weak rounds at the
+ * starting length drop back to the previous stage at its maximum length.
  */
-import type { LevelConfig } from '../melody/levelConfig';
 import type { GradeResult } from '../grading/grade';
+import type { Stage } from '../melody/stages';
 
 export interface Progress {
-  version: 1;
+  version: 2;
+  /** Index into the stage list. */
+  stage: number;
   /** Current melody length in bars. */
   bars: number;
   cleanStreak: number;
@@ -22,8 +26,8 @@ export interface Progress {
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
-export function initialProgress(level: LevelConfig): Progress {
-  return { version: 1, bars: level.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+export function initialProgress(stages: readonly Stage[]): Progress {
+  return { version: 2, stage: 0, bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
 }
 
 /** One number for "how did that go": the mean of pitch and rhythm scores. */
@@ -31,33 +35,46 @@ export function accuracyOf(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore
   return (result.pitchScore + result.rhythmScore) / 2;
 }
 
-export type LengthChange = 'longer' | 'shorter' | null;
+export type ProgressChange = 'longer' | 'shorter' | 'stage-up' | 'stage-down' | null;
 
 export function applyResult(
   progress: Progress,
   result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>,
-  level: LevelConfig,
-): { progress: Progress; change: LengthChange } {
+  stages: readonly Stage[],
+): { progress: Progress; change: ProgressChange } {
+  const stage = stages[progress.stage]!;
   const clean = result.pitchScore >= CLEAN_THRESHOLD && result.rhythmScore >= CLEAN_THRESHOLD;
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
-  let { bars, cleanStreak, weakStreak } = progress;
-  let change: LengthChange = null;
+  let { stage: stageIndex, bars, cleanStreak, weakStreak } = progress;
+  let change: ProgressChange = null;
 
   if (clean) {
     cleanStreak += 1;
     weakStreak = 0;
-    if (cleanStreak >= level.promoteAfter && bars < level.bars) {
-      bars += 1;
+    if (cleanStreak >= stage.promoteAfter) {
       cleanStreak = 0;
-      change = 'longer';
+      if (bars < stage.bars) {
+        bars += 1;
+        change = 'longer';
+      } else if (stageIndex < stages.length - 1) {
+        stageIndex += 1;
+        bars = stages[stageIndex]!.startBars;
+        change = 'stage-up';
+      }
     }
   } else if (weak) {
     weakStreak += 1;
     cleanStreak = 0;
-    if (weakStreak >= level.demoteAfter && bars > 1) {
-      bars -= 1;
+    if (weakStreak >= stage.demoteAfter) {
       weakStreak = 0;
-      change = 'shorter';
+      if (bars > stage.startBars) {
+        bars -= 1;
+        change = 'shorter';
+      } else if (stageIndex > 0) {
+        stageIndex -= 1;
+        bars = stages[stageIndex]!.bars;
+        change = 'stage-down';
+      }
     }
   } else {
     cleanStreak = 0;
@@ -67,6 +84,7 @@ export function applyResult(
   return {
     progress: {
       ...progress,
+      stage: stageIndex,
       bars,
       cleanStreak,
       weakStreak,
@@ -77,8 +95,15 @@ export function applyResult(
   };
 }
 
-/** Manually chosen length: resets the streaks so the new length gets a fair run. */
-export function withBars(progress: Progress, bars: number, level: LevelConfig): Progress {
-  const clamped = Math.max(1, Math.min(level.bars, Math.round(bars)));
+/** Manually chosen length within the current stage: resets the streaks so the new length gets a fair run. */
+export function withBars(progress: Progress, bars: number, stages: readonly Stage[]): Progress {
+  const stage = stages[progress.stage]!;
+  const clamped = Math.max(1, Math.min(stage.bars, Math.round(bars)));
   return { ...progress, bars: clamped, cleanStreak: 0, weakStreak: 0 };
+}
+
+/** Manually chosen stage: starts at that stage's starting length with fresh streaks. */
+export function withStage(progress: Progress, stageIndex: number, stages: readonly Stage[]): Progress {
+  const index = Math.max(0, Math.min(stages.length - 1, Math.round(stageIndex)));
+  return { ...progress, stage: index, bars: stages[index]!.startBars, cleanStreak: 0, weakStreak: 0 };
 }

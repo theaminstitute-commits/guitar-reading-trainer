@@ -7,10 +7,10 @@ import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
 import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
-import { LEVEL_1, type LevelConfig } from './melody/levelConfig';
+import { STAGES, type Stage } from './melody/stages';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
-import { accuracyOf, applyResult, initialProgress, withBars, type LengthChange, type Progress } from './session/progression';
+import { accuracyOf, applyResult, initialProgress, withBars, withStage, type ProgressChange, type Progress } from './session/progression';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -22,20 +22,18 @@ type Screen = 'start' | 'exercise' | 'feedback';
 interface Checked {
   answerBars: AnswerNote[][];
   result: GradeResult;
-  lengthChange: LengthChange;
+  change: ProgressChange;
+  /** Stage the learner is on after this result. */
+  stageAfter: Stage;
 }
 
-/**
- * Until the stage ladder is in, `?key=G` (or Bb, F#, ...) forces every melody
- * into that key so key signatures can be tried out.
- */
-function levelWithKeyOverride(base: LevelConfig): LevelConfig {
+/** `?key=G` (or Bb, F#, ...) forces every melody into that key, for trying key signatures out. */
+function withKeyOverride(stage: Stage): Stage {
   const id = new URLSearchParams(window.location.search).get('key');
   const key = id ? keyFromId(id) : null;
-  return key ? { ...base, keys: [key], fretRange: [0, 4] } : base;
+  return key ? { ...stage, keys: [key], fretRange: [0, 4] } : stage;
 }
 
-const level = levelWithKeyOverride(LEVEL_1);
 const store = localProgressStore;
 
 /**
@@ -45,7 +43,8 @@ const store = localProgressStore;
  */
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
-  const [progress, setProgress] = useState<Progress>(() => store.load(level));
+  const [progress, setProgress] = useState<Progress>(() => store.load(STAGES));
+  const level = withKeyOverride(STAGES[progress.stage]!);
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const [seed, setSeed] = useState(randomSeed);
   const [bars, setBars] = useState(progress.bars);
@@ -71,18 +70,19 @@ export default function App() {
 
   const onCheck = (answerBars: AnswerNote[][]) => {
     const result = gradeAnswer(melody, answerBars, melody.key);
-    const { progress: next, change } = applyResult(progress, result, level);
+    const { progress: next, change } = applyResult(progress, result, STAGES);
     updateProgress(next);
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
-    setChecked({ answerBars, result, lengthChange: change });
+    setChecked({ answerBars, result, change, stageAfter: STAGES[next.stage]! });
     setScreen('feedback');
   };
 
-  const onLength = (n: number) => updateProgress(withBars(progress, n, level));
+  const onLength = (n: number) => updateProgress(withBars(progress, n, STAGES));
+  const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
 
   const onReset = () => {
     store.clear();
-    setProgress(initialProgress(level));
+    setProgress(initialProgress(STAGES));
     setSession({ exercises: 0, accuracySum: 0 });
   };
 
@@ -93,17 +93,19 @@ export default function App() {
         <p className="muted">
           {screen === 'start'
             ? level.title
-            : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'} · ${melody.tempo} bpm`}
+            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${bars} ${bars === 1 ? 'bar' : 'bars'}`}
         </p>
       </header>
 
       {screen === 'start' && (
         <StartScreen
+          stages={STAGES}
           level={level}
           progress={progress}
           session={session}
           onStart={() => startExercise(progress.bars)}
           onLength={onLength}
+          onStage={onStage}
           onExplainer={setExplainer}
           onReset={onReset}
         />
@@ -117,7 +119,8 @@ export default function App() {
           level={level}
           answerBars={checked.answerBars}
           result={checked.result}
-          lengthChange={checked.lengthChange}
+          change={checked.change}
+          nextStage={checked.stageAfter}
           nextBars={progress.bars}
           onNext={() => startExercise(progress.bars)}
           onExplainer={setExplainer}

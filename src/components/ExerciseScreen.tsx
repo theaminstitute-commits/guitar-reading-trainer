@@ -5,6 +5,9 @@ import type { Melody } from '../melody/types';
 import { beatsPerBar } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
 import { keyName } from '../music/key';
+import { tonicReference } from '../melody/tonic';
+import { spellInKey } from '../music/key';
+import { spelledName } from '../music/pitch';
 import { parseSpelled, staffStep } from '../music/pitch';
 import {
   answerReducer,
@@ -30,7 +33,7 @@ interface ExerciseScreenProps {
   onCheck: (answerBars: AnswerNote[][]) => void;
 }
 
-type Status = 'idle' | 'loading' | 'counting' | 'playing';
+type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
@@ -92,13 +95,23 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
       }
       setActiveIndex(null);
       setCountBeat(null);
-      setStatus('counting');
+      setStatus(level.tonicReference ? 'reference' : 'counting');
       setPlays((n) => n + 1);
       await p.play(
         melody.notes,
-        { tempo: melody.tempo, rate, timeSignature: melody.timeSignature, countIn: true },
         {
-          onCountIn: (beat) => setCountBeat(beat),
+          tempo: melody.tempo,
+          rate,
+          timeSignature: melody.timeSignature,
+          countIn: true,
+          reference: level.tonicReference ? { midi: tonicReference(melody), times: 2 } : undefined,
+        },
+        {
+          onReference: () => setStatus('reference'),
+          onCountIn: (beat) => {
+            setStatus('counting');
+            setCountBeat(beat);
+          },
           onNote: (index) => {
             setStatus('playing');
             setCountBeat(null);
@@ -112,12 +125,13 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
         },
       );
     },
-    [melody],
+    [melody, level.tonicReference],
   );
 
   const stop = () => sharedPlayer().stop();
 
-  const busy = status === 'counting' || status === 'playing' || status === 'loading';
+  const busy = status === 'counting' || status === 'playing' || status === 'loading' || status === 'reference';
+  const tonicName = spelledName(spellInKey(tonicReference(melody), melody.key));
   const active: FretPosition | null =
     activeIndex === null ? null : { string: melody.notes[activeIndex]!.string, fret: melody.notes[activeIndex]!.fret };
   const played = activeIndex === null ? [] : melody.notes.slice(0, activeIndex + 1);
@@ -129,6 +143,7 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
     <section className="exercise">
       <div className="status-line" aria-live="polite">
         {status === 'loading' && 'Loading guitar sounds…'}
+        {status === 'reference' && `Key note: ${tonicName}. The melody is in ${keyName(melody.key)}.`}
         {status === 'counting' && countBeat !== null && (
           <span className="count-in">
             Count-in{' '}

@@ -614,3 +614,7 @@ button.undo span {
 .pitch-label.ghost {
   fill: var(--bad);
 }
+
+.stage-summary {
+  margin: 0 0 12px;
+}

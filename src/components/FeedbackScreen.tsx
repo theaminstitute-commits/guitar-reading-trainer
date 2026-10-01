@@ -6,7 +6,8 @@ import type { LevelConfig } from '../melody/levelConfig';
 import { splitIntoBars } from '../melody/bars';
 import type { Melody } from '../melody/types';
 import { answerBarToSounding, type AnswerNote } from '../notation/answer';
-import type { LengthChange } from '../session/progression';
+import type { Stage } from '../melody/stages';
+import type { ProgressChange } from '../session/progression';
 import FeedbackStaff from './FeedbackStaff';
 
 interface FeedbackScreenProps {
@@ -14,7 +15,8 @@ interface FeedbackScreenProps {
   level: LevelConfig;
   answerBars: readonly (readonly AnswerNote[])[];
   result: GradeResult;
-  lengthChange: LengthChange;
+  change: ProgressChange;
+  nextStage: Stage;
   nextBars: number;
   onNext: () => void;
   onExplainer: (id: ExplainerId) => void;
@@ -28,7 +30,7 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, answerBars, result, lengthChange, nextBars, onNext, onExplainer }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, answerBars, result, change, nextStage, nextBars, onNext, onExplainer }: FeedbackScreenProps) {
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -111,11 +113,12 @@ export default function FeedbackScreen({ melody, answerBars, result, lengthChang
         </button>
       </div>
 
-      {lengthChange && (
-        <p className={`length-change ${lengthChange}`}>
-          {lengthChange === 'longer'
-            ? `Three clean rounds in a row. Melodies are now ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} long.`
-            : `Back to ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} for a while. Short and right beats long and shaky.`}
+      {change && (
+        <p className={`length-change ${change === 'longer' || change === 'stage-up' ? 'longer' : 'shorter'}`}>
+          {change === 'longer' && `Three clean rounds in a row. Melodies are now ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} long.`}
+          {change === 'shorter' && `Back to ${nextBars} ${nextBars === 1 ? 'bar' : 'bars'} for a while. Short and right beats long and shaky.`}
+          {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies start at ${nextBars} bars again.`}
+          {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextBars} bars. Build the streak up again.`}
         </p>
       )}
 

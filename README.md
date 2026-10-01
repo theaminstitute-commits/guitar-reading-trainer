@@ -47,8 +47,8 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ## Progression
 
-Melodies start at one bar. Three clean rounds in a row (pitch and rhythm both at 90% or better) add a bar, two weak rounds (under 60%) remove one, up to the level maximum of four. The current length and lifetime counts persist in localStorage.
+The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.ts` (configs) and `src/session/progression.ts` (rules). Inside a stage, three clean rounds in a row (pitch and rhythm both at 90% or better) add a bar and two weak rounds (under 60%) remove one; clean rounds at the stage maximum of four bars unlock the next stage, weak rounds at the stage starting length drop back a stage. Stages so far: 1 C major frets 0-3; 2 frets 0-4 with leaps to a fourth; 3 C, G and F major with the tonic played twice before the count-in. The stage, length and lifetime counts persist in localStorage; the start screen lets you pick a stage and length by hand.
 
 ## Levels
 
-A level is a `LevelConfig` object in `src/melody/levelConfig.ts`. Level 1: C major, 4/4, 4 bars, strings 1-3, frets 0-3, quarter and half notes, leaps up to a third, start and end on a chord tone, 72 bpm.
+A stage is a `LevelConfig` object (`src/melody/levelConfig.ts`) with a number, name and summary (`src/melody/stages.ts`). Stage 1: C major, 4/4, 1 to 4 bars, strings 1-3, frets 0-3, quarter and half notes, leaps up to a third, start and end on a chord tone, 72 bpm, three listens.

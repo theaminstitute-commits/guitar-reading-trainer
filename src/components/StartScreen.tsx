@@ -1,6 +1,6 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
-import type { LevelConfig } from '../melody/levelConfig';
+import type { Stage } from '../melody/stages';
 import type { Progress } from '../session/progression';
 
 export interface SessionStats {
@@ -9,18 +9,20 @@ export interface SessionStats {
 }
 
 interface StartScreenProps {
-  level: LevelConfig;
+  stages: readonly Stage[];
+  level: Stage;
   progress: Progress;
   session: SessionStats;
   onStart: () => void;
   onLength: (bars: number) => void;
+  onStage: (index: number) => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ level, progress, session, onStart, onLength, onExplainer, onReset }: StartScreenProps) {
+export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onExplainer, onReset }: StartScreenProps) {
   const lengths = Array.from({ length: level.bars }, (_, i) => i + 1);
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
@@ -48,6 +50,18 @@ export default function StartScreen({ level, progress, session, onStart, onLengt
         </div>
       </div>
 
+      <div className="length-picker" role="group" aria-label="Stage">
+        <span className="muted">Stage</span>
+        {stages.map((s, i) => (
+          <button key={s.id} className={`chip${i === progress.stage ? ' selected' : ''}`} aria-pressed={i === progress.stage} onClick={() => onStage(i)} title={s.name}>
+            {s.number}
+          </button>
+        ))}
+      </div>
+      <p className="stage-summary">
+        <strong>{level.name}.</strong> {level.summary}
+      </p>
+
       <div className="length-picker" role="group" aria-label="Melody length">
         <span className="muted">Length</span>
         {lengths.map((n) => (
@@ -57,7 +71,7 @@ export default function StartScreen({ level, progress, session, onStart, onLengt
         ))}
       </div>
       <p className="muted small-note">
-        Grows by a bar after {level.promoteAfter} clean rounds in a row, shrinks after {level.demoteAfter} weak ones.
+        Grows by a bar after {level.promoteAfter} clean rounds in a row, shrinks after {level.demoteAfter} weak ones. Clean rounds at {level.bars} bars unlock the next stage.
       </p>
 
       <div className="controls">

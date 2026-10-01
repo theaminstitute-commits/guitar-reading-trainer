@@ -24,9 +24,13 @@ export interface PlayOptions {
   rate?: number;
   timeSignature: readonly [number, number];
   countIn?: boolean;
+  /** Sounding pitch to play as a tonal reference before the count-in, and how many times. */
+  reference?: { midi: Midi; times: number };
 }
 
 export interface PlayerEvents {
+  /** Reference note `index` (0-based) of `total` has started. */
+  onReference?: (index: number, total: number) => void;
   /** Count-in click `beat` (0-based) of `total`. */
   onCountIn?: (beat: number, total: number) => void;
   /** Note `index` has just started sounding. */
@@ -103,6 +107,23 @@ export class GuitarPlayer {
     transport.position = 0;
 
     let cursor = 0;
+    if (options.reference && options.reference.times > 0) {
+      const { midi, times } = options.reference;
+      const name = Tone.Frequency(midi, 'midi').toNote();
+      for (let i = 0; i < times; i++) {
+        const at = cursor;
+        const index = i;
+        this.scheduledIds.push(
+          transport.schedule((time) => {
+            sampler.triggerAttackRelease(name, secondsPerBeat * 1.8, time);
+            uiAt(() => events.onReference?.(index, times), time);
+          }, at),
+        );
+        cursor += secondsPerBeat * 2;
+      }
+      // A beat of silence between the reference and the count-in.
+      cursor += secondsPerBeat;
+    }
     for (let beat = 0; beat < countInBeats; beat++) {
       const at = cursor;
       const b = beat;

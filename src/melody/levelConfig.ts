@@ -22,6 +22,8 @@ export interface LevelConfig {
   tempo: number;
   /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
   maxListens: number;
+  /** Play the tonic twice before the count-in so the learner has a tonal anchor. */
+  tonicReference: boolean;
   /** Strings the melody may use, guitarist numbering (1 = high E). */
   strings: readonly number[];
   /** Inclusive fret range. */
@@ -36,7 +38,7 @@ export interface LevelConfig {
 
 export const LEVEL_1: LevelConfig = {
   id: 'level-1',
-  title: 'Level 1: C major, first position, strings 1-3',
+  title: 'Stage 1: C major, first position',
   keys: [C_MAJOR],
   timeSignature: [4, 4],
   bars: 4,
@@ -45,6 +47,7 @@ export const LEVEL_1: LevelConfig = {
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,
+  tonicReference: false,
   strings: [1, 2, 3],
   fretRange: [0, 3],
   durations: ['q', 'h'],
