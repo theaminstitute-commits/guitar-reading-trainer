@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Dispatch, type PointerEvent } from 'react';
 import { beatsOf, DURATIONS, type DurationId } from '../music/duration';
-import { keyId, type Key } from '../music/key';
+import { keySignatureCount, keySignatureSpec, type Key } from '../music/key';
 import type { Sign } from '../notation/accidentals';
 import {
   addRejection,
@@ -34,11 +34,16 @@ const COLORS = {
 };
 
 function NoteIcon({ duration }: { duration: DurationId }) {
-  const hollow = beatsOf(duration) >= 2;
+  const info = DURATIONS[duration];
+  const hollow = info.beats >= 2;
+  const stem = duration !== 'w';
+  const flag = duration === 'e';
   return (
-    <svg className="note-icon" viewBox="0 0 16 26" aria-hidden="true">
+    <svg className="note-icon" viewBox="0 0 20 26" aria-hidden="true">
       <ellipse cx="6.5" cy="20" rx="5.5" ry="3.8" transform="rotate(-20 6.5 20)" fill={hollow ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth={hollow ? 1.8 : 0} />
-      <line x1="11.6" y1="19" x2="11.6" y2="2" stroke="currentColor" strokeWidth="1.6" />
+      {stem && <line x1="11.6" y1="19" x2="11.6" y2="2" stroke="currentColor" strokeWidth="1.6" />}
+      {flag && <path d="M11.6 2 C 15 5, 17 8, 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" />}
+      {info.dots > 0 && <circle cx="15.5" cy="21" r="1.6" fill="currentColor" />}
     </svg>
   );
 }
@@ -110,7 +115,8 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       barsPerRow: 2,
       scale,
       ink: COLORS.ink,
-      keySignature: keyId(musicKey),
+      keySignature: keySignatureSpec(musicKey),
+      keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
     });
   }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.timeSignature, musicKey]);
 

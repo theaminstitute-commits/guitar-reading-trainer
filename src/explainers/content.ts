@@ -48,13 +48,13 @@ export const EXPLAINERS: Record<ExplainerId, Explainer> = {
     id: 'durations',
     title: 'Note lengths',
     paragraphs: [
-      'In 4/4 time each bar holds four beats. A whole note fills the bar, a half note lasts two beats, a quarter note one beat.',
-      'The shape tells you the length: a hollow head with a stem is a half note, a filled head with a stem is a quarter note. Filled heads with flags or beams are shorter still.',
+      'In 4/4 time each bar holds four beats. A whole note fills the bar, a half note lasts two beats, a quarter note one beat, an eighth note half a beat.',
+      'The shape tells you the length: a hollow head without a stem is a whole note, a hollow head with a stem is a half note, a filled head with a stem is a quarter note, and a filled head with a flag is an eighth. Two eighths on one beat are joined by a beam. A dot after a note adds half its value, so a dotted quarter is a beat and a half.',
       'When you write a bar, the lengths must add up to four beats exactly. The app will not let a note in if it does not fit.',
     ],
     example: {
-      notes: [note(1, 'G4', 'w', '4 beats'), note(2, 'G4', 'h', '2 beats'), note(3, 'G4', 'q', '1 beat')],
-      caption: 'Whole, half and quarter notes on G.',
+      notes: [note(1, 'G4', 'w', '4'), note(2, 'G4', 'h', '2'), note(3, 'G4', 'q', '1'), note(4, 'G4', 'q.', '1½'), note(5, 'G4', 'e', '½'), note(6, 'G4', 'e', '½')],
+      caption: 'Whole, half, quarter, dotted quarter and a pair of eighths on G, with their beats.',
     },
   },
   'guitar-octave': {

@@ -13,6 +13,8 @@ export interface Progress {
   version: 2;
   /** Index into the stage list. */
   stage: number;
+  /** Walk through stages marked optional (the seven-accidental stage). */
+  includeOptional: boolean;
   /** Current melody length in bars. */
   bars: number;
   cleanStreak: number;
@@ -27,12 +29,22 @@ export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 2, stage: 0, bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+  return { version: 2, stage: 0, includeOptional: false, bars: stages[0]!.startBars, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
 }
 
 /** One number for "how did that go": the mean of pitch and rhythm scores. */
 export function accuracyOf(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>): number {
   return (result.pitchScore + result.rhythmScore) / 2;
+}
+
+/** Next stage index in a direction, skipping optional stages unless opted in; null at the end. */
+export function neighbourStage(progress: Progress, stages: readonly Stage[], direction: 1 | -1): number | null {
+  let i = progress.stage + direction;
+  while (i >= 0 && i < stages.length) {
+    if (!stages[i]!.optional || progress.includeOptional) return i;
+    i += direction;
+  }
+  return null;
 }
 
 export type ProgressChange = 'longer' | 'shorter' | 'stage-up' | 'stage-down' | null;
@@ -53,11 +65,12 @@ export function applyResult(
     weakStreak = 0;
     if (cleanStreak >= stage.promoteAfter) {
       cleanStreak = 0;
+      const next = neighbourStage(progress, stages, 1);
       if (bars < stage.bars) {
         bars += 1;
         change = 'longer';
-      } else if (stageIndex < stages.length - 1) {
-        stageIndex += 1;
+      } else if (next !== null) {
+        stageIndex = next;
         bars = stages[stageIndex]!.startBars;
         change = 'stage-up';
       }
@@ -67,11 +80,12 @@ export function applyResult(
     cleanStreak = 0;
     if (weakStreak >= stage.demoteAfter) {
       weakStreak = 0;
+      const previous = neighbourStage(progress, stages, -1);
       if (bars > stage.startBars) {
         bars -= 1;
         change = 'shorter';
-      } else if (stageIndex > 0) {
-        stageIndex -= 1;
+      } else if (previous !== null) {
+        stageIndex = previous;
         bars = stages[stageIndex]!.bars;
         change = 'stage-down';
       }

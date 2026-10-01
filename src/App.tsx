@@ -79,6 +79,7 @@ export default function App() {
 
   const onLength = (n: number) => updateProgress(withBars(progress, n, STAGES));
   const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
+  const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
 
   const onReset = () => {
     store.clear();
@@ -106,6 +107,7 @@ export default function App() {
           onStart={() => startExercise(progress.bars)}
           onLength={onLength}
           onStage={onStage}
+          onIncludeOptional={onIncludeOptional}
           onExplainer={setExplainer}
           onReset={onReset}
         />

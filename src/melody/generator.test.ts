@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { beatsOf, beatsPerBar } from '../music/duration';
 import { midiAt } from '../music/fretboard';
-import { degreeOf, isDiatonic, keyId, MAJOR_KEYS, spellInKey } from '../music/key';
+import { degreeInfoOf, degreeOf, isDiatonic, keyFromId, keyId, MAJOR_KEYS, spellInKey } from '../music/key';
 import { staffStep } from '../music/pitch';
 import { splitIntoBars, totalBeats } from './bars';
 import { generateMelody, generateRhythm, pitchPool } from './generator';
@@ -39,6 +39,41 @@ describe('generateRhythm', () => {
   it('uses only allowed durations', () => {
     const rhythm = generateRhythm(LEVEL_1, createRng(42));
     expect(rhythm.every((d) => LEVEL_1.durations.includes(d))).toBe(true);
+  });
+
+  it('writes eighths in pairs on the beat and a dotted quarter with its eighth', () => {
+    const rhythmic: LevelConfig = { ...LEVEL_1, durations: ['q', 'h', 'e', 'q.', 'w'] };
+    let sawEighths = false;
+    let sawDotted = false;
+    for (const seed of SEEDS) {
+      const rhythm = generateRhythm(rhythmic, createRng(seed));
+      let position = 0; // beats from the start of the bar
+      for (let i = 0; i < rhythm.length; i++) {
+        const d = rhythm[i]!;
+        if (d === 'e') {
+          // An eighth starts on a beat and is followed by its pair, or follows a dotted quarter on the half beat.
+          const afterDotted = rhythm[i - 1] === 'q.';
+          if (afterDotted) {
+            expect(position % 1).toBeCloseTo(0.5);
+          } else {
+            expect(position % 1).toBeCloseTo(0);
+            expect(rhythm[i + 1]).toBe('e');
+            i++;
+            position += 0.5;
+          }
+          sawEighths = true;
+        }
+        if (d === 'q.') {
+          expect(rhythm[i + 1]).toBe('e');
+          sawDotted = true;
+        }
+        position += beatsOf(d);
+      }
+      const bars = splitIntoBars(rhythm.map((duration) => ({ duration })), rhythmic.timeSignature);
+      for (const bar of bars) expect(bar.beats).toBe(4);
+    }
+    expect(sawEighths).toBe(true);
+    expect(sawDotted).toBe(true);
   });
 
   it('throws a clear error when nothing fits', () => {
@@ -145,6 +180,31 @@ describe('generateMelody', () => {
     expect(seen.size).toBe(MAJOR_KEYS.length);
     // Same seed, same key.
     expect(generateMelody(allKeys, 77, 2).key).toBe(generateMelody(allKeys, 77, 2).key);
+  });
+
+  it('melodic minor raises 6 and 7 going up and lowers them coming down', () => {
+    const melodic: LevelConfig = { ...LEVEL_1, id: 'test-melodic', fretRange: [0, 4], strings: [1, 2, 3, 4], keys: [keyFromId('Am-m')!] };
+    let sawRaised = false;
+    let sawNatural = false;
+    for (const seed of SEEDS) {
+      const melody = generateMelody(melodic, seed, 3);
+      for (let i = 1; i < melody.notes.length; i++) {
+        const prev = melody.notes[i - 1]!.midi;
+        const midi = melody.notes[i]!.midi;
+        const info = degreeInfoOf(midi, melody.key)!;
+        if ((info.degree === 6 || info.degree === 7) && midi !== prev) {
+          if (info.raised) {
+            expect(midi).toBeGreaterThan(prev);
+            sawRaised = true;
+          } else {
+            expect(midi).toBeLessThan(prev);
+            sawNatural = true;
+          }
+        }
+      }
+    }
+    expect(sawRaised).toBe(true);
+    expect(sawNatural).toBe(true);
   });
 
   it('honours a wider fret window with alternative positions', () => {

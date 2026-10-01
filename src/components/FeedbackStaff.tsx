@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GradeResult, GradedPair } from '../grading/grade';
 import { splitIntoBars } from '../melody/bars';
 import type { Melody } from '../melody/types';
-import { keyId, spellInKey, type Key } from '../music/key';
+import { keySignatureCount, keySignatureSpec, spellInKey, type Key } from '../music/key';
 import { displaySignsForBars } from '../notation/accidentals';
 import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { ensureNotationFonts } from '../notation/fonts';
@@ -109,7 +109,8 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
       barsPerRow: 2,
       scale,
       ink: COLORS.ink,
-      keySignature: keyId(musicKey),
+      keySignature: keySignatureSpec(musicKey),
+      keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
     });
     setLayout(next);
 

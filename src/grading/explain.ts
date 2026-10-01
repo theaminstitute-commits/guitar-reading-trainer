@@ -1,7 +1,7 @@
 /**
  * Turn a graded mistake into a short teaching explanation.
  */
-import { DURATIONS, type DurationId } from '../music/duration';
+import { beatsInWords, DURATIONS, type DurationId } from '../music/duration';
 import { keyName, keySignatureAccidental, spellInKey, type Key } from '../music/key';
 import { soundingFromWritten, spelledFromStaffStep, spelledName, staffStep, type SpelledNote } from '../music/pitch';
 import type { GradedPair, Mistake } from './grade';
@@ -43,8 +43,7 @@ function name(x: SpelledNote | { written: SpelledNote }): string {
 
 function durationWords(id: DurationId): string {
   const info = DURATIONS[id];
-  const beats = info.beats;
-  return `${info.label.toLowerCase()} (${beats} ${beats === 1 ? 'beat' : 'beats'})`;
+  return `${info.label.toLowerCase()} (${beatsInWords(info.beats)})`;
 }
 
 export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, notesInBar: (bar: number) => number): Explanation {
@@ -68,8 +67,8 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
       const hint = inKey
         ? keyGives === 0
           ? ` In ${keyName(key)} ${t!.written.letter} is natural; a plain note already means ${name(t!)}, so no sign is needed.`
-          : ` The key signature of ${keyName(key)} already makes every ${t!.written.letter} a ${spelledName(t!.written)}, so a plain note on that line means ${name(t!)}. Write a sign only for a note outside the key.`
-        : ` ${name(t!)} is outside ${keyName(key)}, so it needs its sign, and the sign lasts for the rest of the bar on that pitch.`;
+          : ` The key signature of ${keyName(key)} already makes every ${t!.written.letter} a ${spelledName(t!.written)}, so a plain note on that line means ${name(t!)}. Write a sign only for a note outside the key signature.`
+        : ` ${name(t!)} is not in the key signature of ${keyName(key)}, so it needs its sign, and the sign lasts for the rest of the bar on that pitch.`;
       return {
         ...base,
         title: `Wrong accidental: ${name(a!)} instead of ${name(t!)}`,

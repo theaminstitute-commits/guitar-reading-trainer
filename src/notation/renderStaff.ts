@@ -4,7 +4,7 @@
  *
  * Coordinates in the returned layout are CSS pixels relative to the container.
  */
-import { Accidental, Annotation, BarlineType, Formatter, Renderer, Stave, StaveNote, type RenderContext } from 'vexflow/core';
+import { Accidental, Annotation, BarlineType, Dot, Formatter, Renderer, Stave, StaveNote, type RenderContext } from 'vexflow/core';
 import { DURATIONS, type DurationId } from '../music/duration';
 import { spelledFromStaffStep } from '../music/pitch';
 import type { Sign } from './accidentals';
@@ -43,8 +43,10 @@ export interface RenderOptions {
   ink: string;
   showClef?: boolean;
   showTimeSignature?: boolean;
-  /** VexFlow key spec such as 'G', 'Bb', 'F#'; omitted or 'C' draws none. */
+  /** VexFlow key spec such as 'G', 'Bb', 'F#m'; omitted or 'C' draws none. */
   keySignature?: string;
+  /** How many sharps or flats that signature has, for the stave width it needs. */
+  keySignatureAccidentals?: number;
 }
 
 export interface StaffLayout {
@@ -64,12 +66,6 @@ const SIDE_PAD = 2;
 
 const SIGN_GLYPH: Record<Exclude<Sign, 'none'>, string> = { sharp: '#', flat: 'b', natural: 'n' };
 
-/** Count of sharps or flats in a key spec, for the extra stave width it needs. */
-function keySignatureSize(spec: string | undefined): number {
-  const sizes: Record<string, number> = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, 'F#': 6, 'C#': 7, F: 1, Bb: 2, Eb: 3, Ab: 4, Db: 5, Gb: 6, Cb: 7 };
-  return spec ? (sizes[spec] ?? 0) : 0;
-}
-
 /** VexFlow key for a staff position; the pitch comes from letter and octave only, signs are modifiers. */
 function vexKey(step: number): string {
   const spelled = spelledFromStaffStep(step);
@@ -81,8 +77,8 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
   const { scale, barsPerRow, timeSignature, ink } = options;
   const showClef = options.showClef ?? true;
   const showTimeSignature = options.showTimeSignature ?? true;
-  const keySpec = options.keySignature && options.keySignature !== 'C' ? options.keySignature : undefined;
-  const keyExtra = keySpec ? 8 + keySignatureSize(keySpec) * 10 : 0;
+  const keySpec = options.keySignature && options.keySignature !== 'C' && options.keySignature !== 'Am' ? options.keySignature : undefined;
+  const keyExtra = keySpec ? 8 + (options.keySignatureAccidentals ?? 0) * 10 : 0;
   // A melody shorter than one row spreads its bars across the full width.
   const perRow = Math.max(1, Math.min(barsPerRow, bars.length));
   const rows = Math.ceil(bars.length / perRow);
@@ -139,6 +135,9 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
         if (n.sign !== 'none') {
           note.addModifier(new Accidental(SIGN_GLYPH[n.sign]), 0);
         }
+        if (DURATIONS[n.duration].dots > 0) {
+          Dot.buildAndAttach([note], { all: true });
+        }
         if (n.style) note.setStyle({ fillStyle: n.style.fill, strokeStyle: n.style.stroke });
         if (n.label) {
           const annotation = new Annotation(n.label).setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
@@ -149,7 +148,8 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       });
 
       if (staveNotes.length > 0) {
-        Formatter.FormatAndDraw(ctx, stave, staveNotes, { autoBeam: false, alignRests: false });
+        // autoBeam joins eighths into beamed pairs per beat.
+        Formatter.FormatAndDraw(ctx, stave, staveNotes, { autoBeam: true, alignRests: false });
         staveNotes.forEach((note, noteIndex) => {
           layout.notes.push({
             barIndex,

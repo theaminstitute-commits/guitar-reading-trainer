@@ -23,9 +23,9 @@ import StaffInput from './StaffInput';
 
 export const SLOW_RATE = 0.7;
 
-/** Notes may be written from one ledger line below the staff to one above. */
+/** Notes may be written from one ledger line below the staff to two above. */
 const INPUT_MIN_STEP = staffStep(parseSpelled('C4'));
-const INPUT_MAX_STEP = staffStep(parseSpelled('A5'));
+const INPUT_MAX_STEP = staffStep(parseSpelled('D6'));
 
 interface ExerciseScreenProps {
   melody: Melody;
@@ -160,7 +160,7 @@ export default function ExerciseScreen({ melody, level, onCheck }: ExerciseScree
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
 
-      <Fretboard active={active} played={played} />
+      <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} />
 
       {error && <p className="error">{error}</p>}
 

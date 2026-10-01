@@ -16,13 +16,14 @@ interface StartScreenProps {
   onStart: () => void;
   onLength: (bars: number) => void;
   onStage: (index: number) => void;
+  onIncludeOptional: (include: boolean) => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onExplainer, onReset }: StartScreenProps) {
+export default function StartScreen({ stages, level, progress, session, onStart, onLength, onStage, onIncludeOptional, onExplainer, onReset }: StartScreenProps) {
   const lengths = Array.from({ length: level.bars }, (_, i) => i + 1);
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
@@ -61,6 +62,12 @@ export default function StartScreen({ stages, level, progress, session, onStart,
       <p className="stage-summary">
         <strong>{level.name}.</strong> {level.summary}
       </p>
+      {stages.some((s) => s.optional) && (
+        <label className="toggle muted">
+          <input type="checkbox" checked={progress.includeOptional} onChange={(e) => onIncludeOptional(e.target.checked)} /> Include the optional
+          seven-accidental stage
+        </label>
+      )}
 
       <div className="length-picker" role="group" aria-label="Melody length">
         <span className="muted">Length</span>

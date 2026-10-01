@@ -76,6 +76,27 @@ describe('stage ladder progression', () => {
     expect(p.stage).toBe(STAGES.length - 1);
   });
 
+  it('skips the optional stage unless opted in', () => {
+    const optionalIndex = STAGES.findIndex((s) => s.optional);
+    expect(optionalIndex).toBeGreaterThan(0);
+    let p = withStage(initialProgress(STAGES), optionalIndex - 1, STAGES);
+    p = withBars(p, STAGES[optionalIndex - 1]!.bars, STAGES);
+    let r = run(p, clean, STAGES[optionalIndex - 1]!.promoteAfter);
+    expect(r.change).toBe('stage-up');
+    expect(r.p.stage).toBe(optionalIndex + 1);
+
+    p = { ...withStage(initialProgress(STAGES), optionalIndex - 1, STAGES), includeOptional: true };
+    p = withBars(p, STAGES[optionalIndex - 1]!.bars, STAGES);
+    r = run(p, clean, STAGES[optionalIndex - 1]!.promoteAfter);
+    expect(r.p.stage).toBe(optionalIndex);
+
+    // Dropping back from the stage after the optional one also skips it.
+    p = withStage(initialProgress(STAGES), optionalIndex + 1, STAGES);
+    r = run(p, weak, STAGES[optionalIndex + 1]!.demoteAfter);
+    expect(r.change).toBe('stage-down');
+    expect(r.p.stage).toBe(optionalIndex - 1);
+  });
+
   it('tracks lifetime accuracy', () => {
     let p = initialProgress(STAGES);
     p = applyResult(p, clean, STAGES).progress;
