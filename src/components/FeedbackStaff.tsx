@@ -4,18 +4,21 @@ import { splitIntoBars } from '../melody/bars';
 import { timeSignaturesFor } from '../melody/meter';
 import type { Melody } from '../melody/types';
 import { keySignatureCount, keySignatureSpec, spellInKey, type Key } from '../music/key';
-import { displaySignsForBars } from '../notation/accidentals';
 import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
+import { displaySignsForBars } from '../notation/accidentals';
+import { resolveAnswerBar, type AnswerNote } from '../notation/answer';
 import { ensureNotationFonts } from '../notation/fonts';
-import { yFromStep } from '../notation/hitTest';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
 interface FeedbackStaffProps {
   melody: Melody;
   musicKey: Key;
   result: GradeResult;
-  /** Target note index currently sounding, for the "hear the correct melody" button. */
-  activeIndex: number | null;
+  answerBars: readonly (readonly AnswerNote[])[];
+  /** Target note sounding now ("Hear correct"), highlighted on the top staff. */
+  activeTarget: number | null;
+  /** Answer note sounding now ("Hear mine"), highlighted on the bottom staff. */
+  activeAnswer: number | null;
 }
 
 const COLORS = {
@@ -26,13 +29,10 @@ const COLORS = {
   active: '#e0a84a',
 };
 
-interface Marker {
+interface Badge {
   x: number;
-  badgeY: number;
+  y: number;
   numbers: string;
-  ghostY: number | null;
-  /** What the learner wrote, shown beside the ghost head. */
-  ghostLabel: string | null;
 }
 
 interface NoteLabel {
@@ -42,21 +42,47 @@ interface NoteLabel {
   color: string;
 }
 
+interface Overlay {
+  layout: StaffLayout;
+  labels: NoteLabel[];
+  badges: Badge[];
+}
+
 const pitchLabel = (n: SpelledNote) => `${spelledName(n)}${n.octave}`;
 
+function overlayFor(layout: StaffLayout, bars: RenderBar[], names: Map<number, string>, badgesById: Map<number, string>): Overlay {
+  const colorOf = new Map(bars.flatMap((b) => b.notes).map((n) => [n.id, n.style?.fill ?? COLORS.ink]));
+  const labels: NoteLabel[] = layout.notes.map((n) => ({
+    x: n.x,
+    y: n.y,
+    text: names.get(n.id) ?? '',
+    color: colorOf.get(n.id) ?? COLORS.ink,
+  }));
+  const badges: Badge[] = [];
+  for (const n of layout.notes) {
+    const numbers = badgesById.get(n.id);
+    if (!numbers) continue;
+    const stave = layout.staves[n.barIndex] ?? layout.staves[layout.staves.length - 1]!;
+    badges.push({ x: n.x, y: stave.topLineY - stave.lineSpacing * 2.6, numbers });
+  }
+  return { layout, labels, badges };
+}
+
 /**
- * The correct melody with the learner's answer laid over it: green notes were
- * right, red notes were wrong, grey notes were missed. A red ghost head shows
- * where a wrong note was written, and numbered badges point to the explanations.
+ * Two staffs, one above the other: the correct melody, then what the learner
+ * wrote. On both, green notes agree, red notes differ; grey notes on the top
+ * staff were missed, red notes on the bottom staff with no partner are extra.
+ * Numbered badges point to the explanations. While a version plays, its own
+ * staff follows the sounding note in amber.
  */
-export default function FeedbackStaff({ melody, musicKey, result, activeIndex }: FeedbackStaffProps) {
+export default function FeedbackStaff({ melody, musicKey, result, answerBars, activeTarget, activeAnswer }: FeedbackStaffProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
+  const answerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
-  const [layout, setLayout] = useState<StaffLayout | null>(null);
-  const [markers, setMarkers] = useState<Marker[]>([]);
-  const [labels, setLabels] = useState<NoteLabel[]>([]);
+  const [targetOverlay, setTargetOverlay] = useState<Overlay | null>(null);
+  const [answerOverlay, setAnswerOverlay] = useState<Overlay | null>(null);
 
   useEffect(() => {
     ensureNotationFonts().then(() => setFontsReady(true));
@@ -75,36 +101,19 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
   const scale = width < 480 ? 1.35 : 1.6;
 
   useLayoutEffect(() => {
-    const el = canvasRef.current;
-    if (!el || !fontsReady || width === 0) return;
+    const targetEl = targetRef.current;
+    const answerEl = answerRef.current;
+    if (!targetEl || !answerEl || !fontsReady || width === 0) return;
 
     const pairByTarget = new Map<number, GradedPair>();
-    for (const p of result.pairs) if (p.target) pairByTarget.set(p.target.index, p);
+    const pairByAnswer = new Map<number, GradedPair>();
+    for (const p of result.pairs) {
+      if (p.target) pairByTarget.set(p.target.index, p);
+      if (p.answer) pairByAnswer.set(p.answer.index, p);
+    }
+    const numbersOf = (p: GradedPair | undefined) => (p && p.mistakes.length > 0 ? p.mistakes.map((m) => m.number).join(',') : null);
 
-    const targetBars = splitIntoBars(melody.notes, melody.barBeats);
-    const writtenBars = targetBars.map((bar) => bar.notes.map((n) => spellInKey(writtenFromSounding(n.midi), musicKey)));
-    const signs = displaySignsForBars(writtenBars, musicKey);
-    let targetIndex = 0;
-    const bars: RenderBar[] = targetBars.map((bar, barIndex) => ({
-      notes: bar.notes.map((n, noteIndex) => {
-        const index = targetIndex++;
-        const pair = pairByTarget.get(index);
-        const written = writtenBars[barIndex]![noteIndex]!;
-        let color = COLORS.good;
-        if (!pair || !pair.answer) color = COLORS.missing;
-        else if (pair.mistakes.length > 0) color = COLORS.bad;
-        if (index === activeIndex) color = COLORS.active;
-        return {
-          id: index,
-          step: staffStep(written),
-          sign: signs[barIndex]![noteIndex]!,
-          duration: n.duration,
-          style: { fill: color, stroke: color },
-        };
-      }),
-    }));
-
-    const next = renderStaff(el, bars, {
+    const options = {
       timeSignature: melody.timeSignature,
       barTimeSignatures: timeSignaturesFor(melody.barBeats),
       width,
@@ -113,96 +122,100 @@ export default function FeedbackStaff({ melody, musicKey, result, activeIndex }:
       ink: COLORS.ink,
       keySignature: keySignatureSpec(musicKey),
       keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
-    });
-    setLayout(next);
+    };
 
-    // Pitch names to the left of every target note, in the note's colour.
-    const colorOfTarget = new Map(bars.flatMap((b) => b.notes).map((n) => [n.id, n.style!.fill]));
-    setLabels(
-      next.notes.map((n) => {
-        const target = melody.notes[n.id]!;
-        return {
-          x: n.x,
-          y: n.y,
-          text: pitchLabel(spellInKey(writtenFromSounding(target.midi), musicKey)),
-          color: colorOfTarget.get(n.id) ?? COLORS.ink,
-        };
+    // --- Top staff: the correct melody, coloured by how the learner did on each note.
+    const targetBars = splitIntoBars(melody.notes, melody.barBeats);
+    const writtenBars = targetBars.map((bar) => bar.notes.map((n) => spellInKey(writtenFromSounding(n.midi), musicKey)));
+    const signs = displaySignsForBars(writtenBars, musicKey);
+    const targetNames = new Map<number, string>();
+    const targetBadges = new Map<number, string>();
+    let targetIndex = 0;
+    const targetRender: RenderBar[] = targetBars.map((bar, barIndex) => ({
+      notes: bar.notes.map((n, noteIndex) => {
+        const index = targetIndex++;
+        const pair = pairByTarget.get(index);
+        const written = writtenBars[barIndex]![noteIndex]!;
+        let color = COLORS.good;
+        if (!pair || !pair.answer) color = COLORS.missing;
+        else if (pair.mistakes.length > 0) color = COLORS.bad;
+        if (index === activeTarget) color = COLORS.active;
+        targetNames.set(index, pitchLabel(written));
+        const numbers = numbersOf(pair);
+        if (numbers) targetBadges.set(index, numbers);
+        return { id: index, step: staffStep(written), sign: signs[barIndex]![noteIndex]!, duration: n.duration, style: { fill: color, stroke: color } };
       }),
-    );
+    }));
+    const targetLayout = renderStaff(targetEl, targetRender, options);
+    setTargetOverlay(overlayFor(targetLayout, targetRender, targetNames, targetBadges));
 
-    // Work out where each mistake marker goes.
-    const xOfTarget = new Map(next.notes.map((n) => [n.id, n.x]));
-    const list: Marker[] = [];
-    result.pairs.forEach((pair, i) => {
-      if (pair.mistakes.length === 0) return;
-      const bar = pair.target?.bar ?? pair.answer?.bar ?? 0;
-      const stave = next.staves[bar] ?? next.staves[next.staves.length - 1]!;
-      let x: number;
-      if (pair.target) {
-        x = xOfTarget.get(pair.target.index) ?? stave.noteStartX;
-      } else {
-        // Extra note: spread a run of extras evenly between the neighbouring target notes.
-        let runStart = i;
-        while (runStart > 0 && !result.pairs[runStart - 1]!.target) runStart--;
-        let runEnd = i;
-        while (runEnd < result.pairs.length - 1 && !result.pairs[runEnd + 1]!.target) runEnd++;
-        const before = runStart > 0 ? result.pairs[runStart - 1]!.target : null;
-        const after = runEnd < result.pairs.length - 1 ? result.pairs[runEnd + 1]!.target : null;
-        const xBefore = before ? (xOfTarget.get(before.index) ?? stave.noteStartX) : stave.noteStartX - 6 * scale;
-        const xAfter = after ? (xOfTarget.get(after.index) ?? stave.x + stave.width) : stave.x + stave.width - 8 * scale;
-        const slots = runEnd - runStart + 2;
-        x = xBefore + ((xAfter - xBefore) * (i - runStart + 1)) / slots;
-      }
-      const ghostY = pair.answer && !pair.pitchOk ? yFromStep(staffStep(pair.answer.written), stave) : null;
-      list.push({
-        x,
-        badgeY: stave.topLineY - stave.lineSpacing * 2.6,
-        numbers: pair.mistakes.map((m) => m.number).join(','),
-        ghostY,
-        ghostLabel: ghostY === null ? null : pitchLabel(pair.answer!.written),
-      });
+    // --- Bottom staff: what the learner wrote, exactly as written.
+    const answerNames = new Map<number, string>();
+    const answerBadges = new Map<number, string>();
+    let answerIndex = 0;
+    const answerRender: RenderBar[] = answerBars.map((bar) => {
+      const resolved = resolveAnswerBar(bar, musicKey);
+      return {
+        notes: bar.map((n, i) => {
+          const index = answerIndex++;
+          const pair = pairByAnswer.get(index);
+          let color = COLORS.good;
+          if (!pair || !pair.target || pair.mistakes.length > 0) color = COLORS.bad;
+          if (index === activeAnswer) color = COLORS.active;
+          answerNames.set(index, pitchLabel(resolved[i]!));
+          const numbers = numbersOf(pair);
+          if (numbers) answerBadges.set(index, numbers);
+          return { id: index, step: n.step, sign: n.sign, duration: n.duration, style: { fill: color, stroke: color } };
+        }),
+      };
     });
-    setMarkers(list);
-  }, [melody, musicKey, result, activeIndex, width, scale, fontsReady]);
+    // Keep the same number of bars as the melody so the two staffs line up.
+    while (answerRender.length < targetBars.length) answerRender.push({ notes: [] });
+    const answerLayout = renderStaff(answerEl, answerRender, options);
+    setAnswerOverlay(overlayFor(answerLayout, answerRender, answerNames, answerBadges));
+  }, [melody, musicKey, result, answerBars, activeTarget, activeAnswer, width, scale, fontsReady]);
 
-  const headRx = 5.2 * scale;
-  const headRy = 3.6 * scale;
   const labelGap = 9 * scale;
   const labelSize = 8.5 * scale;
 
-  return (
-    <div ref={wrapRef} className="feedback-staff">
-      <div ref={canvasRef} className="staff-canvas static" />
-      {layout && (
-        <svg className="feedback-overlay" width={width} height={layout.height} aria-hidden="true">
-          {labels.map((l, i) => (
-            <text key={`l${i}`} x={l.x - labelGap} y={l.y} textAnchor="end" dominantBaseline="central" className="pitch-label" fill={l.color} fontSize={labelSize}>
-              {l.text}
+  const renderOverlay = (overlay: Overlay | null) =>
+    overlay && (
+      <svg className="feedback-overlay" width={width} height={overlay.layout.height} aria-hidden="true">
+        {overlay.labels.map((l, i) => (
+          <text key={`l${i}`} x={l.x - labelGap} y={l.y} textAnchor="end" dominantBaseline="central" className="pitch-label" fill={l.color} fontSize={labelSize}>
+            {l.text}
+          </text>
+        ))}
+        {overlay.badges.map((b, i) => (
+          <g key={`b${i}`} className="badge">
+            <circle cx={b.x} cy={b.y} r={9 * Math.min(scale, 1.4)} />
+            <text x={b.x} y={b.y} textAnchor="middle" dominantBaseline="central">
+              {b.numbers}
             </text>
-          ))}
-          {markers.map((m, i) => (
-            <g key={i}>
-              {m.ghostY !== null && (
-                <>
-                  <ellipse cx={m.x} cy={m.ghostY} rx={headRx} ry={headRy} transform={`rotate(-20 ${m.x} ${m.ghostY})`} className="ghost-head" />
-                  <text x={m.x - labelGap} y={m.ghostY} textAnchor="end" dominantBaseline="central" className="pitch-label ghost" fontSize={labelSize}>
-                    {m.ghostLabel}
-                  </text>
-                </>
-              )}
-              <g className="badge">
-                <circle cx={m.x} cy={m.badgeY} r={9 * Math.min(scale, 1.4)} />
-                <text x={m.x} y={m.badgeY} textAnchor="middle" dominantBaseline="central">
-                  {m.numbers}
-                </text>
-              </g>
-            </g>
-          ))}
-        </svg>
-      )}
+          </g>
+        ))}
+      </svg>
+    );
+
+  return (
+    <div ref={wrapRef} className="feedback-staffs">
+      <div className={`staff-block${activeTarget !== null ? ' playing' : ''}`}>
+        <div className="staff-caption muted">Correct</div>
+        <div className="staff-wrap">
+          <div ref={targetRef} className="staff-canvas static" />
+          {renderOverlay(targetOverlay)}
+        </div>
+      </div>
+      <div className={`staff-block${activeAnswer !== null ? ' playing' : ''}`}>
+        <div className="staff-caption muted">Yours</div>
+        <div className="staff-wrap">
+          <div ref={answerRef} className="staff-canvas static" />
+          {renderOverlay(answerOverlay)}
+        </div>
+      </div>
       <div className="legend muted">
-        <span className="swatch good" /> right <span className="swatch bad" /> wrong <span className="swatch missing" /> missed{' '}
-        <span className="swatch ghost" /> what you wrote
+        <span className="swatch good" /> agrees <span className="swatch bad" /> differs or extra <span className="swatch missing" /> missed{' '}
+        <span className="swatch active" /> playing now
       </div>
     </div>
   );

@@ -38,7 +38,8 @@ type Playing = 'correct' | 'mine' | null;
 export default function FeedbackScreen({ melody, answerBars, result, change, nextStage, nextCounts, onNext, onExplainer }: FeedbackScreenProps) {
   const nextMeter = describeMeter(barBeatsForCounts(nextCounts));
   const [playing, setPlaying] = useState<Playing>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [activeTarget, setActiveTarget] = useState<number | null>(null);
+  const [activeAnswer, setActiveAnswer] = useState<number | null>(null);
 
   useEffect(() => () => sharedPlayer().stop(), []);
 
@@ -54,15 +55,17 @@ export default function FeedbackScreen({ melody, answerBars, result, change, nex
           });
     if (notes.length === 0) return;
     setPlaying(which);
-    setActiveIndex(null);
+    setActiveTarget(null);
+    setActiveAnswer(null);
     await player.play(
       notes,
       { tempo: melody.tempo, timeSignature: melody.timeSignature, countIn: false },
       {
-        onNote: (i) => setActiveIndex(which === 'correct' ? i : null),
+        onNote: (i) => (which === 'correct' ? setActiveTarget(i) : setActiveAnswer(i)),
         onEnd: () => {
           setPlaying(null);
-          setActiveIndex(null);
+          setActiveTarget(null);
+          setActiveAnswer(null);
         },
       },
     );
@@ -98,10 +101,10 @@ export default function FeedbackScreen({ melody, answerBars, result, change, nex
       <p className="verdict">
         {perfect
           ? 'Every note and every length right. Well read.'
-          : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at. Compare the two versions by ear, then read the notes below.`}
+          : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at. Play each version and watch its staff, then read the notes below.`}
       </p>
 
-      <FeedbackStaff melody={melody} musicKey={melody.key} result={result} activeIndex={activeIndex} />
+      <FeedbackStaff melody={melody} musicKey={melody.key} result={result} answerBars={answerBars} activeTarget={activeTarget} activeAnswer={activeAnswer} />
 
       <div className="controls">
         {playing ? (

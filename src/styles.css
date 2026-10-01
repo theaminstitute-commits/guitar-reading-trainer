@@ -703,3 +703,31 @@ button.undo span {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* Feedback: correct melody above, the learner's answer below */
+.feedback-staffs {
+  margin: 4px 0 8px;
+}
+
+.staff-block {
+  margin-bottom: 6px;
+}
+
+.staff-caption {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 -4px 2px;
+}
+
+.staff-block.playing .staff-caption {
+  color: var(--accent);
+}
+
+.staff-wrap {
+  position: relative;
+}
+
+.swatch.active {
+  background: var(--accent);
+}
