@@ -2,7 +2,7 @@ import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { barBeatsForCounts, describeMeter, MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
-import type { ExerciseMode, Handedness, Progress } from '../session/progression';
+import type { ExerciseMode, Handedness, Progress, Track } from '../session/progression';
 
 export interface SessionStats {
   exercises: number;
@@ -13,6 +13,8 @@ interface StartScreenProps {
   stages: readonly Stage[];
   level: Stage;
   progress: Progress;
+  /** The track of the current mode. */
+  track: Track;
   session: SessionStats;
   onStart: () => void;
   onCounts: (counts: number) => void;
@@ -20,21 +22,42 @@ interface StartScreenProps {
   onIncludeOptional: (include: boolean) => void;
   onMode: (mode: ExerciseMode) => void;
   onHandedness: (handedness: Handedness) => void;
+  onMicCheck: () => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-export default function StartScreen({ stages, level, progress, session, onStart, onCounts, onStage, onIncludeOptional, onMode, onHandedness, onExplainer, onReset }: StartScreenProps) {
+const MODE_NOTE: Record<ExerciseMode, string> = {
+  watch: 'The fretboard lights up each note as it plays, and you write it on the staff.',
+  listen: 'Dictation by ear: no fretboard. The key note still sounds first from stage 3.',
+  play: 'You read the melody and play it on your guitar. The microphone hears the tones; only the notes and how many are graded, not the timing.',
+};
+
+export default function StartScreen({
+  stages,
+  level,
+  progress,
+  track,
+  session,
+  onStart,
+  onCounts,
+  onStage,
+  onIncludeOptional,
+  onMode,
+  onHandedness,
+  onMicCheck,
+  onExplainer,
+  onReset,
+}: StartScreenProps) {
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
-  const lifetimeAccuracy = pct(progress.accuracySum, progress.exercises);
+  const lifetimeAccuracy = pct(track.accuracySum, track.exercises);
+  const chip = (selected: boolean) => `chip${selected ? ' selected' : ''}`;
 
   return (
     <section className="start">
-      <p className="lead">
-        Hear a short melody, watch it on the fretboard, then write it on the staff. Every mistake gets explained.
-      </p>
+      <p className="lead">Hear a short melody, watch it on the fretboard, then write it on the staff. Or read a melody and play it. Every mistake gets explained.</p>
 
       <div className="stats">
         <div>
@@ -45,9 +68,9 @@ export default function StartScreen({ stages, level, progress, session, onStart,
           </span>
         </div>
         <div>
-          <span className="stat-label">All time</span>
+          <span className="stat-label">All time, {progress.mode === 'play' ? 'playing' : 'writing'}</span>
           <span className="stat-value">
-            {progress.exercises} {progress.exercises === 1 ? 'melody' : 'melodies'}
+            {track.exercises} {track.exercises === 1 ? 'melody' : 'melodies'}
             {lifetimeAccuracy ? ` · ${lifetimeAccuracy}` : ''}
           </span>
         </div>
@@ -55,66 +78,64 @@ export default function StartScreen({ stages, level, progress, session, onStart,
 
       <div className="length-picker" role="group" aria-label="Mode">
         <span className="muted">Mode</span>
-        <button className={`chip${progress.mode === 'watch' ? ' selected' : ''}`} aria-pressed={progress.mode === 'watch'} onClick={() => onMode('watch')}>
+        <button className={chip(progress.mode === 'watch')} aria-pressed={progress.mode === 'watch'} onClick={() => onMode('watch')}>
           Watch and write
         </button>
-        <button className={`chip${progress.mode === 'listen' ? ' selected' : ''}`} aria-pressed={progress.mode === 'listen'} onClick={() => onMode('listen')}>
+        <button className={chip(progress.mode === 'listen')} aria-pressed={progress.mode === 'listen'} onClick={() => onMode('listen')}>
           Listen only
         </button>
+        <button className={chip(progress.mode === 'play')} aria-pressed={progress.mode === 'play'} onClick={() => onMode('play')}>
+          Read and play
+        </button>
       </div>
-      <p className="muted small-note">
-        {progress.mode === 'watch'
-          ? 'The fretboard lights up each note as it plays.'
-          : 'Dictation by ear: no fretboard. The key note still sounds first from stage 3.'}
-      </p>
+      <p className="muted small-note">{MODE_NOTE[progress.mode]}</p>
 
       <div className="length-picker" role="group" aria-label="Handedness">
         <span className="muted">Guitar</span>
-        <button className={`chip${progress.handedness === 'right' ? ' selected' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
+        <button className={chip(progress.handedness === 'right')} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
           Right-handed
         </button>
-        <button className={`chip${progress.handedness === 'left' ? ' selected' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
+        <button className={chip(progress.handedness === 'left')} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
           Left-handed
         </button>
       </div>
 
       <div className="length-picker" role="group" aria-label="Stage">
         <span className="muted">Stage</span>
-        {stages.slice(0, progress.unlocked + 1).map((s, i) => (
-          <button key={s.id} className={`chip${i === progress.stage ? ' selected' : ''}`} aria-pressed={i === progress.stage} onClick={() => onStage(i)} title={s.name}>
+        {stages.slice(0, track.unlocked + 1).map((s, i) => (
+          <button key={s.id} className={chip(i === track.stage)} aria-pressed={i === track.stage} onClick={() => onStage(i)} title={s.name}>
             {s.number}
           </button>
         ))}
-        {progress.unlocked < stages.length - 1 && (
-          <span className="chip locked" title={`Stage ${stages[progress.unlocked + 1]!.number} unlocks after clean rounds at ${stages[progress.unlocked]!.maxCounts} counts`} aria-label="Next stage locked">
-            {stages[progress.unlocked + 1]!.number} 🔒
+        {track.unlocked < stages.length - 1 && (
+          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks after clean rounds at ${stages[track.unlocked]!.maxCounts} counts`} aria-label="Next stage locked">
+            {stages[track.unlocked + 1]!.number} 🔒
           </span>
         )}
       </div>
       <p className="stage-summary">
         <strong>{level.name}.</strong> {level.summary}
       </p>
-      {progress.unlocked < stages.length - 1 && (
+      {track.unlocked < stages.length - 1 && (
         <p className="muted small-note">
-          Stage {stages[progress.unlocked + 1]!.number} unlocks after {level.promoteAfter} clean rounds in a row at {level.maxCounts} counts on stage {stages[progress.unlocked]!.number}.
+          Stage {stages[track.unlocked + 1]!.number} unlocks after {level.promoteAfter} clean rounds in a row at {level.maxCounts} counts on stage {stages[track.unlocked]!.number}.
         </p>
       )}
       {stages.some((s) => s.optional) && (
         <label className="toggle muted">
-          <input type="checkbox" checked={progress.includeOptional} onChange={(e) => onIncludeOptional(e.target.checked)} /> Include the optional
-          seven-accidental stage
+          <input type="checkbox" checked={progress.includeOptional} onChange={(e) => onIncludeOptional(e.target.checked)} /> Include the optional seven-accidental stage
         </label>
       )}
 
       <div className="length-picker" role="group" aria-label="Melody length">
         <span className="muted">Length</span>
-        <button className="chip" onClick={() => onCounts(progress.counts - 1)} disabled={progress.counts <= MIN_COUNTS} aria-label="One count shorter">
+        <button className="chip" onClick={() => onCounts(track.counts - 1)} disabled={track.counts <= MIN_COUNTS} aria-label="One count shorter">
           −
         </button>
         <span className="counts-readout">
-          {progress.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(progress.counts))}</span>
+          {track.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(track.counts))}</span>
         </span>
-        <button className="chip" onClick={() => onCounts(progress.counts + 1)} disabled={progress.counts >= level.maxCounts} aria-label="One count longer">
+        <button className="chip" onClick={() => onCounts(track.counts + 1)} disabled={track.counts >= level.maxCounts} aria-label="One count longer">
           +
         </button>
       </div>
@@ -126,6 +147,7 @@ export default function StartScreen({ stages, level, progress, session, onStart,
         <button className="primary big" onClick={onStart}>
           Start
         </button>
+        {progress.mode === 'play' && <button onClick={onMicCheck}>Mic check</button>}
       </div>
 
       <h2 className="section-title">Quick explainers</h2>
@@ -139,7 +161,7 @@ export default function StartScreen({ stages, level, progress, session, onStart,
         ))}
       </ul>
 
-      {progress.exercises > 0 && (
+      {(progress.write.exercises > 0 || progress.play.exercises > 0) && (
         <p className="muted small-note">
           <button className="link subtle" onClick={onReset}>
             Reset progress

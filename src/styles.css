@@ -731,3 +731,51 @@ button.undo span {
 .swatch.active {
   background: var(--accent);
 }
+
+/* Read and play */
+.melody-staff {
+  margin: 8px 0 4px;
+}
+
+.listen-meter {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface);
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+
+.meter-bar {
+  height: 100%;
+  width: 0;
+  background: var(--border);
+  transition: width 0.06s linear;
+}
+
+.meter-bar.live {
+  background: var(--good);
+}
+
+.score-row.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.tuner {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.tuner-note {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tuner-cents {
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.tuner-cents.in-tune {
+  color: var(--good);
+}

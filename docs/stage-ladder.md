@@ -6,6 +6,8 @@ thing that moves a learner up.
 
 ## Rules that apply to every stage
 
+- **Two tracks**: writing (watch and write, listen only) and playing (read and play) each keep their own stage, length and streaks on this ladder. Read and play grades tones and their number only, so its clean rounds are judged on pitch alone.
+
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
 - **Length inside a stage** is counted in beats ("counts"). Stage 1 starts at 4 counts (one bar of 4/4); every later stage starts at 8 (two bars). Three clean rounds in a row add one count, two weak rounds in a row remove one, up to 16 counts (four bars). The extra counts form a short last bar: 5 counts is 4/4 + 1/4, 6 is 4/4 + 2/4, 7 is 4/4 + 3/4, 8 is two bars of 4/4, 9 is 4/4 + 4/4 + 1/4, and so on. The time signature changes before the short bar. Every bar starts on a chord tone of the key.
 - **Move up a stage**: three clean rounds in a row at 16 counts.

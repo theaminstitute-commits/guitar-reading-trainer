@@ -15,14 +15,14 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.3.1 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.4.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
 - **Guitar is a transposing instrument.** Every pitch is stored as the *sounding* MIDI number. Written pitch is sounding plus one octave, computed only in `src/music/pitch.ts` (`writtenFromSounding` / `soundingFromWritten`). Audio and the fretboard use sounding pitch; the staff uses written pitch.
 - **Spelling is strict.** A note is spelled by `spellInKey` in `src/music/key.ts`: diatonic notes take the key's spelling; a chromatic note that merely cancels the key signature is written with a natural (F♮ in G major); other chromatic notes use sharps in C major and sharp keys, flats in flat keys. An enharmonic answer (E♯ for F) is graded as a pitch mistake.
 - **Signs follow standard engraving rules** (`src/notation/accidentals.ts`, after Alfred's *Essential Dictionary of Music Notation*): a plain note takes the key signature; a written sign applies to that pitch for the rest of the bar until another sign on it; it must be rewritten in the next bar; other octaves are separate; a courtesy sign that restates what already applies is legal, not a mistake. The learner's answer stores the sign drawn in front of each note and is read with these rules before grading.
-- **Keys and modes.** Every melody carries a key drawn from its stage's `keys`. `MAJOR_KEYS` and `MINOR_KEYS` hold the fifteen keys of the circle of fifths; a minor key has a mode (natural, harmonic, melodic). The key signature is always the natural form, so the raised degrees of harmonic and melodic minor are written with signs, and melodic minor uses the raised 6th and 7th going up and the natural ones coming down (generator rule). Append `?key=G`, `?key=Am-h` or `?key=Cm-m` to the URL to force a key, and `?unlock=18` to open every stage for testing.
+- **Keys and modes.** Every melody carries a key drawn from its stage's `keys`. `MAJOR_KEYS` and `MINOR_KEYS` hold the fifteen keys of the circle of fifths; a minor key has a mode (natural, harmonic, melodic). The key signature is always the natural form, so the raised degrees of harmonic and melodic minor are written with signs, and melodic minor uses the raised 6th and 7th going up and the natural ones coming down (generator rule). Append `?key=G`, `?key=Am-h` or `?key=Cm-m` to the URL to force a key, `?unlock=18` to open every stage for testing, and `?selfplay=1` to run read-and-play against the app's own guitar.
 - **Rhythm cells.** The generator writes eighths as beamed pairs on a beat and a dotted quarter always followed by an eighth, so no eighth starts off the beat (`DURATIONS[...].cell`).
 - **Position is separate from pitch.** A melody note carries `midi` plus the `string`/`fret` chosen for display (`src/melody/types.ts`).
 
@@ -48,7 +48,11 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ## Modes
 
-**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. The choice is on the start screen and is remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
+**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. **Read and play** reverses the task: the melody is shown as a score, the learner plays it on the guitar and the microphone listens. Only the tones and how many were played are graded, never the timing, and reading and playing keep separate progress tracks on the ladder. The mode is chosen on the start screen and remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
+
+### Microphone
+
+`src/audio/pitch.ts` is a McLeod pitch detector (normalised square difference, first strong peak, parabolic interpolation), `src/audio/noteTracker.ts` turns level and pitch per frame into notes (onset on sound after silence or a level jump on a decaying string, a new note on a sustained pitch change), and `src/audio/mic.ts` opens the microphone with echo cancellation, noise suppression and automatic gain off, feeds 2048-sample frames every 20 ms and records the take for "Hear mine". Audio never leaves the device; the recording lives in memory for the current exercise only. The key note sounds before listening starts so the microphone does not hear it. A Mic check on the start screen shows the note heard, like a tuner. `?selfplay=1` makes the app play the melody into its own detector instead of listening, an end-to-end check that must grade clean.
 
 ## Progression
 

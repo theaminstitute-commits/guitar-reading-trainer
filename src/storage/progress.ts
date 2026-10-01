@@ -4,7 +4,7 @@
  */
 import { MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
-import { initialProgress, type Progress } from '../session/progression';
+import { initialProgress, initialTrack, type Progress, type Track } from '../session/progression';
 
 export interface ProgressStore {
   load(stages: readonly Stage[]): Progress;
@@ -18,11 +18,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object';
 }
 
-/**
- * Accept older records: version 1 (no stage), version 2 (length in bars) and
- * version 3 (length in counts). Anything else starts fresh.
- */
-function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
+/** A track from any older or current record shape; null if it is not one. */
+function migrateTrack(value: unknown, stages: readonly Stage[]): Track | null {
   if (!isRecord(value)) return null;
   const numbers = ['cleanStreak', 'weakStreak', 'exercises', 'accuracySum'];
   if (!numbers.every((k) => typeof value[k] === 'number')) return null;
@@ -30,21 +27,45 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
   const stageIndex = Math.max(0, Math.min(stages.length - 1, Math.round(stage)));
   const maxCounts = stages[stageIndex]!.maxCounts;
   let counts: number;
-  if (value.version === 3 && typeof value.counts === 'number') counts = value.counts;
+  if (typeof value.counts === 'number') counts = value.counts;
   else if (typeof value.bars === 'number') counts = value.bars * 4;
   else return null;
   return {
-    version: 3,
     stage: stageIndex,
     unlocked: Math.max(stageIndex, Math.min(stages.length - 1, typeof value.unlocked === 'number' ? Math.round(value.unlocked) : stageIndex)),
-    includeOptional: value.includeOptional === true,
-    mode: value.mode === 'listen' ? 'listen' : 'watch',
-    handedness: value.handedness === 'left' ? 'left' : 'right',
     counts: Math.max(MIN_COUNTS, Math.min(maxCounts, Math.round(counts))),
     cleanStreak: value.cleanStreak as number,
     weakStreak: value.weakStreak as number,
     exercises: value.exercises as number,
     accuracySum: value.accuracySum as number,
+  };
+}
+
+/**
+ * Accept every record shape so far: versions 1-3 kept one set of counters at
+ * the top level (that becomes the writing track); version 4 has two tracks.
+ */
+function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
+  if (!isRecord(value)) return null;
+  let write: Track | null;
+  let play: Track | null;
+  if (value.version === 4) {
+    write = migrateTrack(value.write, stages);
+    play = migrateTrack(value.play, stages);
+    if (!write || !play) return null;
+  } else {
+    write = migrateTrack(value, stages);
+    if (!write) return null;
+    play = initialTrack(stages);
+  }
+  const mode = value.mode === 'listen' || value.mode === 'play' ? value.mode : 'watch';
+  return {
+    version: 4,
+    mode,
+    handedness: value.handedness === 'left' ? 'left' : 'right',
+    includeOptional: value.includeOptional === true,
+    write,
+    play,
   };
 }
 

@@ -1,17 +1,35 @@
 import { useCallback, useState } from 'react';
+import type { Take } from './audio/mic';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import ExerciseScreen from './components/ExerciseScreen';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
+import type { YoursStaff } from './components/FeedbackStaff';
+import MicCheck from './components/MicCheck';
+import PlayScreen from './components/PlayScreen';
 import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
-import { gradeAnswer, type GradeResult } from './grading/grade';
+import { gradeAnswer, gradePlayed, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
+import { describeMeter } from './melody/meter';
 import { STAGES, type Stage } from './melody/stages';
 import { keyFromId, keyName } from './music/key';
-import { describeMeter } from './melody/meter';
 import type { AnswerNote } from './notation/answer';
-import { accuracyOf, applyResult, initialProgress, withCounts, withStage, withUnlocked, type ExerciseMode, type Handedness, type ProgressChange, type Progress } from './session/progression';
+import {
+  accuracyOf,
+  applyResult,
+  initialProgress,
+  trackOf,
+  withCounts,
+  withStage,
+  withTrack,
+  withUnlocked,
+  type ExerciseMode,
+  type Handedness,
+  type Progress,
+  type ProgressChange,
+} from './session/progression';
+import { hearRecording, hearWrittenAnswer, yoursFromAnswer, yoursFromTake, type HearMine } from './session/yours';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -21,42 +39,52 @@ function randomSeed(): number {
 type Screen = 'start' | 'exercise' | 'feedback';
 
 interface Checked {
-  answerBars: AnswerNote[][];
   result: GradeResult;
   change: ProgressChange;
   /** Stage the learner is on after this result. */
   stageAfter: Stage;
+  yours: YoursStaff;
+  hearMine: HearMine | null;
 }
 
-/** `?key=G` (or Bb, F#, ...) forces every melody into that key, for trying key signatures out. */
+/** `?key=G` (or Bb, F#, Am-h, ...) forces every melody into that key, for trying key signatures out. */
 function withKeyOverride(stage: Stage): Stage {
   const id = new URLSearchParams(window.location.search).get('key');
   const key = id ? keyFromId(id) : null;
   return key ? { ...stage, keys: [key], fretRange: [0, 4] } : stage;
 }
 
+const params = new URLSearchParams(window.location.search);
+/** `?selfplay=1`: in read-and-play, the app plays the melody into its own detector instead of listening to the microphone. */
+const SELF_PLAY = params.get('selfplay') === '1';
 const store = localProgressStore;
+
+const MODE_LABEL: Record<ExerciseMode, string> = { watch: '', listen: ' · listen only', play: ' · read and play' };
 
 /**
  * Session flow: start -> exercise -> feedback -> next exercise.
- * Progress (melody length, lifetime counts) persists through the storage module;
- * session counts live only while the page is open.
+ * Progress (two tracks: writing and playing, each with a stage and length)
+ * persists through the storage module; session counts live only while the
+ * page is open.
  */
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [progress, setProgress] = useState<Progress>(() => {
     const loaded = store.load(STAGES);
-    // `?unlock=18` opens every stage up to that number, for trying stages out.
-    const unlock = Number(new URLSearchParams(window.location.search).get('unlock'));
-    return unlock >= 1 ? withUnlocked(loaded, unlock - 1, STAGES) : loaded;
+    // `?unlock=18` opens every stage up to that number on both tracks, for trying stages out.
+    const unlock = Number(params.get('unlock'));
+    if (!(unlock >= 1)) return loaded;
+    return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES), play: withUnlocked(loaded.play, unlock - 1, STAGES) };
   });
-  const level = withKeyOverride(STAGES[progress.stage]!);
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const [seed, setSeed] = useState(randomSeed);
-  const [counts, setCounts] = useState(progress.counts);
+  const track = trackOf(progress);
+  const [counts, setCounts] = useState(track.counts);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
+  const [micCheck, setMicCheck] = useState(false);
 
+  const level = withKeyOverride(STAGES[track.stage]!);
   const melody = generateMelody(level, seed, counts);
 
   const updateProgress = useCallback((next: Progress) => {
@@ -64,27 +92,37 @@ export default function App() {
     store.save(next);
   }, []);
 
-  const startExercise = useCallback(
-    (length: number) => {
-      setCounts(length);
-      setSeed(randomSeed());
-      setChecked(null);
-      setScreen('exercise');
-    },
-    [],
-  );
+  const startExercise = useCallback((length: number) => {
+    setCounts(length);
+    setSeed(randomSeed());
+    setChecked(null);
+    setScreen('exercise');
+  }, []);
 
-  const onCheck = (answerBars: AnswerNote[][]) => {
-    const result = gradeAnswer(melody, answerBars, melody.key);
-    const { progress: next, change } = applyResult(progress, result, STAGES);
-    updateProgress(next);
+  const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null) => {
+    const { track: nextTrack, change } = applyResult(track, result, STAGES, progress.includeOptional);
+    updateProgress(withTrack(progress, nextTrack));
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
-    setChecked({ answerBars, result, change, stageAfter: STAGES[next.stage]! });
+    setChecked({ result, change, stageAfter: STAGES[nextTrack.stage]!, yours, hearMine });
     setScreen('feedback');
   };
 
-  const onCounts = (n: number) => updateProgress(withCounts(progress, n, STAGES));
-  const onStage = (i: number) => updateProgress(withStage(progress, i, STAGES));
+  const onCheck = (answerBars: AnswerNote[][]) => {
+    const result = gradeAnswer(melody, answerBars, melody.key);
+    record(result, yoursFromAnswer(answerBars, melody, melody.key), hearWrittenAnswer(answerBars, melody, melody.key));
+  };
+
+  const onPlayed = (take: Take) => {
+    const result = gradePlayed(
+      melody,
+      take.notes.map((n) => n.midi),
+      melody.key,
+    );
+    record(result, yoursFromTake(take, melody.key), hearRecording(take));
+  };
+
+  const onCounts = (n: number) => updateProgress(withTrack(progress, withCounts(track, n, STAGES)));
+  const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
   const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
   const onHandedness = (handedness: Handedness) => updateProgress({ ...progress, handedness });
@@ -95,6 +133,8 @@ export default function App() {
     setSession({ exercises: 0, accuracySum: 0 });
   };
 
+  const nextTrack = trackOf(progress);
+
   return (
     <main className="app">
       <header className="app-header">
@@ -102,7 +142,7 @@ export default function App() {
         <p className="muted">
           {screen === 'start'
             ? level.title
-            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${counts} counts (${describeMeter(melody.barBeats)})${progress.mode === 'listen' ? ' · listen only' : ''}`}
+            : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
         </p>
       </header>
 
@@ -111,32 +151,37 @@ export default function App() {
           stages={STAGES}
           level={level}
           progress={progress}
+          track={track}
           session={session}
-          onStart={() => startExercise(progress.counts)}
+          onStart={() => startExercise(track.counts)}
           onCounts={onCounts}
           onStage={onStage}
           onIncludeOptional={onIncludeOptional}
           onMode={onMode}
           onHandedness={onHandedness}
+          onMicCheck={() => setMicCheck(true)}
           onExplainer={setExplainer}
           onReset={onReset}
         />
       )}
 
-      {screen === 'exercise' && (
-        <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} leftHanded={progress.handedness === 'left'} onCheck={onCheck} />
-      )}
+      {screen === 'exercise' &&
+        (progress.mode === 'play' ? (
+          <PlayScreen melody={melody} level={level} selfPlay={SELF_PLAY} onDone={onPlayed} />
+        ) : (
+          <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} leftHanded={progress.handedness === 'left'} onCheck={onCheck} />
+        ))}
 
       {screen === 'feedback' && checked && (
         <FeedbackScreen
           melody={melody}
-          level={level}
-          answerBars={checked.answerBars}
           result={checked.result}
           change={checked.change}
           nextStage={checked.stageAfter}
-          nextCounts={progress.counts}
-          onNext={() => startExercise(progress.counts)}
+          nextCounts={nextTrack.counts}
+          yours={checked.yours}
+          hearMine={checked.hearMine}
+          onNext={() => startExercise(nextTrack.counts)}
           onExplainer={setExplainer}
         />
       )}
@@ -150,6 +195,7 @@ export default function App() {
       )}
 
       {explainer && <ExplainerCard id={explainer} onClose={() => setExplainer(null)} />}
+      {micCheck && <MicCheck musicKey={melody.key} onClose={() => setMicCheck(false)} />}
 
       <footer className="muted small">{SAMPLE_CREDIT}</footer>
     </main>

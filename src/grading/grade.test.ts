@@ -4,7 +4,7 @@ import { C_MAJOR, keyFromId } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { describeStaffPosition, explainMistake } from './explain';
-import { gradeAnswer } from './grade';
+import { gradeAnswer, gradePlayed } from './grade';
 
 /** Target melody from written note names (guitar staff), stored as sounding pitches. */
 function melody(...written: string[]): Melody {
@@ -117,6 +117,41 @@ describe('gradeAnswer', () => {
       [2, 'wrong-duration'],
     ]);
     expect(r.pairs.find((p) => p.mistakes.length > 0)!.target!.bar).toBe(1);
+  });
+});
+
+describe('gradePlayed: tone and count only', () => {
+  // Written C5 D5 E5 F5 sound as C4 D4 E4 F4 on the guitar.
+  const played = (...names: string[]) => names.map((n) => midiFromSpelled(parseSpelled(n)));
+
+  it('gives full marks when the right tones come in the right order, whatever the timing', () => {
+    const r = gradePlayed(melody('C5', 'D5:h', 'E5', 'F5'), played('C4', 'D4', 'E4', 'F4'), C_MAJOR);
+    expect(r.mistakes).toEqual([]);
+    expect(r.pitchScore).toBe(1);
+    expect(r.rhythmScore).toBe(1);
+    expect(r.timingGraded).toBe(false);
+    expect(r.pairs.every((p) => p.durationOk)).toBe(true);
+  });
+
+  it('marks a wrong tone, an octave slip, a missed and an extra note', () => {
+    const r = gradePlayed(melody('C5', 'D5', 'E5', 'F5'), played('C4', 'B3', 'E4', 'F4'), C_MAJOR);
+    expect(kinds(r)).toEqual(['wrong-letter']);
+    expect(r.pitchScore).toBe(0.75);
+    expect(kinds(gradePlayed(melody('G5', 'E5'), played('G3', 'E4'), C_MAJOR))).toEqual(['octave']);
+    expect(kinds(gradePlayed(melody('C5', 'D5', 'E5'), played('C4', 'E4'), C_MAJOR))).toEqual(['missing']);
+    const extra = gradePlayed(melody('C5', 'D5', 'E5', 'F5'), played('C4', 'D4', 'G4', 'E4', 'F4'), C_MAJOR);
+    expect(kinds(extra)).toEqual(['extra']);
+    // The extra note is explained against the bar of the note before it.
+    expect(extra.pairs.find((p) => !p.target)!.answer!.bar).toBe(0);
+  });
+
+  it('spells heard tones the way the key would write them', () => {
+    const G = keyFromId('G')!;
+    const r = gradePlayed({ ...melody('F#5', 'G5'), key: G }, played('F#4', 'G4'), G);
+    expect(r.mistakes).toEqual([]);
+    const F = keyFromId('F')!;
+    const r2 = gradePlayed({ ...melody('Bb4', 'C5'), key: F }, played('Bb3', 'C4'), F);
+    expect(r2.mistakes).toEqual([]);
   });
 });
 

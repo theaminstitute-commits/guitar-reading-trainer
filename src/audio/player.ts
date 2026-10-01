@@ -53,7 +53,8 @@ function uiAt(fn: () => void, time: number): void {
 const GATE = 0.92;
 
 export class GuitarPlayer {
-  private sampler: Tone.Sampler | null = null;
+  /** The guitar sampler once loaded; the self-play check listens to it directly. */
+  sampler: Tone.Sampler | null = null;
   private click: Tone.Synth | null = null;
   private loading: Promise<void> | null = null;
   private scheduledIds: number[] = [];

@@ -1,7 +1,7 @@
 GUITAR READING TRAINER for Linux Mint / Ubuntu - pick ONE of these
 ===================================================================
 
-1) guitar-reading-trainer_0.3.1_all.deb   (recommended)
+1) guitar-reading-trainer_0.4.0_all.deb   (recommended)
    Double-click it. Mint's Package Installer opens: click "Install Package"
    and enter your password. Guitar Reading Trainer then appears in the menu
    under Sound & Video and Education.
@@ -18,6 +18,9 @@ GUITAR READING TRAINER for Linux Mint / Ubuntu - pick ONE of these
 All three open the app in its own window when Chromium or Google Chrome is
 installed (sudo apt install chromium); otherwise it opens in Firefox.
 Works offline. Your progress stays on this computer.
+
+Read and play mode uses the microphone: the browser asks once for
+permission. Sound is analysed on this computer only and never sent anywhere.
 
 The same app also runs on a phone from
 https://theaminstitute-commits.github.io/guitar-reading-trainer/

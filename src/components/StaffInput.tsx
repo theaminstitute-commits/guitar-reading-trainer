@@ -92,7 +92,13 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener('resize', update);
+    const later = setTimeout(update, 300);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+      clearTimeout(later);
+    };
   }, []);
 
   // Forget the selection if that note disappears (undo, delete, clear).

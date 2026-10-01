@@ -6,15 +6,26 @@ import type { Melody } from '../melody/types';
 import { keySignatureCount, keySignatureSpec, spellInKey, type Key } from '../music/key';
 import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
-import { resolveAnswerBar, type AnswerNote } from '../notation/answer';
+import type { DurationId } from '../music/duration';
+import type { Sign } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
+
+/** What the learner produced, ready to draw: written on the staff, or played and transcribed. */
+export interface YoursStaff {
+  caption: string;
+  bars: { notes: { step: number; sign: Sign; duration: DurationId }[] }[];
+  /** Pitch name per note, flattened in bar order. */
+  names: string[];
+  barTimeSignatures?: readonly (readonly [number, number])[];
+  showTimeSignature: boolean;
+}
 
 interface FeedbackStaffProps {
   melody: Melody;
   musicKey: Key;
   result: GradeResult;
-  answerBars: readonly (readonly AnswerNote[])[];
+  yours: YoursStaff;
   /** Target note sounding now ("Hear correct"), highlighted on the top staff. */
   activeTarget: number | null;
   /** Answer note sounding now ("Hear mine"), highlighted on the bottom staff. */
@@ -75,7 +86,7 @@ function overlayFor(layout: StaffLayout, bars: RenderBar[], names: Map<number, s
  * Numbered badges point to the explanations. While a version plays, its own
  * staff follows the sounding note in amber.
  */
-export default function FeedbackStaff({ melody, musicKey, result, answerBars, activeTarget, activeAnswer }: FeedbackStaffProps) {
+export default function FeedbackStaff({ melody, musicKey, result, yours, activeTarget, activeAnswer }: FeedbackStaffProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
   const answerRef = useRef<HTMLDivElement>(null);
@@ -95,7 +106,13 @@ export default function FeedbackStaff({ melody, musicKey, result, answerBars, ac
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener('resize', update);
+    const later = setTimeout(update, 300);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+      clearTimeout(later);
+    };
   }, []);
 
   const scale = width < 480 ? 1.35 : 1.6;
@@ -149,31 +166,32 @@ export default function FeedbackStaff({ melody, musicKey, result, answerBars, ac
     const targetLayout = renderStaff(targetEl, targetRender, options);
     setTargetOverlay(overlayFor(targetLayout, targetRender, targetNames, targetBadges));
 
-    // --- Bottom staff: what the learner wrote, exactly as written.
+    // --- Bottom staff: what the learner wrote or played.
     const answerNames = new Map<number, string>();
     const answerBadges = new Map<number, string>();
     let answerIndex = 0;
-    const answerRender: RenderBar[] = answerBars.map((bar) => {
-      const resolved = resolveAnswerBar(bar, musicKey);
-      return {
-        notes: bar.map((n, i) => {
-          const index = answerIndex++;
-          const pair = pairByAnswer.get(index);
-          let color = COLORS.good;
-          if (!pair || !pair.target || pair.mistakes.length > 0) color = COLORS.bad;
-          if (index === activeAnswer) color = COLORS.active;
-          answerNames.set(index, pitchLabel(resolved[i]!));
-          const numbers = numbersOf(pair);
-          if (numbers) answerBadges.set(index, numbers);
-          return { id: index, step: n.step, sign: n.sign, duration: n.duration, style: { fill: color, stroke: color } };
-        }),
-      };
+    const answerRender: RenderBar[] = yours.bars.map((bar) => ({
+      notes: bar.notes.map((n) => {
+        const index = answerIndex++;
+        const pair = pairByAnswer.get(index);
+        let color = COLORS.good;
+        if (!pair || !pair.target || pair.mistakes.length > 0) color = COLORS.bad;
+        if (index === activeAnswer) color = COLORS.active;
+        answerNames.set(index, yours.names[index] ?? '');
+        const numbers = numbersOf(pair);
+        if (numbers) answerBadges.set(index, numbers);
+        return { id: index, step: n.step, sign: n.sign, duration: n.duration, style: { fill: color, stroke: color } };
+      }),
+    }));
+    // A written answer keeps the melody's bars so the two staffs line up.
+    if (yours.showTimeSignature) while (answerRender.length < targetBars.length) answerRender.push({ notes: [] });
+    const answerLayout = renderStaff(answerEl, answerRender, {
+      ...options,
+      barTimeSignatures: yours.barTimeSignatures ?? options.barTimeSignatures,
+      showTimeSignature: yours.showTimeSignature,
     });
-    // Keep the same number of bars as the melody so the two staffs line up.
-    while (answerRender.length < targetBars.length) answerRender.push({ notes: [] });
-    const answerLayout = renderStaff(answerEl, answerRender, options);
     setAnswerOverlay(overlayFor(answerLayout, answerRender, answerNames, answerBadges));
-  }, [melody, musicKey, result, answerBars, activeTarget, activeAnswer, width, scale, fontsReady]);
+  }, [melody, musicKey, result, yours, activeTarget, activeAnswer, width, scale, fontsReady]);
 
   const labelGap = 9 * scale;
   const labelSize = 8.5 * scale;
@@ -207,7 +225,7 @@ export default function FeedbackStaff({ melody, musicKey, result, answerBars, ac
         </div>
       </div>
       <div className={`staff-block${activeAnswer !== null ? ' playing' : ''}`}>
-        <div className="staff-caption muted">Yours</div>
+        <div className="staff-caption muted">{yours.caption}</div>
         <div className="staff-wrap">
           <div ref={answerRef} className="staff-canvas static" />
           {renderOverlay(answerOverlay)}

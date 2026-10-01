@@ -36,7 +36,13 @@ export default function ExplainerCard({ id, onClose }: ExplainerCardProps) {
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener('resize', update);
+    const later = setTimeout(update, 300);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+      clearTimeout(later);
+    };
   }, [explainer.example]);
 
   useLayoutEffect(() => {
