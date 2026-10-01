@@ -26,6 +26,16 @@ interface StaffInputProps {
   disabled?: boolean;
 }
 
+type Selection = { kind: 'note'; id: number } | { kind: 'slot'; bar: number };
+
+interface SlotRect {
+  bar: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const COLORS = {
   ink: '#f1ece4',
   selected: '#e0a84a',
@@ -55,11 +65,15 @@ function NoteIcon({ duration }: { duration: DurationId }) {
  */
 export default function StaffInput({ answer, dispatch, limits, durations, musicKey, disabled = false }: StaffInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<StaffLayout | null>(null);
   const [width, setWidth] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
   const [duration, setDuration] = useState<DurationId>(durations[0] ?? 'q');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  /** Either a note (to adjust it) or the insertion cursor of a bar (the next note goes there). */
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [slots, setSlots] = useState<SlotRect[]>([]);
+  const selectedId = selection?.kind === 'note' ? selection.id : null;
   const [message, setMessage] = useState<string | null>(null);
   const [rejectedBar, setRejectedBar] = useState<number | null>(null);
 
@@ -83,7 +97,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
   // Forget the selection if that note disappears (undo, delete, clear).
   useEffect(() => {
     if (selectedId !== null && !answer.bars.some((b) => b.some((n) => n.id === selectedId))) {
-      setSelectedId(null);
+      setSelection(null);
     }
   }, [answer, selectedId]);
 
@@ -97,7 +111,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
   const scale = width < 480 ? 1.35 : 1.6;
 
   useLayoutEffect(() => {
-    const el = containerRef.current;
+    const el = canvasRef.current;
     if (!el || !fontsReady || width === 0) return;
     const bars: RenderBar[] = answer.bars.map((bar, i) => ({
       fill: rejectedBar === i ? COLORS.rejectedBar : isBarFull(bar, limits.timeSignature) ? COLORS.fullBar : undefined,
@@ -118,6 +132,18 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       keySignature: keySignatureSpec(musicKey),
       keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
     });
+    const layout = layoutRef.current;
+    // An insertion cursor after the last note of every bar that still has room.
+    setSlots(
+      layout.staves.flatMap((stave) => {
+        const bar = answer.bars[stave.barIndex]!;
+        if (isBarFull(bar, limits.timeSignature)) return [];
+        const last = layout.notes.filter((n) => n.barIndex === stave.barIndex).pop();
+        const w = 20 * scale;
+        const x = Math.min(last ? last.x + 24 * scale : stave.noteStartX + 6 * scale, stave.x + stave.width - w - 4 * scale);
+        return [{ bar: stave.barIndex, x, y: stave.topLineY - stave.lineSpacing * 1.5, width: w, height: stave.lineSpacing * 7 }];
+      }),
+    );
   }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.timeSignature, musicKey]);
 
   const onPointerDown = useCallback(
@@ -132,14 +158,23 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
 
       const hit = noteAt(layout.notes, x, y, { x: 11 * scale, y: 9 * scale });
       if (hit) {
-        setSelectedId(hit.id);
+        setSelection({ kind: 'note', id: hit.id });
         setMessage(null);
+        return;
+      }
+
+      // With a note selected, tapping the dashed cursor hands control back to it without adding
+      // a note. Otherwise a tap inside the cursor adds a note there like any other tap.
+      const slot = slots.find((s) => x >= s.x - 4 && x <= s.x + s.width + 4 && y >= s.y && y <= s.y + s.height);
+      if (slot && selection?.kind === 'note') {
+        setSelection({ kind: 'slot', bar: slot.bar });
+        setMessage(`Next note goes in bar ${slot.bar + 1}. Pick a length, then tap a line or space.`);
         return;
       }
 
       const stave = staveAt(layout.staves, x, y);
       if (!stave) {
-        setSelectedId(null);
+        setSelection(null);
         return;
       }
       const bar = answer.bars[stave.barIndex]!;
@@ -156,17 +191,18 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         return;
       }
       const step = Math.min(limits.maxStep, Math.max(limits.minStep, stepFromY(y, stave)));
-      const id = answer.nextId;
       dispatch({ type: 'add', bar: stave.barIndex, step, duration });
-      setSelectedId(id);
+      // The cursor moves on past the new note, like a caret; tap the note to adjust it.
+      setSelection({ kind: 'slot', bar: stave.barIndex });
       setMessage(null);
     },
-    [answer, disabled, dispatch, duration, limits, scale],
+    [answer, disabled, dispatch, duration, limits, scale, slots, selection],
   );
 
   const hasSelection = selectedId !== null;
   const hasNotes = answer.bars.some((b) => b.length > 0);
-  /** Duration palette: sets the length for new notes and, with a note selected, changes that note. */
+  const slotSelected = selection?.kind === 'slot' && slots.some((s) => s.bar === selection.bar);
+  /** Duration palette: sets the length for the next note; with a note selected, changes that note instead. */
   const chooseDuration = (d: DurationId) => {
     setDuration(d);
     if (selectedId === null) return;
@@ -196,13 +232,29 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         className="staff-canvas"
         onPointerDown={onPointerDown}
         role="application"
-        aria-label="Treble staff. Tap a bar to add a note."
+        aria-label="Treble staff. Tap a line or space to add a note at the dashed cursor; tap a note to adjust it."
       >
+        <div ref={canvasRef} className="staff-paper" />
         {!fontsReady && <div className="staff-loading muted">Loading notation…</div>}
+        {slots.map((s) => (
+          <div
+            key={s.bar}
+            className={`slot${selection?.kind === 'slot' && selection.bar === s.bar ? ' selected' : ''}`}
+            style={{ left: s.x, top: s.y, width: s.width, height: s.height }}
+            aria-hidden="true"
+          />
+        ))}
       </div>
 
       <div className="staff-message" aria-live="polite">
-        {message ?? (hasNotes ? '' : 'Tap a bar to write the first note.')}
+        {message ??
+          (hasNotes
+            ? hasSelection
+              ? 'Note selected: the palette, signs and arrows change it. Tap the dashed cursor to add the next note instead.'
+              : slotSelected
+                ? 'Pick a length, then tap a line or space to add the next note.'
+                : ''
+            : 'Tap a line or space to write the first note. The dashed box shows where the next note goes.')}
       </div>
 
       <div className="palette">

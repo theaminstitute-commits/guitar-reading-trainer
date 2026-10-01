@@ -666,3 +666,23 @@ button.undo span {
   background: var(--accent);
   border-color: var(--accent);
 }
+
+/* Insertion cursor on the input staff */
+.staff-paper {
+  width: 100%;
+}
+
+.slot {
+  position: absolute;
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0.8;
+  box-sizing: border-box;
+}
+
+.slot.selected {
+  border-color: var(--accent);
+  background: rgba(224, 168, 74, 0.14);
+  opacity: 1;
+}
