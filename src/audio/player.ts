@@ -187,11 +187,12 @@ export class GuitarPlayer {
     transport.start();
   }
 
-  /** One click at an audio-context time; the first beat of a bar is a little louder. */
+  /** One click at an audio-context time: one uniform click, like Tempus, with no accent (the `accent` flag is kept for callers and ignored). */
   private tick(time: number, accent: boolean): void {
     if (!this.click || !this.clickGain) return;
     const source = new Tone.ToneBufferSource({ url: this.click, onended: () => source.dispose() }).connect(this.clickGain);
-    source.start(time, 0, undefined, accent ? 1 : 0.6);
+    void accent;
+    source.start(time);
   }
 
   stop(): void {

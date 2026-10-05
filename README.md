@@ -15,7 +15,7 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.6.2 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.6.3 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
@@ -52,7 +52,7 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ### Stage guides and metronome
 
-The count-in and both metronomes use the same click as the user's Tempus (Seiko-style) metronome, synthesised in `src/audio/click.ts`: a 1000 Hz sine with a quarter of 2 kHz overtone, 1 ms attack, exponential decay over 60 ms, rendered once into a buffer and played through a gain node; the first beat of a bar is a little louder.
+The count-in and both metronomes use the same click as the user's Tempus (Seiko-style) metronome, synthesised in `src/audio/click.ts`: a 1000 Hz sine with a quarter of 2 kHz overtone, 1 ms attack, exponential decay over 60 ms, rendered once into a buffer and played through a gain node. One uniform click, no accent, as in Tempus.
 
 `src/melody/stageGuide.ts` builds, for any stage, the list of pitches it can draw on (via the generator's pitch pool in C major, or the stage's first key), named as written, with the ones new since the previous stage flagged, plus the keys, note lengths and range in words. `src/components/StageGuide.tsx` shows that as a page: the pitches on a staff with their names (new ones in amber, tap "Hear them in order" to play them), the same positions dotted on the fretboard, and a Start button. The page opens by itself the first time a stage is met (`Progress.seenGuides`) and from the Stage guide button on the start screen. `Progress.metronome` turns on a click on every beat during playback in the writing modes (accent on bar starts, `PlayOptions.metronome` and `barBeats`); it is off by default and never sounds under the feedback playback. In read and play the same setting runs a free-running click at the melody tempo while the learner plays (`GuitarPlayer.startMetronome`); every click's time is handed to the listener, which skips the frames that contain it (`Listener.ignoreAround`) so a click on a ringing string is never counted as a new pluck.
 
