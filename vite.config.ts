@@ -36,5 +36,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // The stage ladder test generates melodies for 29 stages at three lengths over 40 seeds; CI runners need more than the 5 s default.
+    testTimeout: 30000,
   },
 });
