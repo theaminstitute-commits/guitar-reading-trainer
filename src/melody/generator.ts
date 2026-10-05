@@ -112,6 +112,33 @@ function choosePosition(candidate: PoolNote, previous: FretPosition | null): Fre
  * melodies are used while the learner is starting out.
  */
 export function generateMelody(config: LevelConfig, seed: number, counts: number = config.maxCounts): Melody {
+  const must = config.introduces ?? [];
+  let melody = generateOnce(config, seed, counts);
+  if (must.length === 0) return melody;
+  // A stage that adds frets or strings uses them at once: redraw until a note sits on one of the new positions.
+  const samePlace = (a: FretPosition, b: FretPosition) => a.string === b.string && a.fret === b.fret;
+  const usesNew = (m: Melody) => m.notes.some((n) => must.some((p) => samePlace(p, n)));
+  // When the new positions only duplicate pitches already playable elsewhere (stage 2 adds fret 4,
+  // whose only in-key note in C is a B also found on the open second string), move such a note there.
+  const moved = (m: Melody): Melody | null => {
+    const notes = m.notes.map((n) => ({ ...n }));
+    const note = notes.find((n) => must.some((p) => midiAt(p) === n.midi));
+    if (!note) return null;
+    const alt = must.find((p) => midiAt(p) === note.midi)!;
+    note.string = alt.string;
+    note.fret = alt.fret;
+    return { ...m, notes };
+  };
+  for (let attempt = 0; attempt <= 60; attempt++) {
+    if (attempt > 0) melody = generateOnce(config, seed + attempt * 7919, counts);
+    if (usesNew(melody)) return melody;
+    const alternative = moved(melody);
+    if (alternative) return alternative;
+  }
+  return melody;
+}
+
+function generateOnce(config: LevelConfig, seed: number, counts: number): Melody {
   if (counts < MIN_COUNTS || counts > config.maxCounts) {
     throw new Error(`Level ${config.id}: ${counts} counts is outside ${MIN_COUNTS}..${config.maxCounts}`);
   }

@@ -4,7 +4,7 @@ import { degreeOf, isDiatonic, keyId, spellInKey } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
 import { splitIntoBars, totalBeats } from './bars';
 import { generateMelody, pitchPool } from './generator';
-import { GROW_COUNTS, MAX_COUNTS, MIN_COUNTS } from './meter';
+import { MAX_COUNTS, MIN_COUNTS } from './meter';
 import { MAIN_STAGE_COUNT, STAGES } from './stages';
 
 const SEEDS = Array.from({ length: 40 }, (_, i) => i * 104729 + 7);
@@ -15,21 +15,36 @@ const HIGHEST_WRITTEN = staffStep(parseSpelled('E6'));
 const byNumber = (n: number) => STAGES.find((s) => s.number === n)!;
 
 describe('stage ladder configs', () => {
-  it('is numbered in order; main stages go from one bar to two, bonus stages add one count each', () => {
+  it('is numbered in order; main stages are one bar of 4/4, bonus stages add one count each', () => {
     STAGES.forEach((s, i) => expect(s.number).toBe(i + 1));
-    expect(STAGES).toHaveLength(MAIN_STAGE_COUNT + MAX_COUNTS - GROW_COUNTS);
+    expect(STAGES).toHaveLength(MAIN_STAGE_COUNT + MAX_COUNTS - MIN_COUNTS);
     const main = STAGES.slice(0, MAIN_STAGE_COUNT);
-    expect(main.every((s) => s.startCounts === MIN_COUNTS && s.growCounts === GROW_COUNTS && s.maxCounts === GROW_COUNTS && s.lengthStep === 4)).toBe(true);
+    expect(main.every((s) => s.startCounts === MIN_COUNTS && s.maxCounts === MIN_COUNTS)).toBe(true);
     STAGES.slice(MAIN_STAGE_COUNT).forEach((s, i) => {
-      expect(s.startCounts).toBe(GROW_COUNTS + i + 1);
-      expect(s.growCounts).toBe(s.startCounts);
+      expect(s.startCounts).toBe(MIN_COUNTS + i + 1);
       expect(s.maxCounts).toBe(s.startCounts);
       expect(s.strings).toHaveLength(6);
       expect(s.fretRange).toEqual([0, 12]);
       expect(s.keys.length).toBeGreaterThan(30);
     });
     expect(STAGES[STAGES.length - 1]!.startCounts).toBe(MAX_COUNTS);
-    expect(STAGES.every((s) => s.unlockTally === 20)).toBe(true);
+    expect(STAGES.every((s) => s.unlockAfter === 10)).toBe(true);
+  });
+
+  it('uses newly added frets or strings in every melody of the stage that adds them', () => {
+    const introducing = STAGES.filter((s) => s.introduces && s.introduces.length > 0).map((s) => s.number);
+    expect(introducing).toEqual([2, 12, 13, 14, 15, 16, 21]);
+    expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4']);
+    expect(byNumber(16).introduces!.every((p) => p.fret >= 10)).toBe(true);
+    for (const stage of STAGES.filter((s) => s.introduces)) {
+      for (const seed of SEEDS) {
+        const melody = generateMelody(stage, seed);
+        expect(
+          melody.notes.some((n) => stage.introduces!.some((p) => p.string === n.string && p.fret === n.fret)),
+          `${stage.id} seed ${seed}`,
+        ).toBe(true);
+      }
+    }
   });
 
   it('gives every key of every stage a complete scale in its fret window', () => {
@@ -73,7 +88,7 @@ describe('stage ladder configs', () => {
   it('uses every key of a stage over enough seeds', () => {
     const stage = byNumber(10);
     const seen = new Set<string>();
-    for (let seed = 1; seed < 400; seed++) seen.add(keyId(generateMelody(stage, seed, 8).key));
+    for (let seed = 1; seed < 400; seed++) seen.add(keyId(generateMelody(stage, seed).key));
     expect(seen.size).toBe(stage.keys.length);
   });
 
@@ -95,8 +110,8 @@ describe('stage ladder configs', () => {
   });
 
   it('low-string stages reach the ledger lines below; the octave stage reaches three above', () => {
-    const lowestOf = (n: number) => Math.min(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 8).notes.map((x) => x.midi)));
-    const highestOf = (n: number) => Math.max(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 8).notes.map((x) => x.midi)));
+    const lowestOf = (n: number) => Math.min(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s).notes.map((x) => x.midi)));
+    const highestOf = (n: number) => Math.max(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s).notes.map((x) => x.midi)));
     // Fourth string alone never needs a ledger line: written D4 is the space under the staff.
     expect(writtenFromSounding(lowestOf(12))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
     expect(writtenFromSounding(lowestOf(12))).toBeLessThan(midiFromSpelled(parseSpelled('E4')));

@@ -29,7 +29,7 @@ describe('tonicReference', () => {
   it('is in the melody key for every stage 3 melody', () => {
     const stage3 = STAGES[2]!;
     for (let seed = 1; seed < 60; seed++) {
-      const melody = generateMelody(stage3, seed, 8);
+      const melody = generateMelody(stage3, seed);
       const tonic = tonicReference(melody);
       const lowest = Math.min(...melody.notes.map((n) => n.midi));
       expect(tonic).toBeLessThanOrEqual(lowest);

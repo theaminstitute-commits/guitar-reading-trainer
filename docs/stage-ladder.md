@@ -9,11 +9,11 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 - **Two tracks**: writing (watch and write, listen only) and playing (read and play) each keep their own stage, length and streaks on this ladder. Read and play grades tones and their number only, so its clean rounds are judged on pitch alone.
 
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
-- **Tally**: every stage keeps a tally. A clean round adds one point, a perfect round (100% on both scores) two, a weak round takes one off (never below zero). Rounds in between leave it alone.
-- **Move up a stage**: the tally reaches 20, which is ten perfect melodies or twenty clean ones, whatever the melody length (decided 2026-10-05). Reaching free reading takes 200 perfect melodies at best, the whole game with its bonus stages 280. (History: three-round streaks at every length up to 16 counts, then two-round streaks up to 12, then a tally of 3; the first two tested memory rather than reading, the third was judged too fast.)
-- **Move down a stage**: two weak rounds in a row while already at the stage's starting length; the learner lands on the previous stage at its growth ceiling with an empty tally.
-- **Length on the main ladder** stays in whole bars of 4/4: one bar at the start of a stage, two bars after a clean round, back to one after a weak round. Length is a side effect, not a gate, and there is no length control on the start screen. Every bar starts on a chord tone of the key.
-- **Bonus stages** come after free reading (stages 22 to 29). Each adds one count, so the short trailing bar appears only here: bonus 1 is 9 counts (4/4 + 4/4 + 1/4), bonus 2 is 10 (4/4 + 4/4 + 2/4), up to bonus 8 at 16 counts (four bars of 4/4). The length is fixed within a bonus stage. Keys come from all majors and all minor forms, positions from all six strings between the nut and fret 12. The time signature changes before the short bar.
+- **Move up a stage**: ten flawless melodies on the stage, every note and every length right (decided 2026-10-05). A melody with any mistake does not count and takes nothing away. Reaching free reading takes 200 flawless melodies, the whole game with its bonus stages 320. (History: clean-round streaks at growing lengths, then a points tally where imperfect rounds also counted; the user rejected both: only flawless melodies count.)
+- **Move down a stage**: two weak rounds in a row; the learner lands on the previous stage with the flawless count at zero.
+- **Length on the main ladder** is one bar of 4/4 on every stage, 1 to 21. There is no length control anywhere. Every bar starts on a chord tone of the key.
+- **New frets and strings are used at once**: a stage that adds frets or strings (2, 12, 13, 14, 15, 16 and 21) puts at least one note on a newly added position in every melody.
+- **Bonus stages** come after free reading (stages 22 to 33). Each adds one count, so every length beyond one bar lives here: bonus 1 is 5 counts (4/4 + 1/4), bonus 2 is 6 (4/4 + 2/4), bonus 4 is two bars, up to bonus 12 at 16 counts (four bars of 4/4). The length is fixed within a bonus stage. Keys come from all majors and all minor forms, positions from all six strings between the nut and fret 12. The time signature changes before the short bar.
 - **Keys are random within the unlocked set**, so the key signature must be read every time. New keys come in cycle-of-fifths order, one sharp key and one flat key per stage.
 - **Tonal reference**: from stage 3 on, the tonic note (or tonic chord) sounds before the count-in. The key name and key signature are always shown.
 - **Listens**: 3 per melody in Part A, 2 in Part B.
@@ -53,14 +53,14 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 
 | Stage | Length | Keys and range | Teaches |
 |---|---|---|---|
-| 22 | 9 counts, 4/4 + 4/4 + 1/4 | any key, strings 1-6, frets 0-12 | Holding a longer melody; the short last bar |
-| 23 | 10 counts, 4/4 + 4/4 + 2/4 | same | |
-| 24 | 11 counts, 4/4 + 4/4 + 3/4 | same | |
-| 25 | 12 counts, three bars | same | |
-| 26 | 13 counts, 4/4 + 4/4 + 4/4 + 1/4 | same | |
-| 27 | 14 counts | same | |
-| 28 | 15 counts | same | |
-| 29 | 16 counts, four bars | same | The longest melody in the app |
+| 22 | 5 counts, 4/4 + 1/4 | any key, strings 1-6, frets 0-12 | Holding a longer melody; the short last bar |
+| 23 | 6 counts, 4/4 + 2/4 | same | |
+| 24 | 7 counts, 4/4 + 3/4 | same | |
+| 25 | 8 counts, two bars | same | |
+| 26 to 28 | 9, 10, 11 counts | same | |
+| 29 | 12 counts, three bars | same | |
+| 30 to 32 | 13, 14, 15 counts | same | |
+| 33 | 16 counts, four bars | same | The longest melody in the app |
 
 ## Decisions
 

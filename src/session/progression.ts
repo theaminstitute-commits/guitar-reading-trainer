@@ -5,17 +5,12 @@
  * listen modes) and one for playing (read-and-play), because they are
  * different skills.
  *
- * Stages unlock by a tally, not by melody length: a clean round adds one
- * point, a perfect round two, a weak round takes one off, and when the tally
- * reaches the stage's target (20: ten perfect melodies) the next stage
- * unlocks. Two weak rounds in a row at the stage's starting length drop back
- * a stage. The app teaches reading, not memory, so length is a side effect:
- * on the main ladder a clean round turns one bar of 4/4 into two and a weak
- * round turns it back; only the bonus stages after free reading add single
- * counts, one per bonus stage, with keys and positions drawn from everything.
+ * A stage unlocks after ten flawless melodies: every note and every length
+ * right. Melodies with any mistake do not count, and do not take anything
+ * away. Two weak rounds in a row drop back a stage. Melody length is fixed per
+ * stage: one bar of 4/4 on the main ladder, one count more per bonus stage.
  */
 import type { GradeResult } from '../grading/grade';
-import { MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 
 export type ExerciseMode = 'watch' | 'listen' | 'play';
@@ -27,9 +22,9 @@ export interface Track {
   stage: number;
   /** Highest stage index ever reached; stages above it are locked until earned. */
   unlocked: number;
-  /** Current melody length in counts (beats). */
+  /** Melody length in counts (beats); fixed by the stage. */
   counts: number;
-  /** Points towards unlocking the next stage: +1 clean, +2 perfect, −1 weak. */
+  /** Flawless melodies on the current stage so far. */
   tally: number;
   weakStreak: number;
   /** Lifetime counters. */
@@ -42,7 +37,7 @@ export interface Progress {
   version: 4;
   mode: ExerciseMode;
   handedness: Handedness;
-  /** Click on every beat during playback in the writing modes. */
+  /** Click on every beat during playback, and while playing in read-and-play. */
   metronome: boolean;
   /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
   seenGuides: number[];
@@ -53,7 +48,7 @@ export interface Progress {
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
-/** Every note and every length right: worth two tally points. */
+/** Every note and every length right: the only kind of round that counts towards unlocking. */
 export function isPerfect(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>): boolean {
   return result.pitchScore >= 1 && result.rhythmScore >= 1;
 }
@@ -88,7 +83,7 @@ export function accuracyOf(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore
 }
 
 /** Next stage index in a direction, skipping optional stages unless opted in; null at the end. */
-export function neighbourStage(track: Track, stages: readonly Stage[], direction: 1 | -1, includeOptional: boolean): number | null {
+export function neighbourStage(track: Track, stages: readonly Stage[], direction: 1 | -1, includeOptional = false): number | null {
   let i = track.stage + direction;
   while (i >= 0 && i < stages.length) {
     if (!stages[i]!.optional || includeOptional) return i;
@@ -97,44 +92,28 @@ export function neighbourStage(track: Track, stages: readonly Stage[], direction
   return null;
 }
 
-export type ProgressChange = 'longer' | 'shorter' | 'stage-up' | 'stage-down' | null;
+export type ProgressChange = 'stage-up' | 'stage-down' | null;
 
-export function applyResult(
-  track: Track,
-  result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>,
-  stages: readonly Stage[],
-  includeOptional = false,
-): { track: Track; change: ProgressChange } {
+export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>, stages: readonly Stage[]): { track: Track; change: ProgressChange } {
   const stage = stages[track.stage]!;
-  const clean = isClean(result);
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
-  let { stage: stageIndex, counts, tally, weakStreak } = track;
+  let { stage: stageIndex, tally, weakStreak } = track;
   let change: ProgressChange = null;
 
-  if (clean) {
-    tally += isPerfect(result) ? 2 : 1;
+  if (isPerfect(result)) {
+    tally += 1;
     weakStreak = 0;
-    const next = neighbourStage(track, stages, 1, includeOptional);
-    if (tally >= stage.unlockTally && next !== null) {
+    const next = neighbourStage(track, stages, 1);
+    if (tally >= stage.unlockAfter && next !== null) {
       stageIndex = next;
-      counts = stages[stageIndex]!.startCounts;
       tally = 0;
       change = 'stage-up';
-    } else if (counts < stage.growCounts) {
-      counts = Math.min(stage.growCounts, counts + stage.lengthStep);
-      change = 'longer';
     }
   } else if (weak) {
-    tally = Math.max(0, tally - 1);
-    const previous = neighbourStage(track, stages, -1, includeOptional);
-    if (counts > stage.startCounts) {
-      // Shortening is the first remedy; only weak rounds at the starting length count towards dropping a stage.
-      counts = Math.max(stage.startCounts, counts - stage.lengthStep);
-      weakStreak = 0;
-      change = 'shorter';
-    } else if (++weakStreak >= stage.demoteAfter && previous !== null) {
+    weakStreak += 1;
+    const previous = neighbourStage(track, stages, -1);
+    if (weakStreak >= stage.demoteAfter && previous !== null) {
       stageIndex = previous;
-      counts = stages[stageIndex]!.growCounts;
       tally = 0;
       weakStreak = 0;
       change = 'stage-down';
@@ -148,7 +127,7 @@ export function applyResult(
       ...track,
       stage: stageIndex,
       unlocked: Math.max(track.unlocked, stageIndex),
-      counts,
+      counts: stages[stageIndex]!.startCounts,
       tally,
       weakStreak,
       exercises: track.exercises + 1,
@@ -158,20 +137,13 @@ export function applyResult(
   };
 }
 
-/** Manually chosen length within the current stage; the tally is kept, length is not what unlocks stages. */
-export function withCounts(track: Track, counts: number, stages: readonly Stage[]): Track {
-  const stage = stages[track.stage]!;
-  const clamped = Math.max(MIN_COUNTS, Math.min(stage.maxCounts, Math.round(counts)));
-  return { ...track, counts: clamped, weakStreak: 0 };
-}
-
 /** Unlock every stage up to `stageIndex` (testing aid). */
 export function withUnlocked(track: Track, stageIndex: number, stages: readonly Stage[]): Track {
   const index = Math.max(track.unlocked, Math.min(stages.length - 1, Math.round(stageIndex)));
   return { ...track, unlocked: index };
 }
 
-/** Manually chosen stage, limited to stages already unlocked: starts at that stage's starting length with a fresh tally. */
+/** Manually chosen stage, limited to stages already unlocked: that stage's length, with a fresh count of flawless melodies. */
 export function withStage(track: Track, stageIndex: number, stages: readonly Stage[]): Track {
   const index = Math.max(0, Math.min(stages.length - 1, track.unlocked, Math.round(stageIndex)));
   return { ...track, stage: index, counts: stages[index]!.startCounts, tally: 0, weakStreak: 0 };

@@ -1,6 +1,7 @@
 import type { DurationId } from '../music/duration';
+import type { FretPosition } from '../music/fretboard';
 import { C_MAJOR, type Key } from '../music/key';
-import { BASE_BEATS, GROW_COUNTS, MIN_COUNTS } from './meter';
+import { MIN_COUNTS } from './meter';
 
 /**
  * Everything the generator needs to know about a level. New levels are new
@@ -11,18 +12,16 @@ export interface LevelConfig {
   title: string;
   /** Keys a melody may be in; one is picked per melody. */
   keys: readonly Key[];
-  /** Longest melody this level generates, in counts (beats). */
+  /** Longest melody this level generates, in counts (beats); the same as `startCounts`, length is fixed per level. */
   maxCounts: number;
-  /** Length of the first exercises, in counts. Every clean round adds `lengthStep` counts up to `growCounts`. */
+  /** Melody length in counts: 4 (one bar of 4/4) on the main ladder, one more per bonus stage. */
   startCounts: number;
-  /** Length the melody grows to on its own. 8 = two bars; reading, not memory, is the point. */
-  growCounts: number;
-  /** Counts added per clean round (and removed per weak one). 4 keeps the meter at whole bars of 4/4. */
-  lengthStep: number;
-  /** Tally points that unlock the next stage: a clean round is one, a perfect round two, a weak round takes one off. */
-  unlockTally: number;
-  /** Consecutive weak rounds at the starting length before dropping back a stage. */
+  /** Flawless melodies (every note and length right) that unlock the next stage. */
+  unlockAfter: number;
+  /** Consecutive weak rounds before dropping back a stage. */
   demoteAfter: number;
+  /** Positions (string and fret) this level adds compared with the one before; every melody uses at least one. */
+  introduces?: readonly FretPosition[];
   tempo: number;
   /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
   maxListens: number;
@@ -44,11 +43,9 @@ export const LEVEL_1: LevelConfig = {
   id: 'level-1',
   title: 'Stage 1: C major, first position',
   keys: [C_MAJOR],
-  maxCounts: GROW_COUNTS,
+  maxCounts: MIN_COUNTS,
   startCounts: MIN_COUNTS,
-  growCounts: GROW_COUNTS,
-  lengthStep: BASE_BEATS,
-  unlockTally: 20,
+  unlockAfter: 10,
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,

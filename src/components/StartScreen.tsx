@@ -1,6 +1,5 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
-import { barBeatsForCounts, describeMeter } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Track } from '../session/progression';
 
@@ -106,7 +105,7 @@ export default function StartScreen({
           </button>
         ))}
         {track.unlocked < stages.length - 1 && (
-          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks at ${stages[track.unlocked]!.unlockTally} tally points on stage ${stages[track.unlocked]!.number}`} aria-label="Next stage locked">
+          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks after ${stages[track.unlocked]!.unlockAfter} flawless melodies on stage ${stages[track.unlocked]!.number}`} aria-label="Next stage locked">
             {stages[track.unlocked + 1]!.number} 🔒
           </span>
         )}
@@ -116,19 +115,11 @@ export default function StartScreen({
       </p>
       {track.unlocked < stages.length - 1 && (
         <p className="muted small-note">
-          Stage {stages[track.unlocked + 1]!.number} unlocks at {stages[track.unlocked]!.unlockTally} tally points on stage {stages[track.unlocked]!.number}. A clean round is one point, a perfect round two, a weak round takes one off.
-          {track.stage === track.unlocked && ` Tally now: ${track.tally} of ${level.unlockTally}.`}
+          Stage {stages[track.unlocked + 1]!.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right.
+          {track.stage === track.unlocked && ` Flawless so far: ${track.tally} of ${level.unlockAfter}.`}
         </p>
       )}
 
-      <p className="counts-readout">
-        <span className="muted">Length</span> {track.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(track.counts))}</span>
-      </p>
-      <p className="muted small-note">
-        {level.growCounts > level.startCounts
-          ? 'One bar of 4/4 to start, two bars after a clean round, back to one after a weak round. Length does not affect unlocking.'
-          : 'Bonus stage: the length is fixed, and each bonus stage adds one count.'}
-      </p>
 
       <div className="controls">
         <button className="primary big" onClick={onStart}>

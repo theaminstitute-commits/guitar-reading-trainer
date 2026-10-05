@@ -9,8 +9,6 @@
 export const BASE_BEATS = 4;
 export const MIN_COUNTS = BASE_BEATS;
 export const MAX_COUNTS = BASE_BEATS * 4;
-/** Length a stage grows to on its own (two bars of 4/4); longer is a manual choice. */
-export const GROW_COUNTS = BASE_BEATS * 2;
 
 /** Beats of each bar for a melody of `counts` beats. */
 export function barBeatsForCounts(counts: number, base = BASE_BEATS): number[] {

@@ -4,7 +4,8 @@
  */
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
-import { barBeatsForCounts, describeMeter, GROW_COUNTS, MAX_COUNTS } from './meter';
+import type { FretPosition } from '../music/fretboard';
+import { barBeatsForCounts, describeMeter, MAX_COUNTS, MIN_COUNTS } from './meter';
 
 export interface Stage extends LevelConfig {
   number: number;
@@ -239,12 +240,12 @@ const STAGE_21: Stage = {
 };
 
 /**
- * Bonus stages after free reading: one count more each, so the short trailing
- * bar appears only here (9 counts is 4/4 + 1/4), up to four full bars. Keys
+ * Bonus stages after free reading: one count more each, so every length beyond
+ * one bar of 4/4 lives here (5 counts is 4/4 + 1/4) up to four full bars. Keys
  * and positions come from everything the ladder covered.
  */
-const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - GROW_COUNTS }, (_, i) => {
-  const counts = GROW_COUNTS + i + 1;
+const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - MIN_COUNTS }, (_, i) => {
+  const counts = MIN_COUNTS + i + 1;
   const meter = describeMeter(barBeatsForCounts(counts));
   return {
     ...STAGE_21,
@@ -254,17 +255,32 @@ const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - GROW_COUNTS }, (_, i) =
     title: `Bonus stage ${i + 1}: ${counts} counts (${meter})`,
     summary: `${meter}. Any key, any minor form, anywhere on the neck. The melody is ${counts} counts long every time.`,
     startCounts: counts,
-    growCounts: counts,
     maxCounts: counts,
-    lengthStep: 1,
   };
 });
 
-export const STAGES: readonly Stage[] = [
+function positionsOf(level: LevelConfig): FretPosition[] {
+  const out: FretPosition[] = [];
+  for (const string of level.strings) for (let fret = level.fretRange[0]; fret <= level.fretRange[1]; fret++) out.push({ string, fret });
+  return out;
+}
+
+/** Positions a stage adds compared with the stage before it; melodies there must use one of them. */
+function introducedBy(stage: Stage, previous: Stage): FretPosition[] {
+  const before = positionsOf(previous);
+  return positionsOf(stage).filter((p) => !before.some((q) => q.string === p.string && q.fret === p.fret));
+}
+
+const MAIN: Stage[] = [
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
   STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18, STAGE_19, STAGE_20, STAGE_21,
-  ...BONUS,
-];
+].map((stage, i, all) => {
+  if (i === 0) return stage;
+  const introduces = introducedBy(stage, all[i - 1]!);
+  return introduces.length > 0 ? { ...stage, introduces } : stage;
+});
+
+export const STAGES: readonly Stage[] = [...MAIN, ...BONUS];
 
 /** Stage 21, free reading: the last of the main ladder; everything after it is a bonus stage. */
 export const MAIN_STAGE_COUNT = 21;

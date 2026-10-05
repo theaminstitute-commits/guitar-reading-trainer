@@ -6,7 +6,7 @@ import { splitIntoBars } from '../melody/bars';
 import { barBeatsForCounts, describeMeter } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import type { Melody } from '../melody/types';
-import { isClean, isPerfect, type ProgressChange } from '../session/progression';
+import { isPerfect, type ProgressChange } from '../session/progression';
 import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
 
@@ -137,13 +137,11 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
         </button>
       </div>
 
-      {(change || isClean(result)) && (
-        <p className={`length-change ${change === 'shorter' || change === 'stage-down' ? 'shorter' : 'longer'}`}>
-          {change !== 'stage-up' && change !== 'stage-down' && isClean(result) && `${isPerfect(result) ? 'Perfect round, two points.' : 'Clean round, one point.'} Tally ${nextTally} of ${nextStage.unlockTally} towards stage ${nextStage.number + 1}. `}
-          {change === 'longer' && `Melodies are now ${nextCounts} counts long: ${nextMeter}.`}
-          {change === 'shorter' && `Weak round, one point off. Back to ${nextCounts} counts (${nextMeter}) for a while.`}
-          {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies start at ${nextCounts} counts (${nextMeter}) again.`}
-          {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Build the tally up again.`}
+      {(change || isPerfect(result)) && (
+        <p className={`length-change ${change === 'stage-down' ? 'shorter' : 'longer'}`}>
+          {change === null && `Flawless. ${nextTally} of ${nextStage.unlockAfter} towards stage ${nextStage.number + 1}.`}
+          {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies are ${nextCounts} counts long (${nextMeter}).`}
+          {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Ten flawless melodies bring the next stage back.`}
         </p>
       )}
 
