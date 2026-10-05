@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_COUNTS, MIN_COUNTS } from '../melody/meter';
+import { MAX_COUNTS, MIN_COUNTS, UNLOCK_COUNTS } from '../melody/meter';
 import { STAGES } from '../melody/stages';
 import {
   accuracyOf,
@@ -14,7 +14,8 @@ import {
   type Track,
 } from './progression';
 
-const clean = { pitchScore: 1, rhythmScore: 0.95 };
+const clean = { pitchScore: 0.95, rhythmScore: 0.95 };
+const perfect = { pitchScore: 1, rhythmScore: 1 };
 const okay = { pitchScore: 0.8, rhythmScore: 0.7 };
 const weak = { pitchScore: 0.5, rhythmScore: 0.5 };
 
@@ -41,15 +42,22 @@ describe('stage ladder progression', () => {
 
   it('an okay round breaks the clean streak', () => {
     let t = initialTrack(STAGES);
-    t = run(t, clean, 2).t;
+    t = run(t, clean, STAGES[0]!.promoteAfter - 1).t;
     t = run(t, okay, 1).t;
     expect(t.cleanStreak).toBe(0);
     t = run(t, clean, 1).t;
     expect(t.counts).toBe(MIN_COUNTS);
   });
 
-  it('unlocks the next stage after clean rounds at the maximum length, starting at that stage’s length', () => {
-    const t = withCounts(initialTrack(STAGES), MAX_COUNTS, STAGES);
+  it('a perfect round counts as two clean rounds', () => {
+    const { t, change } = run(initialTrack(STAGES), perfect, 1);
+    expect(change).toBe('longer');
+    expect(t.counts).toBe(5);
+    expect(t.cleanStreak).toBe(0);
+  });
+
+  it('unlocks the next stage after clean rounds at the unlock length, starting at that stage’s length', () => {
+    const t = withCounts(initialTrack(STAGES), UNLOCK_COUNTS, STAGES);
     const { t: next, change } = run(t, clean, STAGES[0]!.promoteAfter);
     expect(change).toBe('stage-up');
     expect(next.stage).toBe(1);
@@ -67,8 +75,29 @@ describe('stage ladder progression', () => {
     r = run(r.t, weak, STAGES[1]!.demoteAfter);
     expect(r.change).toBe('stage-down');
     expect(r.t.stage).toBe(0);
-    expect(r.t.counts).toBe(STAGES[0]!.maxCounts);
+    expect(r.t.counts).toBe(STAGES[0]!.unlockCounts);
     expect(r.t.unlocked).toBe(1);
+  });
+
+  it('a later stage takes ten clean rounds or five perfect ones to unlock the next', () => {
+    const open = withUnlocked(initialTrack(STAGES), 3, STAGES);
+    let r = run(withStage(open, 2, STAGES), clean, 10);
+    expect(r.change).toBe('stage-up');
+    expect(r.t.stage).toBe(3);
+    r = run(withStage(open, 2, STAGES), perfect, 5);
+    expect(r.change).toBe('stage-up');
+    expect(r.t.stage).toBe(3);
+    r = run(withStage(open, 2, STAGES), clean, 9);
+    expect(r.t.stage).toBe(2);
+    expect(r.t.counts).toBe(UNLOCK_COUNTS);
+  });
+
+  it('only the last stage keeps growing past the unlock length', () => {
+    const last = STAGES.length - 1;
+    const open = withUnlocked(initialTrack(STAGES), last, STAGES);
+    const r = run(withCounts(withStage(open, last, STAGES), UNLOCK_COUNTS, STAGES), perfect, 1);
+    expect(r.change).toBe('longer');
+    expect(r.t.counts).toBe(UNLOCK_COUNTS + 1);
   });
 
   it('never drops below stage 1 and four counts, never rises past the last stage at its maximum', () => {
@@ -96,7 +125,7 @@ describe('stage ladder progression', () => {
       t = r.track;
     }
     expect(t.stage).toBe(STAGES.length - 1);
-    expect(steps).toBeGreaterThan(100);
+    expect(steps).toBeGreaterThan(60);
   });
 
   it('skips the optional stage unless opted in', () => {
@@ -155,12 +184,12 @@ describe('stage ladder progression', () => {
   it('keeps writing and playing progress apart', () => {
     let p = initialProgress(STAGES);
     expect(trackOf(p)).toBe(p.write);
-    p = withTrack(p, run(p.write, clean, 3).t);
+    p = withTrack(p, run(p.write, clean, 2).t);
     expect(p.write.counts).toBe(5);
     expect(p.play.counts).toBe(MIN_COUNTS);
     p = { ...p, mode: 'play' };
     expect(trackOf(p)).toBe(p.play);
-    p = withTrack(p, run(p.play, clean, 3).t);
+    p = withTrack(p, run(p.play, clean, 2).t);
     expect(p.play.counts).toBe(5);
     expect(p.write.counts).toBe(5);
   });

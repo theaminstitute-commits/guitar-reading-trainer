@@ -9,9 +9,9 @@ thing that moves a learner up.
 - **Two tracks**: writing (watch and write, listen only) and playing (read and play) each keep their own stage, length and streaks on this ladder. Read and play grades tones and their number only, so its clean rounds are judged on pitch alone.
 
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
-- **Length inside a stage** is counted in beats ("counts"). Stage 1 starts at 4 counts (one bar of 4/4); every later stage starts at 8 (two bars). Three clean rounds in a row add one count, two weak rounds in a row remove one, up to 16 counts (four bars). The extra counts form a short last bar: 5 counts is 4/4 + 1/4, 6 is 4/4 + 2/4, 7 is 4/4 + 3/4, 8 is two bars of 4/4, 9 is 4/4 + 4/4 + 1/4, and so on. The time signature changes before the short bar. Every bar starts on a chord tone of the key.
-- **Move up a stage**: three clean rounds in a row at 16 counts.
-- **Move down a stage**: two weak rounds in a row while already at the stage's starting length.
+- **Length inside a stage** is counted in beats ("counts"). Stage 1 starts at 4 counts (one bar of 4/4); every later stage starts at 8 (two bars). Two clean rounds in a row add one count (a perfect round, 100% on both scores, counts as two clean rounds), two weak rounds in a row remove one. The extra counts form a short last bar: 5 counts is 4/4 + 1/4, 6 is 4/4 + 2/4, 7 is 4/4 + 3/4, 8 is two bars of 4/4, 9 is 4/4 + 4/4 + 1/4, and so on. The time signature changes before the short bar. Every bar starts on a chord tone of the key.
+- **Move up a stage**: a clean streak at 12 counts (three bars). From 8 counts that is ten clean rounds, or five perfect ones; stage 1 from 4 counts is eighteen clean or nine perfect. Only the last stage grows on to 16 counts (four bars); the length stepper on the start screen can still set any stage to 16. (Changed 2026-10-05: three-round streaks and unlocking at 16 counts took 27 clean rounds per stage, which was too slow.)
+- **Move down a stage**: two weak rounds in a row while already at the stage's starting length; the learner lands on the previous stage at 12 counts.
 - **Keys are random within the unlocked set**, so the key signature must be read every time. New keys come in cycle-of-fifths order, one sharp key and one flat key per stage.
 - **Tonal reference**: from stage 3 on, the tonic note (or tonic chord) sounds before the count-in. The key name and key signature are always shown.
 - **Listens**: 3 per melody in Part A, 2 in Part B.

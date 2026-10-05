@@ -15,7 +15,7 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.4.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.4.1 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
@@ -56,7 +56,7 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ## Progression
 
-The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.ts` (configs) and `src/session/progression.ts` (rules). Length is counted in beats (`src/melody/meter.ts`): 4 counts is a bar of 4/4, 5 is 4/4 + 1/4, 8 is two bars of 4/4, 9 is 4/4 + 4/4 + 1/4, up to 16. Inside a stage, three clean rounds in a row (pitch and rhythm both at 90% or better) add one count and two weak rounds (under 60%) remove one; clean rounds at 16 counts unlock the next stage, weak rounds at the stage starting length drop back a stage. Stages are hard-locked: the start screen only offers stages already reached. Every bar of a generated melody starts on a chord tone of its key. All eighteen stages of the ladder are configured: majors added two keys per stage in cycle-of-fifths order (stage 11 with seven accidentals is optional), eighths at stage 5, whole and dotted notes at stage 7, the fourth string at 12, fifth position at 13, then natural, harmonic and melodic minor (14-17) and free reading (18). Part B allows two listens. The stage, length and lifetime counts persist in localStorage; the start screen lets you pick a stage and length by hand.
+The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.ts` (configs) and `src/session/progression.ts` (rules). Length is counted in beats (`src/melody/meter.ts`): 4 counts is a bar of 4/4, 5 is 4/4 + 1/4, 8 is two bars of 4/4, 9 is 4/4 + 4/4 + 1/4, up to 16. Inside a stage, two clean rounds in a row (pitch and rhythm both at 90% or better) add one count and two weak rounds (under 60%) remove one; a perfect round counts as two clean rounds. A clean streak at 12 counts unlocks the next stage (only the last stage grows on to 16), weak rounds at the stage starting length drop back a stage. Stages are hard-locked: the start screen only offers stages already reached. Every bar of a generated melody starts on a chord tone of its key. All eighteen stages of the ladder are configured: majors added two keys per stage in cycle-of-fifths order (stage 11 with seven accidentals is optional), eighths at stage 5, whole and dotted notes at stage 7, the fourth string at 12, fifth position at 13, then natural, harmonic and melodic minor (14-17) and free reading (18). Part B allows two listens. The stage, length and lifetime counts persist in localStorage; the start screen lets you pick a stage and length by hand.
 
 ## Levels
 

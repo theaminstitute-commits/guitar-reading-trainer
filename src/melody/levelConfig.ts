@@ -1,6 +1,6 @@
 import type { DurationId } from '../music/duration';
 import { C_MAJOR, type Key } from '../music/key';
-import { MAX_COUNTS, MIN_COUNTS } from './meter';
+import { MAX_COUNTS, MIN_COUNTS, UNLOCK_COUNTS } from './meter';
 
 /**
  * Everything the generator needs to know about a level. New levels are new
@@ -15,7 +15,9 @@ export interface LevelConfig {
   maxCounts: number;
   /** Length of the first exercises, in counts. Length grows one count at a time towards `maxCounts`. */
   startCounts: number;
-  /** Consecutive clean rounds (see grading) needed before the melody gets a count longer. */
+  /** Length at which a clean streak unlocks the next stage instead of adding a count. 12 = three bars of 4/4. */
+  unlockCounts: number;
+  /** Consecutive clean rounds (see grading) needed before the melody gets a count longer. A perfect round counts as two. */
   promoteAfter: number;
   /** Consecutive weak rounds before the melody gets a count shorter again. */
   demoteAfter: number;
@@ -42,7 +44,8 @@ export const LEVEL_1: LevelConfig = {
   keys: [C_MAJOR],
   maxCounts: MAX_COUNTS,
   startCounts: MIN_COUNTS,
-  promoteAfter: 3,
+  unlockCounts: UNLOCK_COUNTS,
+  promoteAfter: 2,
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,

@@ -6,9 +6,11 @@
  * different skills. Inside a stage the melody length grows one count (beat)
  * at a time from the stage's starting length to its maximum (see melody/meter
  * for how counts become bars). Clean rounds add a count, weak rounds remove
- * one. Three clean rounds at the maximum length unlock the next stage; two
+ * one. A perfect round (100% on both scores) counts as two clean rounds. A
+ * clean streak at the stage's unlock length (12 counts, three bars) unlocks the
+ * next stage; on the last stage the length keeps growing to the maximum. Two
  * weak rounds at the starting length drop back to the previous stage at its
- * maximum length. Stages stay unlocked once reached.
+ * unlock length. Stages stay unlocked once reached.
  */
 import type { GradeResult } from '../grading/grade';
 import { MIN_COUNTS } from '../melody/meter';
@@ -45,6 +47,11 @@ export interface Progress {
 
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
+
+/** Every note and every length right: counts as two clean rounds. */
+export function isPerfect(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>): boolean {
+  return result.pitchScore >= 1 && result.rhythmScore >= 1;
+}
 
 export function initialTrack(stages: readonly Stage[]): Track {
   return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
@@ -91,17 +98,19 @@ export function applyResult(
 ): { track: Track; change: ProgressChange } {
   const stage = stages[track.stage]!;
   const clean = result.pitchScore >= CLEAN_THRESHOLD && result.rhythmScore >= CLEAN_THRESHOLD;
+  const perfect = isPerfect(result);
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
   let { stage: stageIndex, counts, cleanStreak, weakStreak } = track;
   let change: ProgressChange = null;
 
   if (clean) {
-    cleanStreak += 1;
+    cleanStreak += perfect ? 2 : 1;
     weakStreak = 0;
     if (cleanStreak >= stage.promoteAfter) {
       cleanStreak = 0;
       const next = neighbourStage(track, stages, 1, includeOptional);
-      if (counts < stage.maxCounts) {
+      const unlockReady = counts >= stage.unlockCounts && next !== null;
+      if (!unlockReady && counts < stage.maxCounts) {
         counts += 1;
         change = 'longer';
       } else if (next !== null) {
@@ -121,7 +130,7 @@ export function applyResult(
         change = 'shorter';
       } else if (previous !== null) {
         stageIndex = previous;
-        counts = stages[stageIndex]!.maxCounts;
+        counts = stages[stageIndex]!.unlockCounts;
         change = 'stage-down';
       }
     }

@@ -108,7 +108,7 @@ export default function StartScreen({
           </button>
         ))}
         {track.unlocked < stages.length - 1 && (
-          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks after clean rounds at ${stages[track.unlocked]!.maxCounts} counts`} aria-label="Next stage locked">
+          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks after clean rounds at ${stages[track.unlocked]!.unlockCounts} counts`} aria-label="Next stage locked">
             {stages[track.unlocked + 1]!.number} 🔒
           </span>
         )}
@@ -118,7 +118,7 @@ export default function StartScreen({
       </p>
       {track.unlocked < stages.length - 1 && (
         <p className="muted small-note">
-          Stage {stages[track.unlocked + 1]!.number} unlocks after {level.promoteAfter} clean rounds in a row at {level.maxCounts} counts on stage {stages[track.unlocked]!.number}.
+          Stage {stages[track.unlocked + 1]!.number} unlocks after {level.promoteAfter} clean rounds in a row at {level.unlockCounts} counts on stage {stages[track.unlocked]!.number}. A perfect round counts as two.
         </p>
       )}
       {stages.some((s) => s.optional) && (
@@ -140,7 +140,7 @@ export default function StartScreen({
         </button>
       </div>
       <p className="muted small-note">
-        Grows by one count after {level.promoteAfter} clean rounds in a row, shrinks after {level.demoteAfter} weak ones. The extra counts form a short last bar until it fills up. Clean rounds at {level.maxCounts} counts unlock the next stage.
+        Grows by one count after {level.promoteAfter} clean rounds in a row (a perfect round counts as two), shrinks after {level.demoteAfter} weak ones. The extra counts form a short last bar until it fills up. Clean rounds at {level.unlockCounts} counts unlock the next stage.
       </p>
 
       <div className="controls">

@@ -6,7 +6,7 @@ import { splitIntoBars } from '../melody/bars';
 import { barBeatsForCounts, describeMeter } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import type { Melody } from '../melody/types';
-import type { ProgressChange } from '../session/progression';
+import { isPerfect, type ProgressChange } from '../session/progression';
 import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
 
@@ -137,7 +137,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
 
       {change && (
         <p className={`length-change ${change === 'longer' || change === 'stage-up' ? 'longer' : 'shorter'}`}>
-          {change === 'longer' && `Three clean rounds in a row. Melodies are now ${nextCounts} counts long: ${nextMeter}.`}
+          {change === 'longer' && `${isPerfect(result) ? 'A perfect round counts double.' : 'Clean rounds in a row.'} Melodies are now ${nextCounts} counts long: ${nextMeter}.`}
           {change === 'shorter' && `Back to ${nextCounts} counts (${nextMeter}) for a while. Short and right beats long and shaky.`}
           {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies start at ${nextCounts} counts (${nextMeter}) again.`}
           {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Build the streak up again.`}
