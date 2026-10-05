@@ -6,7 +6,7 @@
  */
 import type { DurationId } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
-import { keyName, spellInKey, type Key } from '../music/key';
+import { keyId, keyName, spellInKey, type Key } from '../music/key';
 import { spelledName, staffStep, writtenFromSounding, type Midi } from '../music/pitch';
 import { pitchPool } from './generator';
 import type { Stage } from './stages';
@@ -43,7 +43,7 @@ const DURATION_WORDS: Record<DurationId, string> = {
 };
 
 export function displayKeyFor(stage: Stage): Key {
-  return stage.keys.find((k) => k.tonic === 'C' && k.tonicAccidental === 'none' && k.mode === 'major') ?? stage.keys[0]!;
+  return stage.keys.find((k) => keyId(k) === 'C') ?? stage.keys[0]!;
 }
 
 function joinWords(items: string[]): string {
