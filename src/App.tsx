@@ -200,7 +200,7 @@ export default function App() {
 
       {screen === 'exercise' &&
         (progress.mode === 'play' ? (
-          <PlayScreen melody={melody} level={level} selfPlay={SELF_PLAY} onDone={onPlayed} />
+          <PlayScreen melody={melody} level={level} selfPlay={SELF_PLAY} metronome={progress.metronome} onMetronome={onMetronome} onDone={onPlayed} />
         ) : (
           <ExerciseScreen
             melody={melody}

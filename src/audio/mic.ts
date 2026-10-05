@@ -37,6 +37,8 @@ export interface Take {
 export interface Listener {
   /** Start tracking notes and recording. Before this, only the level is reported. */
   arm(): void;
+  /** Skip note tracking for frames that contain a sound of the app's own, such as a metronome click, at this audio-context time. */
+  ignoreAround(contextTime: number, seconds?: number): void;
   stop(): Promise<Take>;
 }
 
@@ -124,10 +126,19 @@ export async function startListening(options: ListenOptions): Promise<Listener> 
 
   let armed = false;
   let armedAt = 0;
+  /** Windows of absolute context time whose frames are not tracked (own clicks). */
+  let ignored: { from: number; to: number }[] = [];
+  // A frame holds the last FRAME samples, so a click at t colours frames read until t + FRAME/sampleRate.
+  const frameSeconds = FRAME / context.sampleRate;
   const timer = setInterval(() => {
     analyser.getFloatTimeDomainData(buffer);
     const now = context.currentTime - startedAt;
-    if (armed) {
+    const absolute = context.currentTime;
+    ignored = ignored.filter((w) => w.to > absolute - 1);
+    const skip = ignored.some((w) => absolute >= w.from && absolute <= w.to);
+    if (armed && skip) {
+      options.onUpdate({ notes: tracker.notes, level: tracker.level, currentPitch: tracker.currentPitch, elapsed: now });
+    } else if (armed) {
       tracker.push(buffer, now);
       options.onUpdate({ notes: tracker.notes, level: tracker.level, currentPitch: tracker.currentPitch, elapsed: now });
     } else {
@@ -136,6 +147,9 @@ export async function startListening(options: ListenOptions): Promise<Listener> 
   }, HOP_MS);
 
   return {
+    ignoreAround(contextTime, seconds = 0.05) {
+      ignored.push({ from: contextTime - 0.01, to: contextTime + seconds + frameSeconds });
+    },
     arm() {
       if (armed) return;
       armed = true;

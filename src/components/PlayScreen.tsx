@@ -13,6 +13,9 @@ interface PlayScreenProps {
   level: LevelConfig;
   /** Listen to the app's own guitar instead of the microphone, and play the melody itself (testing aid). */
   selfPlay?: boolean;
+  /** Free-running click at the melody tempo while the learner plays. */
+  metronome: boolean;
+  onMetronome: (on: boolean) => void;
   onDone: (take: Take) => void;
 }
 
@@ -28,7 +31,7 @@ const MAX_SECONDS = 60;
  * the guitar, the microphone listens. Only the tones and their number are
  * graded, so the learner can take their time.
  */
-export default function PlayScreen({ melody, level, selfPlay = false, onDone }: PlayScreenProps) {
+export default function PlayScreen({ melody, level, selfPlay = false, metronome, onMetronome, onDone }: PlayScreenProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [heard, setHeard] = useState(0);
@@ -51,6 +54,7 @@ export default function PlayScreen({ melody, level, selfPlay = false, onDone }: 
       void listenerRef.current?.stop();
       listenerRef.current = null;
       sharedPlayer().stop();
+      sharedPlayer().stopMetronome();
     };
   }, [melody]);
 
@@ -61,6 +65,7 @@ export default function PlayScreen({ melody, level, selfPlay = false, onDone }: 
     const listener = listenerRef.current;
     listenerRef.current = null;
     sharedPlayer().stop();
+    sharedPlayer().stopMetronome();
     const take = listener ? await listener.stop() : { notes: [], armedAt: 0, recordingUrl: null, seconds: 0 };
     onDone(take);
   }, [onDone]);
@@ -98,6 +103,10 @@ export default function PlayScreen({ melody, level, selfPlay = false, onDone }: 
       armedAtRef.current = stateRef.current?.elapsed ?? 0;
       listener.arm();
       setStatus('listening');
+      if (metronome) {
+        // The click goes to the speakers, so the listener skips the frames that contain it.
+        void player.startMetronome(melody.tempo, melody.barBeats, (time) => listener.ignoreAround(time));
+      }
       if (selfPlay) {
         void player.play(melody.notes, { tempo: melody.tempo, timeSignature: melody.timeSignature, countIn: false }, {});
       }
@@ -115,7 +124,7 @@ export default function PlayScreen({ melody, level, selfPlay = false, onDone }: 
     } else {
       arm();
     }
-  }, [finish, level.tonicReference, melody, selfPlay]);
+  }, [finish, level.tonicReference, melody, selfPlay, metronome]);
 
   const busy = status === 'opening' || status === 'reference' || status === 'listening' || status === 'stopping';
 
@@ -148,6 +157,9 @@ export default function PlayScreen({ melody, level, selfPlay = false, onDone }: 
           </button>
         )}
       </div>
+      <label className="toggle muted">
+        <input type="checkbox" checked={metronome} onChange={(e) => onMetronome(e.target.checked)} disabled={busy} /> Metronome while I play ({melody.tempo} bpm)
+      </label>
       <p className="muted small-note">
         Only the notes and how many you play are graded, not the timing. Headphones are not needed; the key note is played before listening starts.
       </p>
