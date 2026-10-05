@@ -5,10 +5,12 @@ import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, keyFromId, k
 import { pitchClass, staffStep } from '../music/pitch';
 import { splitIntoBars, totalBeats } from './bars';
 import { generateMelody, generateRhythm, pitchPool } from './generator';
-import { LEVEL_1, type LevelConfig } from './levelConfig';
-import { barBeatsForCounts } from './meter';
+import { LEVEL_1 as LEVEL_1_CONFIG, type LevelConfig } from './levelConfig';
+import { barBeatsForCounts, MAX_COUNTS } from './meter';
 import { createRng } from './random';
 
+/** Level 1 opened up to four bars, so the generator is exercised at every length the bonus stages use. */
+const LEVEL_1: LevelConfig = { ...LEVEL_1_CONFIG, maxCounts: MAX_COUNTS };
 const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
 const FOUR_BARS = [4, 4, 4, 4];
 

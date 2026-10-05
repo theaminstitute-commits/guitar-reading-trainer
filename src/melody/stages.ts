@@ -4,7 +4,7 @@
  */
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
-import { MAX_COUNTS } from './meter';
+import { barBeatsForCounts, describeMeter, GROW_COUNTS, MAX_COUNTS } from './meter';
 
 export interface Stage extends LevelConfig {
   number: number;
@@ -227,7 +227,7 @@ const STAGE_21: Stage = {
   number: 21,
   name: 'Free reading',
   title: 'Stage 21: free reading',
-  summary: 'Any major key, any minor form, every rhythm, all six strings from the nut to fret 12. Melodies grow to four bars.',
+  summary: 'Any major key, any minor form, every rhythm, all six strings from the nut to fret 12.',
   keys: [
     ...MAJOR_KEYS,
     ...MINORS_B,
@@ -236,14 +236,38 @@ const STAGE_21: Stage = {
   ],
   strings: [1, 2, 3, 4, 5, 6],
   fretRange: [0, 12],
-  startCounts: 8,
-  growCounts: MAX_COUNTS,
 };
+
+/**
+ * Bonus stages after free reading: one count more each, so the short trailing
+ * bar appears only here (9 counts is 4/4 + 1/4), up to four full bars. Keys
+ * and positions come from everything the ladder covered.
+ */
+const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - GROW_COUNTS }, (_, i) => {
+  const counts = GROW_COUNTS + i + 1;
+  const meter = describeMeter(barBeatsForCounts(counts));
+  return {
+    ...STAGE_21,
+    id: `bonus-${i + 1}`,
+    number: 22 + i,
+    name: `Bonus ${i + 1}: ${counts} counts`,
+    title: `Bonus stage ${i + 1}: ${counts} counts (${meter})`,
+    summary: `${meter}. Any key, any minor form, anywhere on the neck. The melody is ${counts} counts long every time.`,
+    startCounts: counts,
+    growCounts: counts,
+    maxCounts: counts,
+    lengthStep: 1,
+  };
+});
 
 export const STAGES: readonly Stage[] = [
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
   STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18, STAGE_19, STAGE_20, STAGE_21,
+  ...BONUS,
 ];
+
+/** Stage 21, free reading: the last of the main ladder; everything after it is a bonus stage. */
+export const MAIN_STAGE_COUNT = 21;
 
 export function stageAt(index: number): Stage {
   return STAGES[Math.max(0, Math.min(STAGES.length - 1, index))]!;

@@ -21,7 +21,6 @@ import {
   applyResult,
   initialProgress,
   trackOf,
-  withCounts,
   withStage,
   withTrack,
   withUnlocked,
@@ -72,7 +71,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [progress, setProgress] = useState<Progress>(() => {
     const loaded = store.load(STAGES);
-    // `?unlock=21` opens every stage up to that number on both tracks, for trying stages out.
+    // `?unlock=29` opens every stage up to that number on both tracks, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
     return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES), play: withUnlocked(loaded.play, unlock - 1, STAGES) };
@@ -124,7 +123,6 @@ export default function App() {
     record(result, yoursFromTake(take, melody.key), hearRecording(take));
   };
 
-  const onCounts = (n: number) => updateProgress(withTrack(progress, withCounts(track, n, STAGES)));
   const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
   const onMetronome = (on: boolean) => updateProgress({ ...progress, metronome: on });
 
@@ -178,7 +176,6 @@ export default function App() {
             setPendingLength(track.counts);
             setScreen('guide');
           }}
-          onCounts={onCounts}
           onStage={onStage}
           onMode={onMode}
           onHandedness={onHandedness}

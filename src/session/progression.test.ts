@@ -33,15 +33,16 @@ describe('stage ladder progression', () => {
     expect(t.tally).toBe(0);
   });
 
-  it('a clean round adds a point and a count; a perfect round adds two points', () => {
+  it('a clean round adds a point and a whole bar; a perfect round adds two points', () => {
     let r = run(initialTrack(STAGES), clean, 1);
     expect(r.change).toBe('longer');
-    expect(r.t.counts).toBe(5);
+    expect(r.t.counts).toBe(8);
     expect(r.t.tally).toBe(1);
     r = run(initialTrack(STAGES), perfect, 1);
     expect(r.t.tally).toBe(2);
-    expect(r.t.counts).toBe(5);
+    expect(r.t.counts).toBe(8);
     expect(r.change).toBe('longer');
+    expect(run(r.t, clean, 1).change).toBeNull();
   });
 
   it('unlocks the next stage when the tally reaches the target, whatever the length', () => {
@@ -54,9 +55,10 @@ describe('stage ladder progression', () => {
     expect(t.tally).toBe(0);
   });
 
-  it('two perfect rounds unlock a stage with a tally of three', () => {
-    expect(STAGES[0]!.unlockTally).toBe(3);
-    const { t, change } = run(initialTrack(STAGES), perfect, 2);
+  it('ten perfect rounds unlock a stage with a tally of twenty; nine do not', () => {
+    expect(STAGES[0]!.unlockTally).toBe(20);
+    expect(run(initialTrack(STAGES), perfect, 9).t.stage).toBe(0);
+    const { t, change } = run(initialTrack(STAGES), perfect, 10);
     expect(change).toBe('stage-up');
     expect(t.stage).toBe(1);
   });
@@ -84,7 +86,7 @@ describe('stage ladder progression', () => {
 
   it('a weak round shortens the melody; two weak rounds at the starting length drop a stage', () => {
     let t = withStage(withUnlocked(initialTrack(STAGES), 1, STAGES), 1, STAGES);
-    t = withCounts(t, 5, STAGES);
+    t = withCounts(t, 8, STAGES);
     let r = run(t, weak, 1);
     expect(r.change).toBe('shorter');
     expect(r.t.counts).toBe(STAGES[1]!.startCounts);
@@ -109,18 +111,23 @@ describe('stage ladder progression', () => {
     expect(r.t.counts).toBe(STAGES[last]!.growCounts);
     expect(STAGES[last]!.growCounts).toBe(MAX_COUNTS);
     expect(r.t.tally).toBeGreaterThan(STAGES[last]!.unlockTally);
+    // Bonus stages keep a fixed length: no change on clean or weak rounds, only on the tally.
+    const bonus = withStage(withUnlocked(initialTrack(STAGES), 21, STAGES), 21, STAGES);
+    expect(bonus.counts).toBe(9);
+    expect(applyResult(bonus, clean, STAGES).change).toBeNull();
+    expect(applyResult(bonus, weak, STAGES).track.counts).toBe(9);
   });
 
-  it('reaches free reading in two perfect or three clean rounds per unlock', () => {
+  it('reaches the last bonus stage in ten perfect or twenty clean rounds per unlock', () => {
     const last = STAGES.length - 1;
-    const unlocks = STAGES.filter((s) => !s.optional).length - 1;
+    const unlocks = STAGES.length - 1;
     for (const [result, perUnlock] of [
-      [perfect, 2],
-      [clean, 3],
+      [perfect, 10],
+      [clean, 20],
     ] as const) {
       let t = initialTrack(STAGES);
       let rounds = 0;
-      while (t.stage < last && rounds < 500) {
+      while (t.stage < last && rounds < 2000) {
         t = applyResult(t, result, STAGES).track;
         rounds++;
       }
@@ -151,7 +158,7 @@ describe('stage ladder progression', () => {
 
   it('withCounts clamps up to the maximum and keeps the tally; withStage resets it', () => {
     const t = { ...initialTrack(STAGES), tally: 2 };
-    expect(withCounts(t, 99, STAGES).counts).toBe(MAX_COUNTS);
+    expect(withCounts(t, 99, STAGES).counts).toBe(STAGES[0]!.maxCounts);
     expect(withCounts(t, 0, STAGES).counts).toBe(MIN_COUNTS);
     expect(withCounts(t, 9, STAGES).tally).toBe(2);
     const open = withUnlocked(t, STAGES.length - 1, STAGES);
@@ -165,12 +172,12 @@ describe('stage ladder progression', () => {
     let p = initialProgress(STAGES);
     expect(trackOf(p)).toBe(p.write);
     p = withTrack(p, run(p.write, clean, 1).t);
-    expect(p.write.counts).toBe(5);
+    expect(p.write.counts).toBe(8);
     expect(p.play.counts).toBe(MIN_COUNTS);
     p = { ...p, mode: 'play' };
     expect(trackOf(p)).toBe(p.play);
     p = withTrack(p, run(p.play, clean, 1).t);
-    expect(p.play.counts).toBe(5);
-    expect(p.write.counts).toBe(5);
+    expect(p.play.counts).toBe(8);
+    expect(p.write.counts).toBe(8);
   });
 });

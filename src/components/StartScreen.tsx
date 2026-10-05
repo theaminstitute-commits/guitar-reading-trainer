@@ -1,6 +1,6 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
-import { barBeatsForCounts, describeMeter, MIN_COUNTS } from '../melody/meter';
+import { barBeatsForCounts, describeMeter } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Track } from '../session/progression';
 
@@ -17,7 +17,6 @@ interface StartScreenProps {
   track: Track;
   session: SessionStats;
   onStart: () => void;
-  onCounts: (counts: number) => void;
   onStage: (index: number) => void;
   onGuide: () => void;
   onMode: (mode: ExerciseMode) => void;
@@ -42,7 +41,6 @@ export default function StartScreen({
   track,
   session,
   onStart,
-  onCounts,
   onStage,
   onGuide,
   onMode,
@@ -123,20 +121,13 @@ export default function StartScreen({
         </p>
       )}
 
-      <div className="length-picker" role="group" aria-label="Melody length">
-        <span className="muted">Length</span>
-        <button className="chip" onClick={() => onCounts(track.counts - 1)} disabled={track.counts <= MIN_COUNTS} aria-label="One count shorter">
-          −
-        </button>
-        <span className="counts-readout">
-          {track.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(track.counts))}</span>
-        </span>
-        <button className="chip" onClick={() => onCounts(track.counts + 1)} disabled={track.counts >= level.maxCounts} aria-label="One count longer">
-          +
-        </button>
-      </div>
+      <p className="counts-readout">
+        <span className="muted">Length</span> {track.counts} counts <span className="muted">· {describeMeter(barBeatsForCounts(track.counts))}</span>
+      </p>
       <p className="muted small-note">
-        Grows by one count after every clean round up to {level.growCounts}, shrinks after a weak one. The extra counts form a short last bar until it fills up. Set it longer by hand for a memory workout; length does not affect unlocking.
+        {level.growCounts > level.startCounts
+          ? 'One bar of 4/4 to start, two bars after a clean round, back to one after a weak round. Length does not affect unlocking.'
+          : 'Bonus stage: the length is fixed, and each bonus stage adds one count.'}
       </p>
 
       <div className="controls">

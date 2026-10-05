@@ -5,7 +5,7 @@ import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '.
 import { splitIntoBars, totalBeats } from './bars';
 import { generateMelody, pitchPool } from './generator';
 import { GROW_COUNTS, MAX_COUNTS, MIN_COUNTS } from './meter';
-import { STAGES } from './stages';
+import { MAIN_STAGE_COUNT, STAGES } from './stages';
 
 const SEEDS = Array.from({ length: 40 }, (_, i) => i * 104729 + 7);
 /** Written range of the whole ladder: the open low E (three ledger lines below) to fret 12 on the first string (three above). */
@@ -15,14 +15,21 @@ const HIGHEST_WRITTEN = staffStep(parseSpelled('E6'));
 const byNumber = (n: number) => STAGES.find((s) => s.number === n)!;
 
 describe('stage ladder configs', () => {
-  it('is numbered in order; every stage but free reading starts at one bar and grows to two', () => {
+  it('is numbered in order; main stages go from one bar to two, bonus stages add one count each', () => {
     STAGES.forEach((s, i) => expect(s.number).toBe(i + 1));
-    expect(STAGES).toHaveLength(21);
-    const last = STAGES[STAGES.length - 1]!;
-    expect(STAGES.slice(0, -1).every((s) => s.startCounts === MIN_COUNTS && s.growCounts === GROW_COUNTS)).toBe(true);
-    expect(last.startCounts).toBe(8);
-    expect(last.growCounts).toBe(MAX_COUNTS);
-    expect(STAGES.every((s) => s.maxCounts === MAX_COUNTS && s.unlockTally === 3)).toBe(true);
+    expect(STAGES).toHaveLength(MAIN_STAGE_COUNT + MAX_COUNTS - GROW_COUNTS);
+    const main = STAGES.slice(0, MAIN_STAGE_COUNT);
+    expect(main.every((s) => s.startCounts === MIN_COUNTS && s.growCounts === GROW_COUNTS && s.maxCounts === GROW_COUNTS && s.lengthStep === 4)).toBe(true);
+    STAGES.slice(MAIN_STAGE_COUNT).forEach((s, i) => {
+      expect(s.startCounts).toBe(GROW_COUNTS + i + 1);
+      expect(s.growCounts).toBe(s.startCounts);
+      expect(s.maxCounts).toBe(s.startCounts);
+      expect(s.strings).toHaveLength(6);
+      expect(s.fretRange).toEqual([0, 12]);
+      expect(s.keys.length).toBeGreaterThan(30);
+    });
+    expect(STAGES[STAGES.length - 1]!.startCounts).toBe(MAX_COUNTS);
+    expect(STAGES.every((s) => s.unlockTally === 20)).toBe(true);
   });
 
   it('gives every key of every stage a complete scale in its fret window', () => {
@@ -37,7 +44,7 @@ describe('stage ladder configs', () => {
   it('generates valid melodies at the start, an odd length and the maximum for every stage', () => {
     for (const stage of STAGES) {
       for (const seed of SEEDS) {
-        for (const counts of [stage.startCounts, stage.startCounts + 1, stage.maxCounts]) {
+        for (const counts of [stage.startCounts, Math.min(stage.maxCounts, stage.startCounts + 1), stage.maxCounts]) {
           const melody = generateMelody(stage, seed, counts);
           expect(stage.keys).toContain(melody.key);
           expect(melody.counts).toBe(counts);
@@ -88,8 +95,8 @@ describe('stage ladder configs', () => {
   });
 
   it('low-string stages reach the ledger lines below; the octave stage reaches three above', () => {
-    const lowestOf = (n: number) => Math.min(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 16).notes.map((x) => x.midi)));
-    const highestOf = (n: number) => Math.max(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 16).notes.map((x) => x.midi)));
+    const lowestOf = (n: number) => Math.min(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 8).notes.map((x) => x.midi)));
+    const highestOf = (n: number) => Math.max(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s, 8).notes.map((x) => x.midi)));
     // Fourth string alone never needs a ledger line: written D4 is the space under the staff.
     expect(writtenFromSounding(lowestOf(12))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
     expect(writtenFromSounding(lowestOf(12))).toBeLessThan(midiFromSpelled(parseSpelled('E4')));

@@ -1,6 +1,6 @@
 import type { DurationId } from '../music/duration';
 import { C_MAJOR, type Key } from '../music/key';
-import { GROW_COUNTS, MAX_COUNTS, MIN_COUNTS } from './meter';
+import { BASE_BEATS, GROW_COUNTS, MIN_COUNTS } from './meter';
 
 /**
  * Everything the generator needs to know about a level. New levels are new
@@ -11,12 +11,14 @@ export interface LevelConfig {
   title: string;
   /** Keys a melody may be in; one is picked per melody. */
   keys: readonly Key[];
-  /** Longest melody the start screen may set by hand, in counts (beats). 16 = four bars of 4/4. */
+  /** Longest melody this level generates, in counts (beats). */
   maxCounts: number;
-  /** Length of the first exercises, in counts. Every clean round adds one count up to `growCounts`. */
+  /** Length of the first exercises, in counts. Every clean round adds `lengthStep` counts up to `growCounts`. */
   startCounts: number;
   /** Length the melody grows to on its own. 8 = two bars; reading, not memory, is the point. */
   growCounts: number;
+  /** Counts added per clean round (and removed per weak one). 4 keeps the meter at whole bars of 4/4. */
+  lengthStep: number;
   /** Tally points that unlock the next stage: a clean round is one, a perfect round two, a weak round takes one off. */
   unlockTally: number;
   /** Consecutive weak rounds at the starting length before dropping back a stage. */
@@ -42,10 +44,11 @@ export const LEVEL_1: LevelConfig = {
   id: 'level-1',
   title: 'Stage 1: C major, first position',
   keys: [C_MAJOR],
-  maxCounts: MAX_COUNTS,
+  maxCounts: GROW_COUNTS,
   startCounts: MIN_COUNTS,
   growCounts: GROW_COUNTS,
-  unlockTally: 3,
+  lengthStep: BASE_BEATS,
+  unlockTally: 20,
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,

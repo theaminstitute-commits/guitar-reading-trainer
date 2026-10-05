@@ -7,12 +7,12 @@
  *
  * Stages unlock by a tally, not by melody length: a clean round adds one
  * point, a perfect round two, a weak round takes one off, and when the tally
- * reaches the stage's target the next stage unlocks. Two weak rounds in a row
- * at the stage's starting length drop back a stage. The app teaches reading,
- * not memory, so length is a side effect: every clean round adds one count
- * and every weak round removes one, between the stage's starting length and
- * its growth ceiling (two bars; four on the last stage). The start screen can
- * still set any length up to the maximum by hand.
+ * reaches the stage's target (20: ten perfect melodies) the next stage
+ * unlocks. Two weak rounds in a row at the stage's starting length drop back
+ * a stage. The app teaches reading, not memory, so length is a side effect:
+ * on the main ladder a clean round turns one bar of 4/4 into two and a weak
+ * round turns it back; only the bonus stages after free reading add single
+ * counts, one per bonus stage, with keys and positions drawn from everything.
  */
 import type { GradeResult } from '../grading/grade';
 import { MIN_COUNTS } from '../melody/meter';
@@ -121,7 +121,7 @@ export function applyResult(
       tally = 0;
       change = 'stage-up';
     } else if (counts < stage.growCounts) {
-      counts += 1;
+      counts = Math.min(stage.growCounts, counts + stage.lengthStep);
       change = 'longer';
     }
   } else if (weak) {
@@ -129,7 +129,7 @@ export function applyResult(
     const previous = neighbourStage(track, stages, -1, includeOptional);
     if (counts > stage.startCounts) {
       // Shortening is the first remedy; only weak rounds at the starting length count towards dropping a stage.
-      counts -= 1;
+      counts = Math.max(stage.startCounts, counts - stage.lengthStep);
       weakStreak = 0;
       change = 'shorter';
     } else if (++weakStreak >= stage.demoteAfter && previous !== null) {
