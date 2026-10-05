@@ -70,8 +70,8 @@ describe('stage ladder configs', () => {
     expect(seen.size).toBe(stage.keys.length);
   });
 
-  it('marks only the seven-accidental stage optional and drops listens to two in Part B', () => {
-    expect(STAGES.filter((s) => s.optional).map((s) => s.number)).toEqual([11]);
+  it('has no optional stage and drops listens to two in Part B', () => {
+    expect(STAGES.filter((s) => s.optional)).toEqual([]);
     expect(STAGES.filter((s) => s.number >= 17).every((s) => s.maxListens === 2)).toBe(true);
     expect(STAGES.filter((s) => s.number < 17).every((s) => s.maxListens === 3)).toBe(true);
   });

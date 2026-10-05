@@ -32,6 +32,9 @@ interface ExerciseScreenProps {
   level: LevelConfig;
   /** Listen-only dictation hides the fretboard: the ear does all the work. */
   showFretboard: boolean;
+  /** Click on every beat during playback. */
+  metronome: boolean;
+  onMetronome: (on: boolean) => void;
   /** Mirror the fretboard for left-handed players. */
   leftHanded: boolean;
   onCheck: (answerBars: AnswerNote[][]) => void;
@@ -42,7 +45,7 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, onCheck }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck }: ExerciseScreenProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [countBeat, setCountBeat] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -108,6 +111,8 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           rate,
           timeSignature: melody.timeSignature,
           countIn: true,
+          metronome,
+          barBeats: melody.barBeats,
           reference: level.tonicReference ? { midi: tonicReference(melody), times: 2 } : undefined,
         },
         {
@@ -194,6 +199,9 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           </button>
         )}
       </div>
+      <label className="toggle muted">
+        <input type="checkbox" checked={metronome} onChange={(e) => onMetronome(e.target.checked)} /> Metronome during playback
+      </label>
 
       <h2 className="section-title">
         Write what you heard <span className="muted key-name">· {keyName(melody.key)}</span>

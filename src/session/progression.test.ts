@@ -129,25 +129,6 @@ describe('stage ladder progression', () => {
     }
   });
 
-  it('skips the optional stage unless opted in', () => {
-    const optionalIndex = STAGES.findIndex((s) => s.optional);
-    expect(optionalIndex).toBeGreaterThan(0);
-    const open = withUnlocked(initialTrack(STAGES), STAGES.length - 1, STAGES);
-    let t = withStage(open, optionalIndex - 1, STAGES);
-    let r = run(t, clean, STAGES[optionalIndex - 1]!.unlockTally);
-    expect(r.change).toBe('stage-up');
-    expect(r.t.stage).toBe(optionalIndex + 1);
-
-    t = withStage(open, optionalIndex - 1, STAGES);
-    r = run(t, clean, STAGES[optionalIndex - 1]!.unlockTally, true);
-    expect(r.t.stage).toBe(optionalIndex);
-
-    t = withStage(open, optionalIndex + 1, STAGES);
-    r = run(t, weak, STAGES[optionalIndex + 1]!.demoteAfter);
-    expect(r.change).toBe('stage-down');
-    expect(r.t.stage).toBe(optionalIndex - 1);
-  });
-
   it('tracks lifetime accuracy', () => {
     let t = initialTrack(STAGES);
     t = applyResult(t, clean, STAGES).track;

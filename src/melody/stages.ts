@@ -122,10 +122,9 @@ const STAGE_11: Stage = {
   id: 'stage-11',
   number: 11,
   name: 'Seven accidentals',
-  title: 'Stage 11: seven accidentals (optional)',
-  summary: 'C♯ and C♭ major, where E♯, B♯, F♭ and C♭ are ordinary notes. Optional.',
+  title: 'Stage 11: seven accidentals',
+  summary: 'C♯ and C♭ major, where E♯, B♯, F♭ and C♭ are ordinary notes.',
   keys: MAJOR_KEYS,
-  optional: true,
 };
 
 const STAGE_12: Stage = {

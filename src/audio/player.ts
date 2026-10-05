@@ -24,6 +24,10 @@ export interface PlayOptions {
   rate?: number;
   timeSignature: readonly [number, number];
   countIn?: boolean;
+  /** Click on every beat while the notes play, accented on the first beat of each bar. */
+  metronome?: boolean;
+  /** Beats per bar for the accent pattern; the time signature repeats when absent. */
+  barBeats?: readonly number[];
   /** Sounding pitch to play as a tonal reference before the count-in, and how many times. */
   reference?: { midi: Midi; times: number };
 }
@@ -135,6 +139,26 @@ export class GuitarPlayer {
         }, at),
       );
       cursor += secondsPerBeat;
+    }
+
+    if (options.metronome) {
+      const totalBeats = notes.reduce((sum, n) => sum + beatsOf(n.duration), 0);
+      let beatInBar = 0;
+      let bar = 0;
+      for (let beat = 0; beat < totalBeats; beat++) {
+        const barLength = options.barBeats?.[bar] ?? beatsPerBar(options.timeSignature);
+        const accent = beatInBar === 0;
+        this.scheduledIds.push(
+          transport.schedule((time) => {
+            click.triggerAttackRelease(accent ? 1760 : 1320, 0.03, time);
+          }, cursor + beat * secondsPerBeat),
+        );
+        beatInBar += 1;
+        if (beatInBar >= barLength) {
+          beatInBar = 0;
+          bar += 1;
+        }
+      }
     }
 
     notes.forEach((note, index) => {

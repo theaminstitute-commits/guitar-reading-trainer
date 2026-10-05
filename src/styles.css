@@ -635,6 +635,25 @@ button.undo span {
   accent-color: var(--accent);
 }
 
+/* Stage guide page */
+.guide h2 {
+  margin: 0.2rem 0 0.4rem;
+}
+.guide-facts {
+  margin: 0.4rem 0 1rem;
+  padding-left: 1.2rem;
+}
+.guide-facts li {
+  margin: 0.2rem 0;
+}
+.guide-staff {
+  width: 100%;
+  margin: 0.4rem 0;
+}
+.guide .fretboard {
+  margin: 0.4rem 0 1rem;
+}
+
 /* Listen-only mode: a row of pips instead of the fretboard */
 .listen-only {
   display: flex;

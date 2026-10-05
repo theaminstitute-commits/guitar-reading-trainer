@@ -7,6 +7,7 @@ import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
 import MicCheck from './components/MicCheck';
 import PlayScreen from './components/PlayScreen';
+import StageGuide from './components/StageGuide';
 import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
 import { gradeAnswer, gradePlayed, type GradeResult } from './grading/grade';
@@ -36,7 +37,7 @@ function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000_000);
 }
 
-type Screen = 'start' | 'exercise' | 'feedback';
+type Screen = 'start' | 'guide' | 'exercise' | 'feedback';
 
 interface Checked {
   result: GradeResult;
@@ -83,6 +84,8 @@ export default function App() {
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
   const [micCheck, setMicCheck] = useState(false);
+  /** Length to start with once the stage guide has been read. */
+  const [pendingLength, setPendingLength] = useState(track.counts);
 
   const level = withKeyOverride(STAGES[track.stage]!);
   const melody = generateMelody(level, seed, counts);
@@ -100,7 +103,7 @@ export default function App() {
   }, []);
 
   const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null) => {
-    const { track: nextTrack, change } = applyResult(track, result, STAGES, progress.includeOptional);
+    const { track: nextTrack, change } = applyResult(track, result, STAGES);
     updateProgress(withTrack(progress, nextTrack));
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
     setChecked({ result, change, stageAfter: STAGES[nextTrack.stage]!, yours, hearMine });
@@ -123,7 +126,24 @@ export default function App() {
 
   const onCounts = (n: number) => updateProgress(withTrack(progress, withCounts(track, n, STAGES)));
   const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
-  const onIncludeOptional = (include: boolean) => updateProgress({ ...progress, includeOptional: include });
+  const onMetronome = (on: boolean) => updateProgress({ ...progress, metronome: on });
+
+  /** Go to an exercise, by way of the stage guide the first time a stage is met. */
+  const begin = (length: number) => {
+    const number = STAGES[trackOf(progress).stage]!.number;
+    if (progress.seenGuides.includes(number)) {
+      startExercise(length);
+    } else {
+      setPendingLength(length);
+      setScreen('guide');
+    }
+  };
+
+  const onGuideStart = () => {
+    const number = level.number;
+    if (!progress.seenGuides.includes(number)) updateProgress({ ...progress, seenGuides: [...progress.seenGuides, number] });
+    startExercise(pendingLength);
+  };
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
   const onHandedness = (handedness: Handedness) => updateProgress({ ...progress, handedness });
 
@@ -140,7 +160,7 @@ export default function App() {
       <header className="app-header">
         <h1>Guitar Reading Trainer</h1>
         <p className="muted">
-          {screen === 'start'
+          {screen === 'start' || screen === 'guide'
             ? level.title
             : `Stage ${level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
         </p>
@@ -153,10 +173,13 @@ export default function App() {
           progress={progress}
           track={track}
           session={session}
-          onStart={() => startExercise(track.counts)}
+          onStart={() => begin(track.counts)}
+          onGuide={() => {
+            setPendingLength(track.counts);
+            setScreen('guide');
+          }}
           onCounts={onCounts}
           onStage={onStage}
-          onIncludeOptional={onIncludeOptional}
           onMode={onMode}
           onHandedness={onHandedness}
           onMicCheck={() => setMicCheck(true)}
@@ -165,11 +188,29 @@ export default function App() {
         />
       )}
 
+      {screen === 'guide' && (
+        <StageGuide
+          stage={level}
+          previous={track.stage > 0 ? STAGES[track.stage - 1]! : null}
+          leftHanded={progress.handedness === 'left'}
+          onStart={onGuideStart}
+          onBack={() => setScreen('start')}
+        />
+      )}
+
       {screen === 'exercise' &&
         (progress.mode === 'play' ? (
           <PlayScreen melody={melody} level={level} selfPlay={SELF_PLAY} onDone={onPlayed} />
         ) : (
-          <ExerciseScreen melody={melody} level={level} showFretboard={progress.mode === 'watch'} leftHanded={progress.handedness === 'left'} onCheck={onCheck} />
+          <ExerciseScreen
+            melody={melody}
+            level={level}
+            showFretboard={progress.mode === 'watch'}
+            leftHanded={progress.handedness === 'left'}
+            metronome={progress.metronome}
+            onMetronome={onMetronome}
+            onCheck={onCheck}
+          />
         ))}
 
       {screen === 'feedback' && checked && (
@@ -182,12 +223,12 @@ export default function App() {
           nextTally={nextTrack.tally}
           yours={checked.yours}
           hearMine={checked.hearMine}
-          onNext={() => startExercise(nextTrack.counts)}
+          onNext={() => begin(nextTrack.counts)}
           onExplainer={setExplainer}
         />
       )}
 
-      {screen !== 'start' && (
+      {screen !== 'start' && screen !== 'guide' && (
         <p className="muted small-note">
           <button className="link subtle" onClick={() => setScreen('start')}>
             Back to start

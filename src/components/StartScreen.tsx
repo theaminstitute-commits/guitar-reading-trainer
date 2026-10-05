@@ -19,7 +19,7 @@ interface StartScreenProps {
   onStart: () => void;
   onCounts: (counts: number) => void;
   onStage: (index: number) => void;
-  onIncludeOptional: (include: boolean) => void;
+  onGuide: () => void;
   onMode: (mode: ExerciseMode) => void;
   onHandedness: (handedness: Handedness) => void;
   onMicCheck: () => void;
@@ -44,7 +44,7 @@ export default function StartScreen({
   onStart,
   onCounts,
   onStage,
-  onIncludeOptional,
+  onGuide,
   onMode,
   onHandedness,
   onMicCheck,
@@ -122,11 +122,6 @@ export default function StartScreen({
           {track.stage === track.unlocked && ` Tally now: ${track.tally} of ${level.unlockTally}.`}
         </p>
       )}
-      {stages.some((s) => s.optional) && (
-        <label className="toggle muted">
-          <input type="checkbox" checked={progress.includeOptional} onChange={(e) => onIncludeOptional(e.target.checked)} /> Include the optional seven-accidental stage
-        </label>
-      )}
 
       <div className="length-picker" role="group" aria-label="Melody length">
         <span className="muted">Length</span>
@@ -148,6 +143,7 @@ export default function StartScreen({
         <button className="primary big" onClick={onStart}>
           Start
         </button>
+        <button onClick={onGuide}>Stage guide</button>
         {progress.mode === 'play' && <button onClick={onMicCheck}>Mic check</button>}
       </div>
 

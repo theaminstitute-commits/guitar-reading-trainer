@@ -31,7 +31,7 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 | 8 | Four accidentals | + E, Ab | all so far | same | More remote keys |
 | 9 | Five accidentals | + B, Db | all so far | same | Keys with many accidentals |
 | 10 | Six accidentals, enharmonic pair | + F#, Gb | all so far | same | Same sound, two spellings; strict spelling decides |
-| 11 | Seven accidentals (optional expert stage) | + C#, Cb | all so far | same | E#, B#, Fb, Cb as ordinary notes |
+| 11 | Seven accidentals | + C#, Cb | all so far | same | E#, B#, Fb, Cb as ordinary notes |
 | 12 | Fourth string | all majors | all so far | strings 1-4, frets 0-4 (written from D4, the space under the staff) | The D string; no ledger line yet |
 | 13 | Low strings, first position | all majors | all so far | strings 1-6, frets 0-4 (written from E3, three ledger lines below) | Ledger lines below the staff, middle C, the low E |
 | 14 | Fifth position | all majors | all so far | strings 1-4, frets 5-9 (written to C#6) | Reading away from the nut; ledger lines above |
@@ -54,4 +54,5 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 2. Tonal reference: the tonic note, played twice, before the count-in (from stage 3).
 3. Listens drop from 3 to 2 in Part B.
 4. Eighth notes arrive early (stage 5) so rhythm and keys grow together and sessions stay varied.
-5. Stage 11 (seven accidentals) is optional: skipped by default, switchable in settings.
+5. Stage 11 (seven accidentals) was optional until 2026-10-05; it is now an ordinary stage and the opt-in checkbox is gone.
+6. Every stage has a guide page (2026-10-05) that opens by itself the first time the stage is met and from a Stage guide button on the start screen: the stage's pitches named on the staff (new ones in amber), the same pitches dotted on the fretboard, keys, note lengths, range and listens. A metronome can be switched on under the Play buttons; it clicks on every beat during playback with an accent on each bar, off by default.

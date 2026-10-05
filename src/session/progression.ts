@@ -42,8 +42,10 @@ export interface Progress {
   version: 4;
   mode: ExerciseMode;
   handedness: Handedness;
-  /** Walk through stages marked optional (the seven-accidental stage). */
-  includeOptional: boolean;
+  /** Click on every beat during playback in the writing modes. */
+  metronome: boolean;
+  /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
+  seenGuides: number[];
   write: Track;
   play: Track;
 }
@@ -65,7 +67,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 4, mode: 'watch', handedness: 'right', includeOptional: false, write: initialTrack(stages), play: initialTrack(stages) };
+  return { version: 4, mode: 'watch', handedness: 'right', metronome: false, seenGuides: [], write: initialTrack(stages), play: initialTrack(stages) };
 }
 
 export function trackIdFor(mode: ExerciseMode): TrackId {
