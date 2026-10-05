@@ -165,7 +165,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       </div>
 
       {showFretboard ? (
-        <Fretboard active={active} played={played} fretCount={Math.max(5, level.fretRange[1])} mirrored={leftHanded} />
+        <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} />
       ) : (
         <div className="listen-only" aria-hidden="true">
           <span className={`ear${status === 'playing' ? ' on' : ''}`}>
