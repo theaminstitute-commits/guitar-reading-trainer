@@ -58,10 +58,12 @@ export interface StaffLayout {
   height: number;
 }
 
-/* VexFlow places the top staff line 40 units below a stave's y, which leaves
-   room for two ledger lines above; the row height leaves room for two below. */
-const ROW_HEIGHT = 104;
-const STAVE_TOP = -8;
+/* VexFlow places the top staff line 40 units below a stave's y. With the stave
+   at 4 the top line sits at 44, leaving room for three ledger lines above (fret
+   12 on the first string is written E6); the row height leaves room for three
+   below (the open low E is written E3). */
+const ROW_HEIGHT = 128;
+const STAVE_TOP = 4;
 const CLEF_EXTRA = 42;
 const TIME_SIG_EXTRA = 24;
 const SIDE_PAD = 2;

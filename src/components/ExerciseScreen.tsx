@@ -23,9 +23,9 @@ import StaffInput from './StaffInput';
 
 export const SLOW_RATE = 0.7;
 
-/** Notes may be written from one ledger line below the staff to two above. */
-const INPUT_MIN_STEP = staffStep(parseSpelled('C4'));
-const INPUT_MAX_STEP = staffStep(parseSpelled('D6'));
+/** Notes may be written from three ledger lines below the staff (the open low E) to three above (fret 12 on the first string). */
+const INPUT_MIN_STEP = staffStep(parseSpelled('E3'));
+const INPUT_MAX_STEP = staffStep(parseSpelled('E6'));
 
 interface ExerciseScreenProps {
   melody: Melody;

@@ -4,6 +4,7 @@
  */
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
+import { MAX_COUNTS } from './meter';
 
 export interface Stage extends LevelConfig {
   number: number;
@@ -33,7 +34,6 @@ const STAGE_2: Stage = {
   summary: 'Frets 0 to 4, so the same pitch can sit in two places. Leaps up to a fourth.',
   fretRange: [0, 4],
   maxLeapSteps: 3,
-  startCounts: 8,
 };
 
 const STAGE_3: Stage = {
@@ -132,9 +132,9 @@ const STAGE_12: Stage = {
   ...STAGE_10,
   id: 'stage-12',
   number: 12,
-  name: 'Low strings',
-  title: 'Stage 12: the fourth string and ledger lines',
-  summary: 'Strings 1 to 4, frets 0 to 4. Notes below the staff on ledger lines.',
+  name: 'Fourth string',
+  title: 'Stage 12: the fourth string',
+  summary: 'Strings 1 to 4, frets 0 to 4. The D string takes the melody down to the space under the staff.',
   strings: [1, 2, 3, 4],
 };
 
@@ -142,74 +142,108 @@ const STAGE_13: Stage = {
   ...STAGE_12,
   id: 'stage-13',
   number: 13,
-  name: 'Fifth position',
-  title: 'Stage 13: fifth position',
-  summary: 'Frets 5 to 9 on strings 1 to 4. Reading away from the nut, up to the ledger lines above.',
-  fretRange: [5, 9],
+  name: 'Low strings, first position',
+  title: 'Stage 13: low strings, first position',
+  summary: 'All six strings, frets 0 to 4. Ledger lines below the staff: middle C on the fifth string, the open low E three lines down.',
+  strings: [1, 2, 3, 4, 5, 6],
 };
 
-const MINORS_A = K('Am', 'Em', 'Dm');
-const MINORS_B = K('Am', 'Em', 'Dm', 'Bm', 'Gm', 'F#m', 'Cm');
-
 const STAGE_14: Stage = {
-  ...STAGE_13,
+  ...STAGE_12,
   id: 'stage-14',
   number: 14,
-  name: 'Natural minor',
-  title: 'Stage 14: natural minor',
-  summary: 'A, E and D minor. The same signature as the relative major, a different centre. Two listens from here on.',
-  keys: MINORS_A,
-  maxListens: 2,
+  name: 'Fifth position',
+  title: 'Stage 14: fifth position',
+  summary: 'Frets 5 to 9 on strings 1 to 4. Reading away from the nut, up to the ledger lines above.',
+  fretRange: [5, 9],
 };
 
 const STAGE_15: Stage = {
   ...STAGE_14,
   id: 'stage-15',
   number: 15,
-  name: 'Natural minor, more keys',
-  title: 'Stage 15: natural minor across the cycle',
-  summary: 'B, G, F♯ and C minor join the set.',
-  keys: MINORS_B,
+  name: 'Low strings, fifth position',
+  title: 'Stage 15: low strings, fifth position',
+  summary: 'All six strings, frets 5 to 9. The same low notes in a new place on the neck.',
+  strings: [1, 2, 3, 4, 5, 6],
 };
 
 const STAGE_16: Stage = {
   ...STAGE_15,
   id: 'stage-16',
   number: 16,
-  name: 'Harmonic minor',
-  title: 'Stage 16: harmonic minor',
-  summary: 'The raised seventh is written with a sign, and a sign lasts for the bar.',
-  keys: MINORS_B.map((k) => withMode(k, 'harmonic-minor')),
+  name: 'Up to the octave',
+  title: 'Stage 16: up to the octave',
+  summary: 'Frets 9 to 12 on all six strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.',
+  fretRange: [9, 12],
 };
+
+const MINORS_A = K('Am', 'Em', 'Dm');
+const MINORS_B = K('Am', 'Em', 'Dm', 'Bm', 'Gm', 'F#m', 'Cm');
 
 const STAGE_17: Stage = {
   ...STAGE_16,
   id: 'stage-17',
   number: 17,
-  name: 'Melodic minor',
-  title: 'Stage 17: melodic minor',
-  summary: 'Raised sixth and seventh going up, natural coming down. Spelling is graded strictly.',
-  keys: MINORS_B.map((k) => withMode(k, 'melodic-minor')),
+  name: 'Natural minor',
+  title: 'Stage 17: natural minor',
+  summary: 'A, E and D minor. The same signature as the relative major, a different centre. Two listens from here on.',
+  keys: MINORS_A,
+  maxListens: 2,
 };
 
 const STAGE_18: Stage = {
   ...STAGE_17,
   id: 'stage-18',
   number: 18,
+  name: 'Natural minor, more keys',
+  title: 'Stage 18: natural minor across the cycle',
+  summary: 'B, G, F♯ and C minor join the set.',
+  keys: MINORS_B,
+};
+
+const STAGE_19: Stage = {
+  ...STAGE_18,
+  id: 'stage-19',
+  number: 19,
+  name: 'Harmonic minor',
+  title: 'Stage 19: harmonic minor',
+  summary: 'The raised seventh is written with a sign, and a sign lasts for the bar.',
+  keys: MINORS_B.map((k) => withMode(k, 'harmonic-minor')),
+};
+
+const STAGE_20: Stage = {
+  ...STAGE_19,
+  id: 'stage-20',
+  number: 20,
+  name: 'Melodic minor',
+  title: 'Stage 20: melodic minor',
+  summary: 'Raised sixth and seventh going up, natural coming down. Spelling is graded strictly.',
+  keys: MINORS_B.map((k) => withMode(k, 'melodic-minor')),
+};
+
+const STAGE_21: Stage = {
+  ...STAGE_20,
+  id: 'stage-21',
+  number: 21,
   name: 'Free reading',
-  title: 'Stage 18: free reading',
-  summary: 'Any major key, any minor form, every rhythm so far.',
+  title: 'Stage 21: free reading',
+  summary: 'Any major key, any minor form, every rhythm, all six strings from the nut to fret 12. Melodies grow to four bars.',
   keys: [
     ...MAJOR_KEYS,
     ...MINORS_B,
     ...MINORS_B.map((k) => withMode(k, 'harmonic-minor')),
     ...MINORS_B.map((k) => withMode(k, 'melodic-minor')),
   ],
+  strings: [1, 2, 3, 4, 5, 6],
+  fretRange: [0, 12],
+  startCounts: 8,
+  growCounts: MAX_COUNTS,
 };
 
 export const STAGES: readonly Stage[] = [
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
-  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18,
+  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18, STAGE_19, STAGE_20, STAGE_21,
 ];
 
 export function stageAt(index: number): Stage {

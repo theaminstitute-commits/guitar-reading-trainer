@@ -21,7 +21,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** A track from any older or current record shape; null if it is not one. */
 function migrateTrack(value: unknown, stages: readonly Stage[]): Track | null {
   if (!isRecord(value)) return null;
-  const numbers = ['cleanStreak', 'weakStreak', 'exercises', 'accuracySum'];
+  const numbers = ['weakStreak', 'exercises', 'accuracySum'];
   if (!numbers.every((k) => typeof value[k] === 'number')) return null;
   const stage = typeof value.stage === 'number' ? value.stage : 0;
   const stageIndex = Math.max(0, Math.min(stages.length - 1, Math.round(stage)));
@@ -34,7 +34,8 @@ function migrateTrack(value: unknown, stages: readonly Stage[]): Track | null {
     stage: stageIndex,
     unlocked: Math.max(stageIndex, Math.min(stages.length - 1, typeof value.unlocked === 'number' ? Math.round(value.unlocked) : stageIndex)),
     counts: Math.max(MIN_COUNTS, Math.min(maxCounts, Math.round(counts))),
-    cleanStreak: value.cleanStreak as number,
+    // Records before the tally rule carried a clean streak instead; it starts the tally at zero.
+    tally: typeof value.tally === 'number' ? Math.max(0, Math.round(value.tally)) : 0,
     weakStreak: value.weakStreak as number,
     exercises: value.exercises as number,
     accuracySum: value.accuracySum as number,

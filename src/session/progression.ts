@@ -3,14 +3,16 @@
  *
  * Progress is kept in two independent tracks, one for writing (watch and
  * listen modes) and one for playing (read-and-play), because they are
- * different skills. Inside a stage the melody length grows one count (beat)
- * at a time from the stage's starting length to its maximum (see melody/meter
- * for how counts become bars). Clean rounds add a count, weak rounds remove
- * one. A perfect round (100% on both scores) counts as two clean rounds. A
- * clean streak at the stage's unlock length (12 counts, three bars) unlocks the
- * next stage; on the last stage the length keeps growing to the maximum. Two
- * weak rounds at the starting length drop back to the previous stage at its
- * unlock length. Stages stay unlocked once reached.
+ * different skills.
+ *
+ * Stages unlock by a tally, not by melody length: a clean round adds one
+ * point, a perfect round two, a weak round takes one off, and when the tally
+ * reaches the stage's target the next stage unlocks. Two weak rounds in a row
+ * at the stage's starting length drop back a stage. The app teaches reading,
+ * not memory, so length is a side effect: every clean round adds one count
+ * and every weak round removes one, between the stage's starting length and
+ * its growth ceiling (two bars; four on the last stage). The start screen can
+ * still set any length up to the maximum by hand.
  */
 import type { GradeResult } from '../grading/grade';
 import { MIN_COUNTS } from '../melody/meter';
@@ -27,7 +29,8 @@ export interface Track {
   unlocked: number;
   /** Current melody length in counts (beats). */
   counts: number;
-  cleanStreak: number;
+  /** Points towards unlocking the next stage: +1 clean, +2 perfect, −1 weak. */
+  tally: number;
   weakStreak: number;
   /** Lifetime counters. */
   exercises: number;
@@ -48,13 +51,17 @@ export interface Progress {
 export const CLEAN_THRESHOLD = 0.9;
 export const WEAK_THRESHOLD = 0.6;
 
-/** Every note and every length right: counts as two clean rounds. */
+/** Every note and every length right: worth two tally points. */
 export function isPerfect(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>): boolean {
   return result.pitchScore >= 1 && result.rhythmScore >= 1;
 }
 
+export function isClean(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>): boolean {
+  return result.pitchScore >= CLEAN_THRESHOLD && result.rhythmScore >= CLEAN_THRESHOLD;
+}
+
 export function initialTrack(stages: readonly Stage[]): Track {
-  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, cleanStreak: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, tally: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
@@ -97,45 +104,40 @@ export function applyResult(
   includeOptional = false,
 ): { track: Track; change: ProgressChange } {
   const stage = stages[track.stage]!;
-  const clean = result.pitchScore >= CLEAN_THRESHOLD && result.rhythmScore >= CLEAN_THRESHOLD;
-  const perfect = isPerfect(result);
+  const clean = isClean(result);
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
-  let { stage: stageIndex, counts, cleanStreak, weakStreak } = track;
+  let { stage: stageIndex, counts, tally, weakStreak } = track;
   let change: ProgressChange = null;
 
   if (clean) {
-    cleanStreak += perfect ? 2 : 1;
+    tally += isPerfect(result) ? 2 : 1;
     weakStreak = 0;
-    if (cleanStreak >= stage.promoteAfter) {
-      cleanStreak = 0;
-      const next = neighbourStage(track, stages, 1, includeOptional);
-      const unlockReady = counts >= stage.unlockCounts && next !== null;
-      if (!unlockReady && counts < stage.maxCounts) {
-        counts += 1;
-        change = 'longer';
-      } else if (next !== null) {
-        stageIndex = next;
-        counts = stages[stageIndex]!.startCounts;
-        change = 'stage-up';
-      }
+    const next = neighbourStage(track, stages, 1, includeOptional);
+    if (tally >= stage.unlockTally && next !== null) {
+      stageIndex = next;
+      counts = stages[stageIndex]!.startCounts;
+      tally = 0;
+      change = 'stage-up';
+    } else if (counts < stage.growCounts) {
+      counts += 1;
+      change = 'longer';
     }
   } else if (weak) {
-    weakStreak += 1;
-    cleanStreak = 0;
-    if (weakStreak >= stage.demoteAfter) {
+    tally = Math.max(0, tally - 1);
+    const previous = neighbourStage(track, stages, -1, includeOptional);
+    if (counts > stage.startCounts) {
+      // Shortening is the first remedy; only weak rounds at the starting length count towards dropping a stage.
+      counts -= 1;
       weakStreak = 0;
-      const previous = neighbourStage(track, stages, -1, includeOptional);
-      if (counts > stage.startCounts) {
-        counts -= 1;
-        change = 'shorter';
-      } else if (previous !== null) {
-        stageIndex = previous;
-        counts = stages[stageIndex]!.unlockCounts;
-        change = 'stage-down';
-      }
+      change = 'shorter';
+    } else if (++weakStreak >= stage.demoteAfter && previous !== null) {
+      stageIndex = previous;
+      counts = stages[stageIndex]!.growCounts;
+      tally = 0;
+      weakStreak = 0;
+      change = 'stage-down';
     }
   } else {
-    cleanStreak = 0;
     weakStreak = 0;
   }
 
@@ -145,7 +147,7 @@ export function applyResult(
       stage: stageIndex,
       unlocked: Math.max(track.unlocked, stageIndex),
       counts,
-      cleanStreak,
+      tally,
       weakStreak,
       exercises: track.exercises + 1,
       accuracySum: track.accuracySum + accuracyOf(result),
@@ -154,11 +156,11 @@ export function applyResult(
   };
 }
 
-/** Manually chosen length within the current stage: resets the streaks so the new length gets a fair run. */
+/** Manually chosen length within the current stage; the tally is kept, length is not what unlocks stages. */
 export function withCounts(track: Track, counts: number, stages: readonly Stage[]): Track {
   const stage = stages[track.stage]!;
   const clamped = Math.max(MIN_COUNTS, Math.min(stage.maxCounts, Math.round(counts)));
-  return { ...track, counts: clamped, cleanStreak: 0, weakStreak: 0 };
+  return { ...track, counts: clamped, weakStreak: 0 };
 }
 
 /** Unlock every stage up to `stageIndex` (testing aid). */
@@ -167,8 +169,8 @@ export function withUnlocked(track: Track, stageIndex: number, stages: readonly 
   return { ...track, unlocked: index };
 }
 
-/** Manually chosen stage, limited to stages already unlocked: starts at that stage's starting length with fresh streaks. */
+/** Manually chosen stage, limited to stages already unlocked: starts at that stage's starting length with a fresh tally. */
 export function withStage(track: Track, stageIndex: number, stages: readonly Stage[]): Track {
   const index = Math.max(0, Math.min(stages.length - 1, track.unlocked, Math.round(stageIndex)));
-  return { ...track, stage: index, counts: stages[index]!.startCounts, cleanStreak: 0, weakStreak: 0 };
+  return { ...track, stage: index, counts: stages[index]!.startCounts, tally: 0, weakStreak: 0 };
 }

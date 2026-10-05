@@ -71,7 +71,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [progress, setProgress] = useState<Progress>(() => {
     const loaded = store.load(STAGES);
-    // `?unlock=18` opens every stage up to that number on both tracks, for trying stages out.
+    // `?unlock=21` opens every stage up to that number on both tracks, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
     return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES), play: withUnlocked(loaded.play, unlock - 1, STAGES) };
@@ -179,6 +179,7 @@ export default function App() {
           change={checked.change}
           nextStage={checked.stageAfter}
           nextCounts={nextTrack.counts}
+          nextTally={nextTrack.tally}
           yours={checked.yours}
           hearMine={checked.hearMine}
           onNext={() => startExercise(nextTrack.counts)}

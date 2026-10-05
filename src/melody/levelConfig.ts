@@ -1,6 +1,6 @@
 import type { DurationId } from '../music/duration';
 import { C_MAJOR, type Key } from '../music/key';
-import { MAX_COUNTS, MIN_COUNTS, UNLOCK_COUNTS } from './meter';
+import { GROW_COUNTS, MAX_COUNTS, MIN_COUNTS } from './meter';
 
 /**
  * Everything the generator needs to know about a level. New levels are new
@@ -11,15 +11,15 @@ export interface LevelConfig {
   title: string;
   /** Keys a melody may be in; one is picked per melody. */
   keys: readonly Key[];
-  /** Longest melody in this level, in counts (beats). 16 = four bars of 4/4. */
+  /** Longest melody the start screen may set by hand, in counts (beats). 16 = four bars of 4/4. */
   maxCounts: number;
-  /** Length of the first exercises, in counts. Length grows one count at a time towards `maxCounts`. */
+  /** Length of the first exercises, in counts. Every clean round adds one count up to `growCounts`. */
   startCounts: number;
-  /** Length at which a clean streak unlocks the next stage instead of adding a count. 12 = three bars of 4/4. */
-  unlockCounts: number;
-  /** Consecutive clean rounds (see grading) needed before the melody gets a count longer. A perfect round counts as two. */
-  promoteAfter: number;
-  /** Consecutive weak rounds before the melody gets a count shorter again. */
+  /** Length the melody grows to on its own. 8 = two bars; reading, not memory, is the point. */
+  growCounts: number;
+  /** Tally points that unlock the next stage: a clean round is one, a perfect round two, a weak round takes one off. */
+  unlockTally: number;
+  /** Consecutive weak rounds at the starting length before dropping back a stage. */
   demoteAfter: number;
   tempo: number;
   /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
@@ -44,8 +44,8 @@ export const LEVEL_1: LevelConfig = {
   keys: [C_MAJOR],
   maxCounts: MAX_COUNTS,
   startCounts: MIN_COUNTS,
-  unlockCounts: UNLOCK_COUNTS,
-  promoteAfter: 2,
+  growCounts: GROW_COUNTS,
+  unlockTally: 3,
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,
