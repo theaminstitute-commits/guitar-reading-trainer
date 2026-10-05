@@ -8,6 +8,7 @@
  * All pitches here are SOUNDING pitches.
  */
 import * as Tone from 'tone';
+import { seikoClick } from './click';
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import type { Midi } from '../music/pitch';
 import { loadSampleBuffers } from './loadSamples';
@@ -59,7 +60,8 @@ const GATE = 0.92;
 export class GuitarPlayer {
   /** The guitar sampler once loaded; the self-play check listens to it directly. */
   sampler: Tone.Sampler | null = null;
-  private click: Tone.Synth | null = null;
+  private click: Tone.ToneAudioBuffer | null = null;
+  private clickGain: Tone.Gain | null = null;
   private loading: Promise<void> | null = null;
   private scheduledIds: number[] = [];
   private currentEvents: PlayerEvents | null = null;
@@ -81,11 +83,13 @@ export class GuitarPlayer {
           release: 0.6,
           volume: 2,
         }).toDestination();
-        this.click = new Tone.Synth({
-          oscillator: { type: 'triangle' },
-          envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 },
-          volume: -8,
-        }).toDestination();
+        // The Seiko-style beep from the user's Tempus metronome, rendered once into a buffer.
+        const rate = Tone.getContext().sampleRate;
+        const samples = seikoClick(rate);
+        const buffer = Tone.getContext().createBuffer(1, samples.length, rate);
+        buffer.copyToChannel(samples, 0);
+        this.click = new Tone.ToneAudioBuffer(buffer);
+        this.clickGain = new Tone.Gain(0.5).toDestination();
         await Tone.loaded();
       })();
     }
@@ -100,7 +104,6 @@ export class GuitarPlayer {
     await this.load();
     this.stop();
     const sampler = this.sampler!;
-    const click = this.click!;
     const transport = Tone.getTransport();
 
     const rate = options.rate ?? 1;
@@ -135,7 +138,7 @@ export class GuitarPlayer {
       const b = beat;
       this.scheduledIds.push(
         transport.schedule((time) => {
-          click.triggerAttackRelease(b === 0 ? 1760 : 1320, 0.03, time);
+          this.tick(time, b === 0);
           uiAt(() => events.onCountIn?.(b, countInBeats), time);
         }, at),
       );
@@ -151,7 +154,7 @@ export class GuitarPlayer {
         const accent = beatInBar === 0;
         this.scheduledIds.push(
           transport.schedule((time) => {
-            click.triggerAttackRelease(accent ? 1760 : 1320, 0.03, time);
+            this.tick(time, accent);
           }, cursor + beat * secondsPerBeat),
         );
         beatInBar += 1;
@@ -184,6 +187,13 @@ export class GuitarPlayer {
     transport.start();
   }
 
+  /** One click at an audio-context time; the first beat of a bar is a little louder. */
+  private tick(time: number, accent: boolean): void {
+    if (!this.click || !this.clickGain) return;
+    const source = new Tone.ToneBufferSource({ url: this.click, onended: () => source.dispose() }).connect(this.clickGain);
+    source.start(time, 0, undefined, accent ? 1 : 0.6);
+  }
+
   stop(): void {
     if (this._isPlaying) this.finish(false);
   }
@@ -196,7 +206,6 @@ export class GuitarPlayer {
   async startMetronome(tempo: number, barBeats: readonly number[], onTick?: (contextTime: number, accent: boolean) => void): Promise<void> {
     await this.load();
     this.stopMetronome();
-    const click = this.click!;
     const secondsPerBeat = 60 / tempo;
     const lookahead = 0.12;
     let next = Tone.now() + 0.1;
@@ -205,7 +214,7 @@ export class GuitarPlayer {
     const schedule = () => {
       while (next < Tone.now() + lookahead) {
         const accent = beatInBar === 0;
-        click.triggerAttackRelease(accent ? 1760 : 1320, 0.03, next);
+        this.tick(next, accent);
         onTick?.(next, accent);
         next += secondsPerBeat;
         beatInBar += 1;
@@ -246,6 +255,8 @@ export class GuitarPlayer {
     this.stopMetronome();
     this.sampler?.dispose();
     this.click?.dispose();
+    this.clickGain?.dispose();
+    this.clickGain = null;
     this.sampler = null;
     this.click = null;
     this.loading = null;
