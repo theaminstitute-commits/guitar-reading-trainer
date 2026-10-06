@@ -647,8 +647,10 @@ button.undo span {
   margin: 0.2rem 0;
 }
 .guide-staff {
+  position: relative;
   width: 100%;
   margin: 0.4rem 0;
+  padding-bottom: 14px;
 }
 .guide .fretboard {
   margin: 0.4rem 0 1rem;

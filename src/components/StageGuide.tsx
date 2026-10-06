@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { sharedPlayer } from '../audio/player';
 import { stageGuide } from '../melody/stageGuide';
 import type { Stage } from '../melody/stages';
@@ -6,7 +6,7 @@ import { keyName, keySignatureCount, keySignatureSpec, spellInKey } from '../mus
 import { writtenFromSounding } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
-import { renderStaff, type RenderBar } from '../notation/renderStaff';
+import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 import Fretboard from './Fretboard';
 
 interface StageGuideProps {
@@ -28,12 +28,13 @@ const NOTES_PER_BAR = 4;
  * pitches sit on the fretboard. Tapping a note plays it.
  */
 export default function StageGuide({ stage, previous, leftHanded, onStart, onBack }: StageGuideProps) {
-  const guide = stageGuide(stage, previous);
+  const guide = useMemo(() => stageGuide(stage, previous), [stage, previous]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
   const [sounding, setSounding] = useState<number | null>(null);
+  const [layout, setLayout] = useState<StaffLayout | null>(null);
 
   useEffect(() => {
     ensureNotationFonts().then(() => setFontsReady(true));
@@ -71,21 +72,33 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
         step: p.step,
         sign: signs[b]![i]!,
         duration: 'q' as const,
-        label: p.name,
         style: p.isNew || sounding === p.midi ? { fill: NEW, stroke: NEW } : undefined,
       })),
     }));
-    renderStaff(el, bars, {
-      timeSignature: [4, 4],
-      width,
-      barsPerRow: width < 480 ? 2 : 3,
-      scale,
-      ink: INK,
-      showTimeSignature: false,
-      keySignature: keySignatureSpec(guide.key),
-      keySignatureAccidentals: Math.abs(keySignatureCount(guide.key)),
-    });
+    setLayout(
+      renderStaff(el, bars, {
+        timeSignature: [4, 4],
+        width,
+        barsPerRow: width < 480 ? 2 : 3,
+        scale,
+        ink: INK,
+        showTimeSignature: false,
+        keySignature: keySignatureSpec(guide.key),
+        keySignatureAccidentals: Math.abs(keySignatureCount(guide.key)),
+      }),
+    );
   }, [guide, width, scale, fontsReady, sounding]);
+
+  // Pitch names on one baseline under each staff row, clear of three ledger lines, instead of
+  // VexFlow's per-note annotations that follow the stems up and down.
+  const labelSize = 9 * scale;
+  const labels = layout
+    ? layout.notes.map((n) => {
+        const stave = layout.staves[n.barIndex] ?? layout.staves[layout.staves.length - 1]!;
+        const pitch = guide.pitches[n.id];
+        return { x: n.x, y: stave.topLineY + stave.lineSpacing * 8.4, text: pitch?.name ?? '', isNew: pitch?.isNew ?? false };
+      })
+    : [];
 
   const playAll = async () => {
     const player = sharedPlayer();
@@ -129,6 +142,15 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       </p>
       <div ref={wrapRef} className="guide-staff">
         <div ref={canvasRef} className="staff-canvas static" />
+        {layout && (
+          <svg className="feedback-overlay" width={width} height={layout.height + labelSize} aria-hidden="true">
+            {labels.map((l, i) => (
+              <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" className="pitch-label" fill={l.isNew ? NEW : INK} fontSize={labelSize}>
+                {l.text}
+              </text>
+            ))}
+          </svg>
+        )}
       </div>
       <div className="controls">
         {sounding === null ? (
