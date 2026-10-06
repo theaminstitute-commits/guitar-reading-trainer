@@ -21,6 +21,8 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R13 | The newest fret stays in use: every melody on a main stage puts at least one note on the highest fret of the stage's window that has an in-key note on one of the stage's strings. Where the top fret has none (F major in first position has no note on fret 4 on any string), the next fret down counts. Waived on the stages that add a string (12, 13, 15), see the conflict log. **(user, rule 1 of 2026-10-06)** | 2026-10-06 | `LevelConfig.featureFret`, `melody/generator.ts` |
 | R14 | In a key with a key signature, every melody contains at least one note altered by that signature (a B♭ in F major, an F♯ or C♯ in D major). Raised minor degrees do not count; they are not in the signature. **(user, rule 2 of 2026-10-06)** | 2026-10-06 | `melody/generator.ts` |
 | R15 | Stage 1 reads from written D4 to G5: strings 1 to 4, frets 0 to 3. **(user, rule 3 of 2026-10-06)** | 2026-10-06 | `melody/levelConfig.ts` |
+| R16 | No melody is given twice on the same stage. Two melodies are the same when their key, pitches and lengths match; where the notes are played does not count. The app remembers what each stage has given (per track, up to 400 melodies a stage) and draws again until it has something new. **(user, rule 4 of 2026-10-06)** | 2026-10-06 | `session/progression.ts` (`fingerprint`, `withMelodyHeard`), `App.tsx` |
+| R17 | A stage lost through demotion shows its guide page again when it is won back. **(user, rule 5 of 2026-10-06)** | 2026-10-06 | `App.tsx` (`record`) |
 
 ## How a rule is enforced
 
@@ -32,6 +34,16 @@ fret 4 of the third string). R14 is about pitch, so only a redraw can meet it. T
 checks all three over every stage and forty seeds.
 
 ## Conflict log
+
+- **2026-10-06, R16 against the size of a stage.** A one-bar stage in one key (stage 1: eleven
+  pitches, quarters and halves, R4 and R13 on top) has a few thousand distinct melodies, and the
+  generator's rules narrow that further. A learner who stays on one stage for a very long time
+  could exhaust it. Settled: the app tries sixty fresh draws, then accepts a repeat rather than
+  stalling, and forgets the oldest of 400 remembered melodies per stage. In normal use, ten to
+  thirty melodies per stage, nothing repeats.
+- **2026-10-06, R17 against R12.** R12 shows a guide once per stage. R17 is a deliberate
+  exception: demotion forgets that the higher stage's guide was seen, so it opens again on the way
+  back up. The stage the learner drops to does not re-show its guide; only the regained one does.
 
 - **2026-10-06, R15 against the ladder.** Stage 1 now includes the fourth string, so the old
   stage 12 ("fourth string") taught nothing new. Settled by splitting the low strings: stage 12

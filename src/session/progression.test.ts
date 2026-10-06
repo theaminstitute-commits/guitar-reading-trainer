@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_COUNTS, MIN_COUNTS } from '../melody/meter';
+import { generateMelody } from '../melody/generator';
 import { MAIN_STAGE_COUNT, STAGES } from '../melody/stages';
-import { accuracyOf, applyResult, initialProgress, initialTrack, trackOf, withStage, withTrack, withUnlocked, type Track } from './progression';
+import { accuracyOf, applyResult, fingerprint, hasHeard, initialProgress, initialTrack, MELODIES_KEPT, trackOf, withMelodyHeard, withStage, withTrack, withUnlocked, type Track } from './progression';
 
 const perfect = { pitchScore: 1, rhythmScore: 1 };
 const clean = { pitchScore: 0.95, rhythmScore: 0.95 };
@@ -91,6 +92,27 @@ describe('stage ladder progression', () => {
     expect(t.stage).toBe(last);
     expect(rounds).toBe(10 * last);
     expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(200);
+  });
+
+  it('remembers the melodies given on a stage so none repeats there (R16)', () => {
+    const a = generateMelody(STAGES[0]!, 1);
+    const b = generateMelody(STAGES[0]!, 2);
+    let t = initialTrack(STAGES);
+    expect(hasHeard(t, 1, a)).toBe(false);
+    t = withMelodyHeard(t, 1, a);
+    expect(hasHeard(t, 1, a)).toBe(true);
+    expect(hasHeard(t, 1, b)).toBe(fingerprint(a) === fingerprint(b));
+    expect(hasHeard(t, 2, a)).toBe(false);
+    // Positions do not make a different melody; pitches and lengths do.
+    const moved = { ...a, notes: a.notes.map((n) => ({ ...n, string: n.string + 1, fret: n.fret + 5 })) };
+    expect(fingerprint(moved)).toBe(fingerprint(a));
+    const longer = { ...a, notes: a.notes.map((n, i) => (i === 0 ? { ...n, duration: n.duration === 'q' ? ('h' as const) : ('q' as const) } : n)) };
+    expect(fingerprint(longer)).not.toBe(fingerprint(a));
+    // The memory survives a stage change and is bounded.
+    t = applyResult(t, perfect, STAGES).track;
+    expect(hasHeard(t, 1, a)).toBe(true);
+    for (let i = 0; i < MELODIES_KEPT + 10; i++) t = withMelodyHeard(t, 1, { ...a, seed: i, notes: [{ ...a.notes[0]!, midi: 40 + (i % 30) }, ...a.notes.slice(1)] });
+    expect(t.melodies['1']!.length).toBe(MELODIES_KEPT);
   });
 
   it('tracks lifetime accuracy', () => {

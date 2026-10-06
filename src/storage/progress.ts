@@ -18,6 +18,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object';
 }
 
+/** Fingerprints of melodies heard per stage; anything malformed is dropped. */
+function migrateMelodies(value: unknown): Record<string, string[]> {
+  if (!isRecord(value)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [stage, list] of Object.entries(value)) {
+    if (Array.isArray(list)) out[stage] = list.filter((f): f is string => typeof f === 'string');
+  }
+  return out;
+}
+
 /** A track from any older or current record shape; null if it is not one. */
 function migrateTrack(value: unknown, stages: readonly Stage[]): Track | null {
   if (!isRecord(value)) return null;
@@ -36,6 +46,7 @@ function migrateTrack(value: unknown, stages: readonly Stage[]): Track | null {
     counts: Math.max(MIN_COUNTS, Math.min(maxCounts, Math.round(counts))),
     // Records before the tally rule carried a clean streak instead; it starts the tally at zero.
     tally: typeof value.tally === 'number' ? Math.max(0, Math.round(value.tally)) : 0,
+    melodies: migrateMelodies(value.melodies),
     weakStreak: value.weakStreak as number,
     exercises: value.exercises as number,
     accuracySum: value.accuracySum as number,

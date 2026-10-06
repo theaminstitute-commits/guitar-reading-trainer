@@ -29,6 +29,8 @@ import {
   type Handedness,
   type Progress,
   type ProgressChange,
+  hasHeard,
+  withMelodyHeard,
   type Track,
 } from './session/progression';
 import { hearRecording, hearWrittenAnswer, yoursFromAnswer, yoursFromTake, type HearMine } from './session/yours';
@@ -62,9 +64,15 @@ function withKeyOverride(stage: Stage): Stage {
   return key ? { ...stage, keys: [key], fretRange: [0, 4], introduces: undefined } : stage;
 }
 
-function makeExercise(track: Track): Exercise {
+/** Tries with fresh seeds before a melody already heard on this stage is accepted (R16: the space can run out). */
+const FRESH_TRIES = 60;
+
+/** A melody for the track's stage that has not been given on that stage before, and the track that remembers it. */
+function makeExercise(track: Track): { exercise: Exercise; track: Track } {
   const level = withKeyOverride(STAGES[track.stage]!);
-  return { level, melody: generateMelody(level, randomSeed(), track.counts) };
+  let melody = generateMelody(level, randomSeed(), track.counts);
+  for (let i = 0; i < FRESH_TRIES && hasHeard(track, level.number, melody); i++) melody = generateMelody(level, randomSeed(), track.counts);
+  return { exercise: { level, melody }, track: withMelodyHeard(track, level.number, melody) };
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -90,7 +98,7 @@ export default function App() {
   });
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const track = trackOf(progress);
-  const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track));
+  const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track).exercise);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
   const [micCheck, setMicCheck] = useState(false);
@@ -106,14 +114,19 @@ export default function App() {
 
   /** Draw a fresh melody for the track's current stage and go to it. */
   const startExercise = (current: Progress) => {
-    setExercise(makeExercise(trackOf(current)));
+    const made = makeExercise(trackOf(current));
+    updateProgress(withTrack(current, made.track));
+    setExercise(made.exercise);
     setChecked(null);
     setScreen('exercise');
   };
 
   const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null) => {
     const { track: nextTrack, change } = applyResult(track, result, STAGES);
-    updateProgress(withTrack(progress, nextTrack));
+    // R17: a stage lost through demotion shows its guide again when it is won back.
+    const lost = change === 'stage-down' ? STAGES[track.stage]!.number : null;
+    const seenGuides = lost === null ? progress.seenGuides : progress.seenGuides.filter((n) => n !== lost);
+    updateProgress(withTrack({ ...progress, seenGuides }, nextTrack));
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
     setChecked({ result, change, stageAfter: STAGES[nextTrack.stage]!, yours, hearMine });
     setScreen('feedback');

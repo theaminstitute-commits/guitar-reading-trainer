@@ -11,6 +11,8 @@
  * stage: one bar of 4/4 on the main ladder, one count more per bonus stage.
  */
 import type { GradeResult } from '../grading/grade';
+import type { Melody } from '../melody/types';
+import { keyId } from '../music/key';
 import type { Stage } from '../melody/stages';
 
 export type ExerciseMode = 'watch' | 'listen' | 'play';
@@ -31,6 +33,26 @@ export interface Track {
   exercises: number;
   /** Sum of per-exercise accuracy (0..1) for the lifetime average. */
   accuracySum: number;
+  /** Fingerprints of the melodies already given on each stage (by stage number), so none repeats there (R16). */
+  melodies: Record<string, string[]>;
+}
+
+/** Most fingerprints kept per stage; beyond that the oldest are forgotten. */
+export const MELODIES_KEPT = 400;
+
+/** What makes two melodies the same for R16: key, pitches and lengths. Positions do not count. */
+export function fingerprint(melody: Melody): string {
+  return `${keyId(melody.key)}|${melody.notes.map((n) => `${n.midi}${n.duration}`).join(' ')}`;
+}
+
+export function hasHeard(track: Track, stageNumber: number, melody: Melody): boolean {
+  return (track.melodies[String(stageNumber)] ?? []).includes(fingerprint(melody));
+}
+
+export function withMelodyHeard(track: Track, stageNumber: number, melody: Melody): Track {
+  const key = String(stageNumber);
+  const list = [...(track.melodies[key] ?? []), fingerprint(melody)].slice(-MELODIES_KEPT);
+  return { ...track, melodies: { ...track.melodies, [key]: list } };
 }
 
 export interface Progress {
@@ -58,7 +80,7 @@ export function isClean(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>)
 }
 
 export function initialTrack(stages: readonly Stage[]): Track {
-  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, tally: 0, weakStreak: 0, exercises: 0, accuracySum: 0 };
+  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, tally: 0, weakStreak: 0, exercises: 0, accuracySum: 0, melodies: {} };
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
