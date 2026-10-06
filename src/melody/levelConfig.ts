@@ -20,8 +20,10 @@ export interface LevelConfig {
   unlockAfter: number;
   /** Consecutive weak rounds before dropping back a stage. */
   demoteAfter: number;
-  /** Positions (string and fret) this level adds compared with the one before; every melody uses at least one. */
+  /** Positions (string and fret) this level adds compared with the one before; every melody uses at least one (R7). */
   introduces?: readonly FretPosition[];
+  /** Every melody puts a note on the highest fret of the window that has an in-key note (R13). Main stages only. */
+  featureFret?: boolean;
   tempo: number;
   /** How many times the learner may hear the melody per exercise (Play, Replay and Slow all count). */
   maxListens: number;
@@ -50,8 +52,9 @@ export const LEVEL_1: LevelConfig = {
   tempo: 72,
   maxListens: 3,
   tonicReference: false,
-  strings: [1, 2, 3],
+  strings: [1, 2, 3, 4],
   fretRange: [0, 3],
+  featureFret: true,
   durations: ['q', 'h'],
   maxLeapSteps: 2,
   startDegrees: [1, 3, 5],

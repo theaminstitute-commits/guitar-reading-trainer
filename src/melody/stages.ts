@@ -23,7 +23,7 @@ const STAGE_1: Stage = {
   number: 1,
   name: 'C major, first position',
   title: 'Stage 1: C major, first position',
-  summary: 'Quarter and half notes on strings 1 to 3, frets 0 to 3.',
+  summary: 'Quarter and half notes on strings 1 to 4, frets 0 to 3: written D4 to G5.',
 };
 
 const STAGE_2: Stage = {
@@ -132,19 +132,21 @@ const STAGE_12: Stage = {
   ...STAGE_10,
   id: 'stage-12',
   number: 12,
-  name: 'Fourth string',
-  title: 'Stage 12: the fourth string',
-  summary: 'Strings 1 to 4, frets 0 to 4. The D string takes the melody down to the space under the staff.',
-  strings: [1, 2, 3, 4],
+  name: 'Fifth string',
+  title: 'Stage 12: the fifth string',
+  summary: 'Strings 1 to 5, frets 0 to 4. The A string takes the melody below middle C: the first ledger lines.',
+  strings: [1, 2, 3, 4, 5],
+  // R13 is waived while a string is being added (rules.md, conflict log): the new string is the feature here.
+  featureFret: false,
 };
 
 const STAGE_13: Stage = {
   ...STAGE_12,
   id: 'stage-13',
   number: 13,
-  name: 'Low strings, first position',
-  title: 'Stage 13: low strings, first position',
-  summary: 'All six strings, frets 0 to 4. Ledger lines below the staff: middle C on the fifth string, the open low E three lines down.',
+  name: 'Sixth string',
+  title: 'Stage 13: the sixth string',
+  summary: 'All six strings, frets 0 to 4. The open low E sits three ledger lines below the staff.',
   strings: [1, 2, 3, 4, 5, 6],
 };
 
@@ -156,6 +158,7 @@ const STAGE_14: Stage = {
   title: 'Stage 14: fifth position',
   summary: 'Frets 5 to 9 on strings 1 to 4. Reading away from the nut, up to the ledger lines above.',
   fretRange: [5, 9],
+  featureFret: true,
 };
 
 const STAGE_15: Stage = {
@@ -166,6 +169,7 @@ const STAGE_15: Stage = {
   title: 'Stage 15: low strings, fifth position',
   summary: 'All six strings, frets 5 to 9. The same low notes in a new place on the neck.',
   strings: [1, 2, 3, 4, 5, 6],
+  featureFret: false,
 };
 
 const STAGE_16: Stage = {
@@ -176,6 +180,7 @@ const STAGE_16: Stage = {
   title: 'Stage 16: up to the octave',
   summary: 'Frets 9 to 12 on all six strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.',
   fretRange: [9, 12],
+  featureFret: true,
 };
 
 const MINORS_A = K('Am', 'Em', 'Dm');
@@ -256,6 +261,7 @@ const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - MIN_COUNTS }, (_, i) =>
     summary: `${meter}. Any key, any minor form, anywhere on the neck. The melody is ${counts} counts long every time.`,
     startCounts: counts,
     maxCounts: counts,
+    featureFret: false,
   };
 });
 

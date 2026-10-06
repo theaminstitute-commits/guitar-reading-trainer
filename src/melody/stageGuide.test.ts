@@ -9,20 +9,22 @@ describe('stage guide', () => {
   it('names every pitch of stage 1 in C major, lowest to highest, all new', () => {
     const g = stageGuide(byNumber(1), null);
     expect(keyId(g.key)).toBe('C');
-    expect(g.pitches.map((p) => p.name)).toEqual(['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5']);
+    expect(g.pitches.map((p) => p.name)).toEqual(['D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5']);
     expect(g.pitches.every((p) => p.isNew)).toBe(true);
     expect(g.keys).toBe('C major');
     expect(g.lengths).toBe('quarter and half notes');
-    expect(g.range).toBe('strings 1 to 3, frets 0 to 3');
+    expect(g.range).toBe('strings 1 to 4, frets 0 to 3');
   });
 
   it('marks only the added pitches new when the window grows', () => {
     const g = stageGuide(byNumber(2), byNumber(1));
     // Fret 4 adds no new in-key pitch in C on strings 1-3 (G#, C#, F#), so nothing is new.
     expect(g.pitches.filter((p) => p.isNew)).toHaveLength(0);
+    const fifth = stageGuide(byNumber(12), byNumber(11));
+    expect(fifth.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['A3', 'B3', 'C4']);
     const low = stageGuide(byNumber(13), byNumber(12));
     expect(low.pitches[0]!.name).toBe('E3');
-    expect(low.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['E3', 'F3', 'G3', 'A3', 'B3', 'C4']);
+    expect(low.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['E3', 'F3', 'G3']);
   });
 
   it('shows minor stages in their first key and lists the keys in words', () => {

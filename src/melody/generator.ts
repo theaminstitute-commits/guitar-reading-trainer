@@ -9,7 +9,7 @@
  */
 import { beatsOf, cellBeats, DURATIONS, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
-import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, spellInKey, type Key } from '../music/key';
+import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, keySignatureCount, spellInKey, type Key } from '../music/key';
 import { pitchClass } from '../music/pitch';
 import { barBeatsForCounts, MIN_COUNTS } from './meter';
 import { staffStep, type Midi } from '../music/pitch';
@@ -111,41 +111,104 @@ function choosePosition(candidate: PoolNote, previous: FretPosition | null): Fre
  * @param bars How many bars to generate; defaults to the level maximum. Shorter
  * melodies are used while the learner is starting out.
  */
-export function generateMelody(config: LevelConfig, seed: number, counts: number = config.maxCounts): Melody {
-  const must = config.introduces ?? [];
-  let melody = generateOnce(config, seed, counts);
-  if (must.length === 0) return melody;
-  // A stage that adds frets or strings uses them at once: redraw until a note sits on one of the new positions.
-  const samePlace = (a: FretPosition, b: FretPosition) => a.string === b.string && a.fret === b.fret;
-  const usesNew = (m: Melody) => m.notes.some((n) => must.some((p) => samePlace(p, n)));
-  // When the new positions only duplicate pitches already playable elsewhere (stage 2 adds fret 4,
-  // whose only in-key note in C is a B also found on the open second string), move such a note there.
-  const moved = (m: Melody): Melody | null => {
-    const notes = m.notes.map((n) => ({ ...n }));
-    const note = notes.find((n) => must.some((p) => midiAt(p) === n.midi));
-    if (!note) return null;
-    const alt = must.find((p) => midiAt(p) === note.midi)!;
-    note.string = alt.string;
-    note.fret = alt.fret;
-    return { ...m, notes };
-  };
-  for (let attempt = 0; attempt <= 60; attempt++) {
-    if (attempt > 0) melody = generateOnce(config, seed + attempt * 7919, counts);
-    if (usesNew(melody)) return melody;
-    const alternative = moved(melody);
-    if (alternative) return alternative;
+const samePlace = (a: FretPosition, b: FretPosition) => a.string === b.string && a.fret === b.fret;
+
+/** R13: the highest fret of the window that carries an in-key note on one of the level's strings, as positions. */
+export function topFretPositions(config: LevelConfig, key: Key): FretPosition[] {
+  for (let fret = config.fretRange[1]; fret >= config.fretRange[0]; fret--) {
+    const at = config.strings.map((string) => ({ string, fret })).filter((p) => isDiatonic(midiAt(p), key));
+    if (at.length > 0) return at;
   }
-  return melody;
+  return [];
 }
 
-function generateOnce(config: LevelConfig, seed: number, counts: number): Melody {
+/** R14: a note altered by the key signature (not a raised minor degree) is present. */
+export function hasSignatureNote(melody: Melody): boolean {
+  return melody.notes.some((n) => {
+    const info = degreeInfoOf(n.midi, melody.key);
+    return !!info && !info.raised && spellInKey(n.midi, melody.key).accidental !== 0;
+  });
+}
+
+/** Position rules a level imposes on a melody in a key (R7, R13): sets of positions, one note on each set. */
+export function positionRules(config: LevelConfig, key: Key): FretPosition[][] {
+  const rules: FretPosition[][] = [];
+  if (config.introduces && config.introduces.length > 0) rules.push([...config.introduces]);
+  if (config.featureFret) rules.push(topFretPositions(config, key));
+  return rules.filter((r) => r.length > 0);
+}
+
+const usesOneOf = (m: Melody, set: readonly FretPosition[]) => m.notes.some((n) => set.some((p) => samePlace(p, n)));
+
+/**
+ * Meet every position rule with a different note each, moving a note of the
+ * right pitch onto a qualifying position where the walk did not land there by
+ * itself (a pitch may live in two places). Returns null when no assignment of
+ * notes to rules exists.
+ */
+function settlePositions(melody: Melody, rules: readonly FretPosition[][]): Melody | null {
+  const notes = melody.notes.map((n) => ({ ...n }));
+  // For each rule, the (note, position) pairs that would satisfy it: the note's own position when it
+  // already qualifies (listed first, so nothing moves without need), or another place for the same pitch.
+  const options = rules.map((set) =>
+    notes.flatMap((n, i) => {
+      const own = set.some((p) => samePlace(p, n)) ? [{ i, at: { string: n.string, fret: n.fret } }] : [];
+      const moves = set.filter((p) => midiAt(p) === n.midi && !samePlace(p, n)).map((at) => ({ i, at }));
+      return [...own, ...moves];
+    }),
+  );
+  // One note may serve several rules, as long as every rule wants it in the same place.
+  const assigned = new Map<number, FretPosition>();
+  const search = (r: number): boolean => {
+    if (r === rules.length) return true;
+    for (const { i, at } of options[r]!) {
+      const current = assigned.get(i);
+      if (current && !samePlace(current, at)) continue;
+      if (!current) assigned.set(i, at);
+      if (search(r + 1)) return true;
+      if (!current) assigned.delete(i);
+    }
+    return false;
+  };
+  if (!search(0)) return null;
+  for (const [i, at] of assigned) notes[i] = { ...notes[i]!, string: at.string, fret: at.fret };
+  return { ...melody, notes };
+}
+
+const ATTEMPTS = 200;
+/** Step between redraw seeds: large and odd, so redraws of neighbouring seeds never coincide. */
+const REDRAW_STEP = 1013904223;
+
+/**
+ * A melody that meets the level's rules (docs/rules.md): redraw until it does,
+ * moving notes between positions where only the place is wrong. If no draw
+ * meets every rule, the draw that meets most of them is used.
+ */
+export function generateMelody(config: LevelConfig, seed: number, counts: number = config.maxCounts): Melody {
+  let best: { melody: Melody; met: number } | null = null;
+  // The key is drawn once from the seed and kept through every redraw, so the rules never bias which keys come up.
+  const first = generateOnce(config, seed, counts);
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const drawn = attempt === 0 ? first : generateOnce(config, seed + attempt * REDRAW_STEP, counts, first.key);
+    const rules = positionRules(config, drawn.key);
+    const needsSignature = keySignatureCount(drawn.key) !== 0;
+    const signatureOk = !needsSignature || hasSignatureNote(drawn);
+    const settled = settlePositions(drawn, rules);
+    if (settled && signatureOk) return { ...settled, seed };
+    const met = (signatureOk ? 1 : 0) + rules.filter((r) => usesOneOf(settled ?? drawn, r)).length;
+    if (!best || met > best.met) best = { melody: { ...(settled ?? drawn), seed }, met };
+  }
+  return best!.melody;
+}
+
+function generateOnce(config: LevelConfig, seed: number, counts: number, fixedKey?: Key): Melody {
   if (counts < MIN_COUNTS || counts > config.maxCounts) {
     throw new Error(`Level ${config.id}: ${counts} counts is outside ${MIN_COUNTS}..${config.maxCounts}`);
   }
   const barBeats = barBeatsForCounts(counts);
   const rng = createRng(seed);
   // The key is drawn first so a seed fixes the key as well as the notes.
-  const key = rng.pick(config.keys);
+  const key = fixedKey ?? rng.pick(config.keys);
   const pool = pitchPool(config, key);
   if (pool.length === 0) throw new Error(`Level ${config.id}: no playable in-key pitches`);
 

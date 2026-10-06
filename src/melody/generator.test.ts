@@ -15,9 +15,9 @@ const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
 const FOUR_BARS = [4, 4, 4, 4];
 
 describe('pitchPool', () => {
-  it('Level 1 gives the eight naturals G3..G4, one position each', () => {
+  it('Level 1 gives the eleven naturals D3..G4, one position each', () => {
     const pool = pitchPool(LEVEL_1, LEVEL_1.keys[0]!);
-    expect(pool.map((p) => p.midi)).toEqual([55, 57, 59, 60, 62, 64, 65, 67]);
+    expect(pool.map((p) => p.midi)).toEqual([50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67]);
     expect(pool.every((p) => p.positions.length === 1)).toBe(true);
     expect(pool.find((p) => p.midi === 59)!.positions).toEqual([{ string: 2, fret: 0 }]);
   });
@@ -111,7 +111,7 @@ describe('generateMelody', () => {
 
       for (const note of melody.notes) {
         expect(LEVEL_1.durations).toContain(note.duration);
-        expect(note.midi).toBeGreaterThanOrEqual(55);
+        expect(note.midi).toBeGreaterThanOrEqual(50);
         expect(note.midi).toBeLessThanOrEqual(67);
         expect(isDiatonic(note.midi, melody.key)).toBe(true);
         expect(LEVEL_1.strings).toContain(note.string);

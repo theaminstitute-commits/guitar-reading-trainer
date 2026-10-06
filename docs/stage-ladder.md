@@ -6,6 +6,8 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 
 ## Rules that apply to every stage
 
+The full, numbered rule set with its conflict log is in [rules.md](rules.md).
+
 - **Two tracks**: writing (watch and write, listen only) and playing (read and play) each keep their own stage, length and streaks on this ladder. Read and play grades tones and their number only, so its clean rounds are judged on pitch alone.
 
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
@@ -22,7 +24,7 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 
 | Stage | Adds | Keys | Rhythm | Range | Teaches |
 |---|---|---|---|---|---|
-| 1 | Starting point (as built today) | C | quarter, half | strings 1-3, frets 0-3 (written G4-G5) | Staff positions, two note lengths, the guitar octave |
+| 1 | Starting point | C | quarter, half | strings 1-4, frets 0-3 (written D4-G5) | Staff positions, two note lengths, the guitar octave |
 | 2 | One more fret, leaps up to a 4th | C | quarter, half | strings 1-3, frets 0-4 | Same pitch in two places; wider leaps |
 | 3 | First key signatures | C, G, F | quarter, half | strings 1-3, frets 0-4 | Reading one sharp or one flat; plain F on the line means F# in G |
 | 4 | Two accidentals | + D, Bb | quarter, half | same | Key signature order of sharps and flats |
@@ -33,8 +35,8 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 | 9 | Five accidentals | + B, Db | all so far | same | Keys with many accidentals |
 | 10 | Six accidentals, enharmonic pair | + F#, Gb | all so far | same | Same sound, two spellings; strict spelling decides |
 | 11 | Seven accidentals | + C#, Cb | all so far | same | E#, B#, Fb, Cb as ordinary notes |
-| 12 | Fourth string | all majors | all so far | strings 1-4, frets 0-4 (written from D4, the space under the staff) | The D string; no ledger line yet |
-| 13 | Low strings, first position | all majors | all so far | strings 1-6, frets 0-4 (written from E3, three ledger lines below) | Ledger lines below the staff, middle C, the low E |
+| 12 | Fifth string | all majors | all so far | strings 1-5, frets 0-4 (written from A3: the first ledger lines) | Ledger lines below the staff, middle C |
+| 13 | Sixth string | all majors | all so far | strings 1-6, frets 0-4 (written from E3, three ledger lines below) | The low E, three lines down |
 | 14 | Fifth position | all majors | all so far | strings 1-4, frets 5-9 (written to C#6) | Reading away from the nut; ledger lines above |
 | 15 | Low strings, fifth position | all majors | all so far | strings 1-6, frets 5-9 | The low notes in a new place on the neck |
 | 16 | Up to the octave | all majors | all so far | strings 1-6, frets 9-12 (written to E6, three ledger lines above) | Fret 12 as the octave; the whole neck is now read |

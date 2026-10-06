@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { midiAt } from '../music/fretboard';
-import { degreeOf, isDiatonic, keyId, spellInKey } from '../music/key';
+import { degreeOf, isDiatonic, keyId, keySignatureCount, spellInKey } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
 import { splitIntoBars, totalBeats } from './bars';
-import { generateMelody, pitchPool } from './generator';
+import { generateMelody, hasSignatureNote, pitchPool, topFretPositions } from './generator';
 import { MAX_COUNTS, MIN_COUNTS } from './meter';
 import { MAIN_STAGE_COUNT, STAGES } from './stages';
 
@@ -34,7 +34,9 @@ describe('stage ladder configs', () => {
   it('uses newly added frets or strings in every melody of the stage that adds them', () => {
     const introducing = STAGES.filter((s) => s.introduces && s.introduces.length > 0).map((s) => s.number);
     expect(introducing).toEqual([2, 12, 13, 14, 15, 16, 21]);
-    expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4']);
+    expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4', '4:4']);
+    expect(byNumber(12).introduces!.every((p) => p.string === 5)).toBe(true);
+    expect(byNumber(13).introduces!.every((p) => p.string === 6)).toBe(true);
     expect(byNumber(16).introduces!.every((p) => p.fret >= 10)).toBe(true);
     for (const stage of STAGES.filter((s) => s.introduces)) {
       for (const seed of SEEDS) {
@@ -98,8 +100,27 @@ describe('stage ladder configs', () => {
     expect(STAGES.filter((s) => s.number < 17).every((s) => s.maxListens === 3)).toBe(true);
   });
 
+  it('every main-stage melody uses the top fret of its window and, in a key with a signature, a signature note', () => {
+    for (const stage of STAGES) {
+      for (const seed of SEEDS) {
+        const melody = generateMelody(stage, seed);
+        const label = `${stage.id} ${keyId(melody.key)} seed ${seed}`;
+        if (stage.featureFret) {
+          const top = topFretPositions(stage, melody.key);
+          expect(top.length, label).toBeGreaterThan(0);
+          expect(melody.notes.some((n) => top.some((p) => p.string === n.string && p.fret === n.fret)), label).toBe(true);
+        }
+        if (keySignatureCount(melody.key) !== 0) expect(hasSignatureNote(melody), label).toBe(true);
+      }
+    }
+    // F major has no note on fret 4 in first position, so the top usable fret there is 3.
+    expect(topFretPositions(byNumber(3), byNumber(3).keys.find((k) => keyId(k) === 'F')!).every((p) => p.fret === 3)).toBe(true);
+    expect(topFretPositions(byNumber(3), byNumber(3).keys.find((k) => keyId(k) === 'C')!)).toEqual([{ string: 3, fret: 4 }]);
+  });
+
   it('covers the whole neck: six strings in two positions and up to fret 12', () => {
-    expect(byNumber(12).strings).toEqual([1, 2, 3, 4]);
+    expect(byNumber(1).strings).toEqual([1, 2, 3, 4]);
+    expect(byNumber(12).strings).toEqual([1, 2, 3, 4, 5]);
     expect(byNumber(13).strings).toEqual([1, 2, 3, 4, 5, 6]);
     expect(byNumber(13).fretRange).toEqual([0, 4]);
     expect(byNumber(14).fretRange).toEqual([5, 9]);
@@ -112,10 +133,12 @@ describe('stage ladder configs', () => {
   it('low-string stages reach the ledger lines below; the octave stage reaches three above', () => {
     const lowestOf = (n: number) => Math.min(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s).notes.map((x) => x.midi)));
     const highestOf = (n: number) => Math.max(...SEEDS.flatMap((s) => generateMelody(byNumber(n), s).notes.map((x) => x.midi)));
-    // Fourth string alone never needs a ledger line: written D4 is the space under the staff.
-    expect(writtenFromSounding(lowestOf(12))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
-    expect(writtenFromSounding(lowestOf(12))).toBeLessThan(midiFromSpelled(parseSpelled('E4')));
-    // Six strings in first position go down to the open low E, written E3.
+    // Stage 1 reads from written D4 (the open D string): the space under the staff, no ledger line yet.
+    expect(writtenFromSounding(lowestOf(1))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
+    expect(writtenFromSounding(lowestOf(1))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('E4')));
+    // The fifth string brings the first ledger lines (written A3 to C4), the sixth the open low E (E3).
+    expect(writtenFromSounding(lowestOf(12))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('C4')));
+    expect(writtenFromSounding(lowestOf(12))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('A3')));
     expect(writtenFromSounding(lowestOf(13))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('G3')));
     expect(writtenFromSounding(highestOf(14))).toBeGreaterThan(midiFromSpelled(parseSpelled('A5')));
     expect(writtenFromSounding(highestOf(16))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D6')));
