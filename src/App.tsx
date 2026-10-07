@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Take } from './audio/mic';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import ExerciseScreen from './components/ExerciseScreen';
@@ -169,12 +169,31 @@ export default function App() {
   const onTheme = (theme: Theme) => updateProgress({ ...progress, theme });
 
   // The theme is a data attribute on <html>; "system" removes it so the prefers-color-scheme rules apply.
+  // A change after the first paint crossfades: the View Transitions API where the browser has it,
+  // otherwise a short colour transition on every element. Reduced-motion settings skip both (CSS).
+  const themeApplied = useRef(false);
   useEffect(() => {
     const rootEl = document.documentElement;
-    if (progress.theme === 'system') delete rootEl.dataset.theme;
-    else rootEl.dataset.theme = progress.theme;
-    const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#15130f' : '#efeae2');
+    const apply = () => {
+      if (progress.theme === 'system') delete rootEl.dataset.theme;
+      else rootEl.dataset.theme = progress.theme;
+      const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#15130f' : '#efeae2');
+    };
+    if (!themeApplied.current) {
+      themeApplied.current = true;
+      apply();
+      return;
+    }
+    const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+    if (typeof doc.startViewTransition === 'function') {
+      doc.startViewTransition(apply);
+      return;
+    }
+    rootEl.classList.add('theme-fade');
+    apply();
+    const timer = setTimeout(() => rootEl.classList.remove('theme-fade'), 500);
+    return () => clearTimeout(timer);
   }, [progress.theme]);
 
   const onReset = () => {
