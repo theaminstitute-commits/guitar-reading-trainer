@@ -117,21 +117,24 @@ export class GuitarPlayer {
 
     let cursor = 0;
     if (options.reference && options.reference.times > 0) {
+      // The key note, quickly: one beat apart at the written tempo whatever the playback rate,
+      // then half a beat of air before the count-in. Two tonics at 72 bpm take 2.1 s, not the
+      // 4.2 s (6 s in slow mode) of the old two-beat spacing and full-beat rest.
       const { midi, times } = options.reference;
       const name = Tone.Frequency(midi, 'midi').toNote();
+      const referenceBeat = 60 / options.tempo;
       for (let i = 0; i < times; i++) {
         const at = cursor;
         const index = i;
         this.scheduledIds.push(
           transport.schedule((time) => {
-            sampler.triggerAttackRelease(name, secondsPerBeat * 1.8, time);
+            sampler.triggerAttackRelease(name, referenceBeat * 1.4, time);
             uiAt(() => events.onReference?.(index, times), time);
           }, at),
         );
-        cursor += secondsPerBeat * 2;
+        cursor += referenceBeat;
       }
-      // A beat of silence between the reference and the count-in.
-      cursor += secondsPerBeat;
+      cursor += referenceBeat * 0.5;
     }
     for (let beat = 0; beat < countInBeats; beat++) {
       const at = cursor;

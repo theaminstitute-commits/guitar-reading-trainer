@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Take } from './audio/mic';
+import { sharedPlayer } from './audio/player';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import ExerciseScreen from './components/ExerciseScreen';
 import ExplainerCard from './components/ExplainerCard';
@@ -171,6 +172,18 @@ export default function App() {
   // The theme is a data attribute on <html>; "system" removes it so the prefers-color-scheme rules apply.
   // A change after the first paint crossfades: the View Transitions API where the browser has it,
   // otherwise a short colour transition on every element. Reduced-motion settings skip both (CSS).
+  // Decode the guitar samples on the first touch anywhere, so the first Play does not wait for them.
+  // The audio context needs a user gesture to start, and a tap on the home screen is one.
+  useEffect(() => {
+    const warm = () => {
+      sharedPlayer()
+        .load()
+        .catch(() => {});
+    };
+    window.addEventListener('pointerdown', warm, { once: true });
+    return () => window.removeEventListener('pointerdown', warm);
+  }, []);
+
   const themeApplied = useRef(false);
   useEffect(() => {
     const rootEl = document.documentElement;
