@@ -13,6 +13,8 @@
   --accent: #f0b24f;
   --accent-2: #e39a33;
   --accent-soft: rgba(240, 178, 79, 0.16);
+  --accent-line: rgba(240, 178, 79, 0.3);
+  --accent-shadow: rgba(240, 178, 79, 0.25);
   --accent-text: #1a1611;
   --good: #5fd39a;
   --good-soft: rgba(95, 211, 154, 0.16);
@@ -24,7 +26,7 @@
   --paper: #f8f1e3;
   --paper-ink: #1f1a13;
   --paper-muted: #7d7468;
-  --paper-active: #c9780c;
+  --paper-active: #1f6fb2;
   --paper-bad: #c9402b;
   --glow: rgba(240, 178, 79, 0.12);
   --radius: 16px;
@@ -50,16 +52,18 @@
   --text: #1f1a13;
   --muted: #6b6257;
   --faint: #a39a8d;
-  --accent: #d98a12;
-  --accent-2: #c2760a;
-  --accent-soft: rgba(217, 138, 18, 0.14);
-  --accent-text: #1a1611;
+  --accent: #2b6cb0;
+  --accent-2: #245c96;
+  --accent-soft: rgba(43, 108, 176, 0.13);
+  --accent-line: rgba(43, 108, 176, 0.35);
+  --accent-shadow: rgba(43, 108, 176, 0.25);
+  --accent-text: #ffffff;
   --good: #1e8a4e;
   --good-soft: rgba(30, 138, 78, 0.14);
   --bad: #c9402b;
   --bad-soft: rgba(201, 64, 43, 0.12);
   --info: #1f6fb2;
-  --glow: rgba(217, 138, 18, 0.16);
+  --glow: rgba(43, 108, 176, 0.12);
   --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
   --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
   color-scheme: light;
@@ -77,16 +81,18 @@
     --text: #1f1a13;
     --muted: #6b6257;
     --faint: #a39a8d;
-    --accent: #d98a12;
-    --accent-2: #c2760a;
-    --accent-soft: rgba(217, 138, 18, 0.14);
-    --accent-text: #1a1611;
+    --accent: #2b6cb0;
+    --accent-2: #245c96;
+    --accent-soft: rgba(43, 108, 176, 0.13);
+    --accent-line: rgba(43, 108, 176, 0.35);
+    --accent-shadow: rgba(43, 108, 176, 0.25);
+    --accent-text: #ffffff;
     --good: #1e8a4e;
     --good-soft: rgba(30, 138, 78, 0.14);
     --bad: #c9402b;
     --bad-soft: rgba(201, 64, 43, 0.12);
     --info: #1f6fb2;
-    --glow: rgba(217, 138, 18, 0.16);
+    --glow: rgba(43, 108, 176, 0.12);
     --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
     --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
     color-scheme: light;
@@ -309,7 +315,7 @@ button.primary,
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-text);
   border-color: transparent;
-  box-shadow: 0 6px 18px rgba(240, 178, 79, 0.25);
+  box-shadow: 0 6px 18px var(--accent-shadow);
 }
 
 button.primary:active,
@@ -511,7 +517,7 @@ button.big,
   align-items: center;
   gap: 14px;
   background: linear-gradient(145deg, var(--surface-2), var(--surface));
-  border-color: rgba(240, 178, 79, 0.25);
+  border-color: var(--accent-line);
 }
 
 .hero-main {
@@ -950,7 +956,7 @@ button.link.subtle {
 
 .slot.selected {
   border-color: var(--paper-active);
-  background: rgba(201, 120, 12, 0.14);
+  background: rgba(31, 111, 178, 0.14);
   opacity: 1;
 }
 

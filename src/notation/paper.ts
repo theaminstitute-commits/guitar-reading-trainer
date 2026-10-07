@@ -8,8 +8,8 @@ export const PAPER = {
   background: '#f8f1e3',
   ink: '#1f1a13',
   muted: '#7d7468',
-  /** The note being played or the one selected for editing. */
-  active: '#c9780c',
+  /** The note being played or the one selected for editing: blue on cream, in both themes. */
+  active: '#1f6fb2',
   good: '#1e8a4e',
   bad: '#c9402b',
   missing: '#8c8478',

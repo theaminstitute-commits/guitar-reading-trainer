@@ -15,7 +15,7 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.12.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.12.1 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
@@ -52,7 +52,7 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ### Interface
 
-The look is a small design system in `src/styles.css`: tokens for colour, radius and shadow; `.panel` cards; a `.segmented` control; a toggle switch; `Ring` (progress ring); `.path` for the stage ladder grouped by part; `.sticky-cta` for the primary action on phones. Icons are inline SVG in `src/components/icons.tsx`, so the single-file build needs no icon font. The theme is chosen on the home screen (Auto follows the device, or Light or Dark; `Progress.theme`, a `data-theme` attribute on `<html>`). Every staff sits on a cream paper card in both themes, with the notation colours fixed in `src/notation/paper.ts`, so what is read here looks like printed music.
+The look is a small design system in `src/styles.css`: tokens for colour, radius and shadow; `.panel` cards; a `.segmented` control; a toggle switch; `Ring` (progress ring); `.path` for the stage ladder grouped by part; `.sticky-cta` for the primary action on phones. Icons are inline SVG in `src/components/icons.tsx`, so the single-file build needs no icon font. The theme is chosen on the home screen (Auto follows the device, or Light or Dark; the light theme uses a blue accent, the dark theme amber; `Progress.theme`, a `data-theme` attribute on `<html>`). Every staff sits on a cream paper card in both themes, with the notation colours fixed in `src/notation/paper.ts`, so what is read here looks like printed music.
 
 ### Stage guides and metronome
 
