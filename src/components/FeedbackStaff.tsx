@@ -9,6 +9,7 @@ import { displaySignsForBars } from '../notation/accidentals';
 import type { DurationId } from '../music/duration';
 import type { Sign } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
+import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
 /** What the learner produced, ready to draw: written on the staff, or played and transcribed. */
@@ -33,11 +34,11 @@ interface FeedbackStaffProps {
 }
 
 const COLORS = {
-  ink: '#f1ece4',
-  good: '#6cc38b',
-  bad: '#e5674f',
-  missing: '#8a8178',
-  active: '#e0a84a',
+  ink: PAPER.ink,
+  good: PAPER.good,
+  bad: PAPER.bad,
+  missing: PAPER.missing,
+  active: PAPER.active,
 };
 
 interface Badge {

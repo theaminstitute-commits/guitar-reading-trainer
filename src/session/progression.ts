@@ -17,6 +17,8 @@ import type { Stage } from '../melody/stages';
 
 export type ExerciseMode = 'watch' | 'listen' | 'play';
 export type Handedness = 'right' | 'left';
+/** Colour theme: follow the device, or a fixed choice. */
+export type Theme = 'system' | 'light' | 'dark';
 export type TrackId = 'write' | 'play';
 
 export interface Track {
@@ -59,6 +61,7 @@ export interface Progress {
   version: 4;
   mode: ExerciseMode;
   handedness: Handedness;
+  theme: Theme;
   /** Click on every beat during playback, and while playing in read-and-play. */
   metronome: boolean;
   /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
@@ -84,7 +87,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 4, mode: 'watch', handedness: 'right', metronome: false, seenGuides: [], write: initialTrack(stages), play: initialTrack(stages) };
+  return { version: 4, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), play: initialTrack(stages) };
 }
 
 export function trackIdFor(mode: ExerciseMode): TrackId {

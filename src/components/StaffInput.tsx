@@ -13,6 +13,7 @@ import {
   type AnswerState,
 } from '../notation/answer';
 import { ensureNotationFonts } from '../notation/fonts';
+import { PAPER } from '../notation/paper';
 import { noteAt, staveAt, stepFromY } from '../notation/hitTest';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
@@ -38,10 +39,10 @@ interface SlotRect {
 }
 
 const COLORS = {
-  ink: '#f1ece4',
-  selected: '#e0a84a',
-  fullBar: 'rgba(108, 195, 139, 0.10)',
-  rejectedBar: 'rgba(229, 103, 79, 0.28)',
+  ink: PAPER.ink,
+  selected: PAPER.active,
+  fullBar: PAPER.fullBar,
+  rejectedBar: PAPER.rejectedBar,
 };
 
 function NoteIcon({ duration }: { duration: DurationId }) {

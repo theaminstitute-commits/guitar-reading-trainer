@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Take } from './audio/mic';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import ExerciseScreen from './components/ExerciseScreen';
@@ -28,6 +28,7 @@ import {
   withUnlocked,
   type ExerciseMode,
   type Handedness,
+  type Theme,
   type Progress,
   type ProgressChange,
   hasHeard,
@@ -165,6 +166,16 @@ export default function App() {
   };
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
   const onHandedness = (handedness: Handedness) => updateProgress({ ...progress, handedness });
+  const onTheme = (theme: Theme) => updateProgress({ ...progress, theme });
+
+  // The theme is a data attribute on <html>; "system" removes it so the prefers-color-scheme rules apply.
+  useEffect(() => {
+    const rootEl = document.documentElement;
+    if (progress.theme === 'system') delete rootEl.dataset.theme;
+    else rootEl.dataset.theme = progress.theme;
+    const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#15130f' : '#efeae2');
+  }, [progress.theme]);
 
   const onReset = () => {
     store.clear();
@@ -210,6 +221,7 @@ export default function App() {
           onStage={onStage}
           onMode={onMode}
           onHandedness={onHandedness}
+          onTheme={onTheme}
           onMicCheck={() => setMicCheck(true)}
           onExplainer={setExplainer}
           onReset={onReset}

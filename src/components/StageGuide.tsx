@@ -6,6 +6,7 @@ import { keyName, keySignatureCount, keySignatureSpec, spellInKey } from '../mus
 import { writtenFromSounding } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
+import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 import Fretboard from './Fretboard';
 
@@ -18,8 +19,8 @@ interface StageGuideProps {
   onBack: () => void;
 }
 
-const INK = '#f1ece4';
-const NEW = '#e0a84a';
+const INK = PAPER.ink;
+const NEW = PAPER.active;
 const NOTES_PER_BAR = 4;
 
 /**

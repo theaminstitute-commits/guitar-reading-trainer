@@ -6,6 +6,7 @@ import { keySignatureCount, keySignatureSpec, spellInKey, type Key } from '../mu
 import { staffStep, writtenFromSounding } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
+import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar } from '../notation/renderStaff';
 
 interface MelodyStaffProps {
@@ -15,8 +16,8 @@ interface MelodyStaffProps {
   activeIndex?: number | null;
 }
 
-const INK = '#f1ece4';
-const ACTIVE = '#e0a84a';
+const INK = PAPER.ink;
+const ACTIVE = PAPER.active;
 
 /** The melody as a plain score to read from: key signature, time signatures, no labels. */
 export default function MelodyStaff({ melody, musicKey, activeIndex = null }: MelodyStaffProps) {

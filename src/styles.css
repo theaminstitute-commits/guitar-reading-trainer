@@ -21,6 +21,12 @@
   --info: #7cc4ff;
   --wood: #4a3524;
   --wood-edge: #2f2016;
+  --paper: #f8f1e3;
+  --paper-ink: #1f1a13;
+  --paper-muted: #7d7468;
+  --paper-active: #c9780c;
+  --paper-bad: #c9402b;
+  --glow: rgba(240, 178, 79, 0.12);
   --radius: 16px;
   --radius-sm: 12px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -30,6 +36,61 @@
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Light theme: chosen on the home screen, or the device setting when the choice is "Auto". */
+:root[data-theme='light'] {
+  --bg: #efeae2;
+  --bg-2: #e8e2d8;
+  --surface: #fffdf9;
+  --surface-2: #f6f1e8;
+  --surface-3: #e9e2d6;
+  --border: rgba(40, 30, 15, 0.1);
+  --border-strong: rgba(40, 30, 15, 0.2);
+  --text: #1f1a13;
+  --muted: #6b6257;
+  --faint: #a39a8d;
+  --accent: #d98a12;
+  --accent-2: #c2760a;
+  --accent-soft: rgba(217, 138, 18, 0.14);
+  --accent-text: #1a1611;
+  --good: #1e8a4e;
+  --good-soft: rgba(30, 138, 78, 0.14);
+  --bad: #c9402b;
+  --bad-soft: rgba(201, 64, 43, 0.12);
+  --info: #1f6fb2;
+  --glow: rgba(217, 138, 18, 0.16);
+  --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
+  --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #efeae2;
+    --bg-2: #e8e2d8;
+    --surface: #fffdf9;
+    --surface-2: #f6f1e8;
+    --surface-3: #e9e2d6;
+    --border: rgba(40, 30, 15, 0.1);
+    --border-strong: rgba(40, 30, 15, 0.2);
+    --text: #1f1a13;
+    --muted: #6b6257;
+    --faint: #a39a8d;
+    --accent: #d98a12;
+    --accent-2: #c2760a;
+    --accent-soft: rgba(217, 138, 18, 0.14);
+    --accent-text: #1a1611;
+    --good: #1e8a4e;
+    --good-soft: rgba(30, 138, 78, 0.14);
+    --bad: #c9402b;
+    --bad-soft: rgba(201, 64, 43, 0.12);
+    --info: #1f6fb2;
+    --glow: rgba(217, 138, 18, 0.16);
+    --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
+    --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
+    color-scheme: light;
+  }
 }
 
 * {
@@ -43,7 +104,7 @@ html {
 body {
   margin: 0;
   color: var(--text);
-  background: radial-gradient(1200px 500px at 50% -10%, rgba(240, 178, 79, 0.12), transparent 60%), var(--bg);
+  background: radial-gradient(1200px 500px at 50% -10%, var(--glow), transparent 60%), var(--bg);
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
 }
@@ -843,9 +904,28 @@ button.link.subtle {
   display: block;
 }
 
+/* Cream paper under every staff, in both themes: what is read here should look like printed music.
+   The halo is a box-shadow so the canvas keeps its measured width and its tap geometry. */
+.staff-input .staff-canvas,
+.feedback-staffs .staff-wrap,
+.melody-staff .staff-canvas,
+.card-example .staff-canvas,
+.guide-staff {
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: 0 0 0 10px var(--paper);
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.feedback-staffs .staff-wrap {
+  margin-top: 12px;
+}
+
 .staff-loading {
   padding: 40px 0;
   text-align: center;
+  color: var(--paper-muted);
 }
 
 .staff-message {
@@ -861,7 +941,7 @@ button.link.subtle {
 
 .slot {
   position: absolute;
-  border: 2px dashed var(--border-strong);
+  border: 2px dashed rgba(31, 26, 19, 0.3);
   border-radius: 6px;
   pointer-events: none;
   opacity: 0.8;
@@ -869,8 +949,8 @@ button.link.subtle {
 }
 
 .slot.selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--paper-active);
+  background: rgba(201, 120, 12, 0.14);
   opacity: 1;
 }
 
@@ -1057,14 +1137,14 @@ button.undo span {
 }
 
 .ghost-head {
-  fill: var(--bad);
+  fill: var(--paper-bad);
   fill-opacity: 0.45;
-  stroke: var(--bad);
+  stroke: var(--paper-bad);
   stroke-width: 1.5;
 }
 
 .badge circle {
-  fill: var(--bad);
+  fill: var(--paper-bad);
 }
 
 .badge text {
@@ -1089,37 +1169,37 @@ button.undo span {
 }
 
 .swatch.good {
-  background: var(--good);
+  background: #1e8a4e;
 }
 
 .swatch.bad {
-  background: var(--bad);
+  background: var(--paper-bad);
 }
 
 .swatch.missing {
-  background: #8a8178;
+  background: #8c8478;
 }
 
 .swatch.ghost {
-  background: rgba(255, 107, 87, 0.45);
-  border: 1.5px solid var(--bad);
+  background: rgba(201, 64, 43, 0.45);
+  border: 1.5px solid var(--paper-bad);
 }
 
 .swatch.active {
-  background: var(--accent);
+  background: var(--paper-active);
 }
 
 .pitch-label {
   font-family: inherit;
   font-weight: 600;
   paint-order: stroke;
-  stroke: var(--surface);
+  stroke: var(--paper);
   stroke-width: 3px;
   stroke-linejoin: round;
 }
 
 .pitch-label.ghost {
-  fill: var(--bad);
+  fill: var(--paper-bad);
 }
 
 .length-change {
@@ -1263,7 +1343,6 @@ button.undo span {
 .guide-staff {
   position: relative;
   width: 100%;
-  margin: 0.4rem 0;
   padding-bottom: 14px;
 }
 

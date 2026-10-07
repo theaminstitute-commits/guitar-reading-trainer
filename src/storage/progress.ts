@@ -75,6 +75,7 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
     version: 4,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
+    theme: value.theme === 'light' || value.theme === 'dark' ? value.theme : 'system',
     metronome: value.metronome === true,
     seenGuides: Array.isArray(value.seenGuides) ? value.seenGuides.filter((n): n is number => typeof n === 'number') : [],
     write,

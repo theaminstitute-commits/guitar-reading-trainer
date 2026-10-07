@@ -1,7 +1,7 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
-import type { ExerciseMode, Handedness, Progress, Track } from '../session/progression';
+import type { ExerciseMode, Handedness, Progress, Theme, Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, GuitarIcon, LockIcon, MicIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
 
@@ -22,6 +22,7 @@ interface StartScreenProps {
   onGuide: () => void;
   onMode: (mode: ExerciseMode) => void;
   onHandedness: (handedness: Handedness) => void;
+  onTheme: (theme: Theme) => void;
   onMicCheck: () => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
@@ -55,6 +56,7 @@ export default function StartScreen({
   onGuide,
   onMode,
   onHandedness,
+  onTheme,
   onMicCheck,
   onExplainer,
   onReset,
@@ -126,6 +128,16 @@ export default function StartScreen({
             <button className={`seg${progress.handedness === 'left' ? ' on' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
               Left-handed
             </button>
+          </div>
+        </div>
+        <div className="row-between">
+          <span className="muted">Theme</span>
+          <div className="segmented compact" role="group" aria-label="Theme">
+            {(['system', 'light', 'dark'] as const).map((t) => (
+              <button key={t} className={`seg${progress.theme === t ? ' on' : ''}`} aria-pressed={progress.theme === t} onClick={() => onTheme(t)}>
+                {t === 'system' ? 'Auto' : t === 'light' ? 'Light' : 'Dark'}
+              </button>
+            ))}
           </div>
         </div>
       </div>
