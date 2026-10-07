@@ -19,6 +19,7 @@ import {
   type AnswerState,
 } from '../notation/answer';
 import Fretboard from './Fretboard';
+import { CheckIcon, PlayIcon, SlowIcon, StopIcon } from './icons';
 import StaffInput from './StaffInput';
 
 export const SLOW_RATE = 0.7;
@@ -150,6 +151,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
 
   return (
     <section className="exercise">
+      <div className="panel tight status-card">
       <div className="status-line" aria-live="polite">
         {status === 'loading' && 'Loading guitar sounds…'}
         {status === 'reference' && `Key note: ${tonicName}. The melody is in ${keyName(melody.key)}.`}
@@ -168,9 +170,17 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
+      <div className="listens" aria-label={`${listensLeft} of ${level.maxListens} listens left`}>
+        {Array.from({ length: level.maxListens }, (_, i) => (
+          <span key={i} className={`dot${i < plays ? ' used' : ''}`} />
+        ))}
+      </div>
+      </div>
 
       {showFretboard ? (
-        <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} />
+        <div className="panel board">
+          <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} />
+        </div>
       ) : (
         <div className="listen-only" aria-hidden="true">
           <span className={`ear${status === 'playing' ? ' on' : ''}`}>
@@ -187,15 +197,15 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         {!busy ? (
           <>
             <button className="primary" onClick={() => play(1)} disabled={listensLeft === 0}>
-              {plays === 0 ? 'Play' : 'Replay'}
+              <PlayIcon size={18} /> {plays === 0 ? 'Play' : 'Replay'}
             </button>
             <button onClick={() => play(SLOW_RATE)} disabled={listensLeft === 0}>
-              Slow
+              <SlowIcon size={18} /> Slow
             </button>
           </>
         ) : (
           <button onClick={stop} disabled={status === 'loading'}>
-            Stop
+            <StopIcon size={18} /> Stop
           </button>
         )}
       </div>
@@ -203,21 +213,21 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         <input type="checkbox" checked={metronome} onChange={(e) => onMetronome(e.target.checked)} /> Metronome during playback
       </label>
 
-      <h2 className="section-title">
-        Write what you heard <span className="muted key-name">· {keyName(melody.key)}</span>
-      </h2>
-      <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
+      <div className="panel">
+        <span className="eyebrow">Write what you heard · {keyName(melody.key)}</span>
+        <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
+      </div>
 
-      <div className="controls">
+      <div className="sticky-cta">
         <button
-          className="primary big"
+          className="btn primary big"
           onClick={() => {
             stop();
             onCheck(answer.bars.map((b) => [...b]));
           }}
           disabled={written === 0}
         >
-          Check my answer
+          <CheckIcon size={22} /> Check my answer
         </button>
       </div>
     </section>

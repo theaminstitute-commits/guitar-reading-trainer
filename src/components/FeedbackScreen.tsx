@@ -9,6 +9,8 @@ import type { Melody } from '../melody/types';
 import { isPerfect, type ProgressChange } from '../session/progression';
 import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
+import { EarIcon, PlayIcon, StopIcon } from './icons';
+import Ring from './Ring';
 
 interface FeedbackScreenProps {
   melody: Melody;
@@ -90,60 +92,75 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
   const perfect = result.mistakes.length === 0;
   const rightNotes = result.targetCount - result.missingCount - result.pairs.filter((p) => p.target && p.answer && p.mistakes.length > 0).length;
 
+  const tone = (v: number) => (v >= 0.9 ? 'var(--good)' : v < 0.6 ? 'var(--bad)' : 'var(--accent)');
+
   return (
     <section className="feedback">
-      <div className={`score-row${result.timingGraded ? '' : ' two'}`}>
-        <div className="score">
-          <span className="score-label">{result.timingGraded ? 'Pitch' : 'Tones'}</span>
-          <span className={`score-value ${result.pitchScore >= 0.9 ? 'good' : result.pitchScore < 0.6 ? 'bad' : ''}`}>{pct(result.pitchScore)}</span>
+      <div className={`panel result-hero${perfect ? ' perfect' : ''}`}>
+        <div className="result-rings">
+          <Ring value={result.pitchScore} color={tone(result.pitchScore)} label={pct(result.pitchScore)} sub={result.timingGraded ? 'pitch' : 'tones'} />
+          {result.timingGraded && <Ring value={result.rhythmScore} color={tone(result.rhythmScore)} label={pct(result.rhythmScore)} sub="rhythm" />}
         </div>
-        {result.timingGraded && (
-          <div className="score">
-            <span className="score-label">Rhythm</span>
-            <span className={`score-value ${result.rhythmScore >= 0.9 ? 'good' : result.rhythmScore < 0.6 ? 'bad' : ''}`}>{pct(result.rhythmScore)}</span>
-          </div>
-        )}
-        <div className="score">
-          <span className="score-label">Notes</span>
-          <span className="score-value">
-            {rightNotes}/{result.targetCount}
+        <div className="result-text">
+          <h2 className="result-title">{perfect ? 'Flawless' : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at`}</h2>
+          <p className="verdict">
+            {perfect
+              ? result.timingGraded
+                ? 'Every note and every length right. Well read.'
+                : 'Every tone right, and the right number of them. Well played.'
+              : 'Play each version and watch its staff, then read the notes below.'}
+          </p>
+          <span className="notes-count">
+            {rightNotes}/{result.targetCount} notes right
           </span>
         </div>
       </div>
 
-      <p className="verdict">
-        {perfect
-          ? result.timingGraded
-            ? 'Every note and every length right. Well read.'
-            : 'Every tone right, and the right number of them. Well played.'
-          : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at. Play each version and watch its staff, then read the notes below.`}
-      </p>
+      {change === null && (
+        <div className="tally-strip" aria-label={`${nextTally} of ${nextStage.unlockAfter} flawless melodies on this stage`}>
+          <div className="tally-dots" aria-hidden="true">
+            {Array.from({ length: nextStage.unlockAfter }, (_, i) => (
+              <span key={i} className={i < nextTally ? 'on' : ''} />
+            ))}
+          </div>
+          <span className="tally-text muted">
+            {nextTally} of {nextStage.unlockAfter} flawless{isPerfect(result) ? ' · +1' : ''}
+          </span>
+        </div>
+      )}
 
-      <FeedbackStaff melody={melody} musicKey={melody.key} result={result} yours={yours} activeTarget={activeTarget} activeAnswer={activeAnswer} />
-
-      <div className="controls">
-        {playing ? (
-          <button onClick={stop}>Stop</button>
-        ) : (
-          <>
-            <button onClick={() => void playCorrect()}>Hear correct</button>
-            <button onClick={() => void playMine()} disabled={!hearMine || result.answerCount === 0}>
-              Hear mine
-            </button>
-          </>
-        )}
-        <button className="primary" onClick={onNext}>
-          Next melody
-        </button>
-      </div>
-
-      {(change || isPerfect(result)) && (
+      {change && (
         <p className={`length-change ${change === 'stage-down' ? 'shorter' : 'longer'}`}>
-          {change === null && `Flawless. ${nextTally} of ${nextStage.unlockAfter} towards stage ${nextStage.number + 1}.`}
           {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies are ${nextCounts} counts long (${nextMeter}).`}
           {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Ten flawless melodies bring the next stage back.`}
         </p>
       )}
+
+      <div className="panel">
+        <FeedbackStaff melody={melody} musicKey={melody.key} result={result} yours={yours} activeTarget={activeTarget} activeAnswer={activeAnswer} />
+      </div>
+
+      <div className="controls">
+        {playing ? (
+          <button onClick={stop}>
+            <StopIcon size={18} /> Stop
+          </button>
+        ) : (
+          <>
+            <button onClick={() => void playCorrect()}>
+              <PlayIcon size={18} /> Hear correct
+            </button>
+            <button onClick={() => void playMine()} disabled={!hearMine || result.answerCount === 0}>
+              <EarIcon size={18} /> Hear mine
+            </button>
+          </>
+        )}
+      </div>
+      <div className="sticky-cta">
+        <button className="btn primary big" onClick={onNext}>
+          Next melody
+        </button>
+      </div>
 
       {explanations.length > 0 && (
         <ol className="mistakes">

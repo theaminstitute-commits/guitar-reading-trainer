@@ -15,7 +15,7 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.10.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.11.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
@@ -49,6 +49,10 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 ## Modes
 
 **Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. **Read and play** reverses the task: the melody is shown as a score, the learner plays it on the guitar and the microphone listens. Only the tones and how many were played are graded, never the timing, and reading and playing keep separate progress tracks on the ladder. The mode is chosen on the start screen and remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
+
+### Interface
+
+The look is a small design system in `src/styles.css`: tokens for colour, radius and shadow; `.panel` cards; a `.segmented` control; a toggle switch; `Ring` (progress ring); `.path` for the stage ladder grouped by part; `.sticky-cta` for the primary action on phones. Icons are inline SVG in `src/components/icons.tsx`, so the single-file build needs no icon font.
 
 ### Stage guides and metronome
 

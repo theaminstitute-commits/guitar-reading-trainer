@@ -6,6 +6,7 @@ import { tonicReference } from '../melody/tonic';
 import type { Melody } from '../melody/types';
 import { keyName, spellInKey } from '../music/key';
 import { spelledName } from '../music/pitch';
+import { CheckIcon, MicIcon } from './icons';
 import MelodyStaff from './MelodyStaff';
 
 interface PlayScreenProps {
@@ -130,6 +131,7 @@ export default function PlayScreen({ melody, level, selfPlay = false, metronome,
 
   return (
     <section className="exercise play">
+      <div className="panel tight status-card">
       <div className="status-line" aria-live="polite">
         {status === 'idle' && `Read the melody, then play it on your guitar. ${selfPlay ? 'Self-play check: the app plays it for you.' : 'The microphone listens while you play.'}`}
         {status === 'opening' && 'Opening the microphone…'}
@@ -137,11 +139,14 @@ export default function PlayScreen({ melody, level, selfPlay = false, metronome,
         {status === 'listening' && `Listening. Notes heard: ${heard}. Tap Done when you have finished, or just stop playing.`}
         {status === 'stopping' && 'Working out what you played…'}
       </div>
+      </div>
 
-      <MelodyStaff melody={melody} musicKey={melody.key} />
-
-      <div className="listen-meter" aria-hidden="true">
-        <div className={`meter-bar${status === 'listening' ? ' live' : ''}`} style={{ width: `${Math.round(level_ * 100)}%` }} />
+      <div className="panel">
+        <span className="eyebrow">Read and play · {keyName(melody.key)}</span>
+        <MelodyStaff melody={melody} musicKey={melody.key} />
+        <div className="listen-meter" aria-hidden="true">
+          <div className={`meter-bar${status === 'listening' ? ' live' : ''}`} style={{ width: `${Math.round(level_ * 100)}%` }} />
+        </div>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -149,11 +154,11 @@ export default function PlayScreen({ melody, level, selfPlay = false, metronome,
       <div className="controls">
         {!busy ? (
           <button className="primary big" onClick={() => void start()}>
-            {selfPlay ? 'Run self-play check' : 'Start playing'}
+            <MicIcon size={20} /> {selfPlay ? 'Run self-play check' : 'Start playing'}
           </button>
         ) : (
           <button className="primary big" onClick={() => void finish()} disabled={status !== 'listening'}>
-            Done
+            <CheckIcon size={20} /> Done
           </button>
         )}
       </div>

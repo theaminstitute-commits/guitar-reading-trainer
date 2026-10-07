@@ -7,6 +7,7 @@ import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
 import MicCheck from './components/MicCheck';
 import PlayScreen from './components/PlayScreen';
+import { ChevronLeftIcon } from './components/icons';
 import StageGuide from './components/StageGuide';
 import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
@@ -173,13 +174,28 @@ export default function App() {
 
   return (
     <main className="app">
-      <header className="app-header">
-        <h1>Guitar Reading Trainer</h1>
-        <p className="muted">
-          {screen === 'start' || screen === 'guide'
-            ? level.title
-            : `Stage ${exercise.level.number} · Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${melody.counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
-        </p>
+      <header className="app-bar">
+        {screen !== 'start' && (
+          <button className="icon-btn" onClick={() => setScreen('start')} aria-label="Back to start">
+            <ChevronLeftIcon />
+          </button>
+        )}
+        <div className="brand">
+          {screen === 'start' && (
+            <span className="brand-mark" aria-hidden="true">
+              ♪
+            </span>
+          )}
+          <div>
+            <h1>Guitar Reading Trainer</h1>
+            <p>
+              {screen === 'start' || screen === 'guide'
+                ? level.title
+                : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${melody.counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
+            </p>
+          </div>
+        </div>
+        {screen !== 'start' && <span className="stage-pill">Stage {screen === 'guide' ? level.number : exercise.level.number}</span>}
       </header>
 
       {screen === 'start' && (
@@ -238,14 +254,6 @@ export default function App() {
           onNext={begin}
           onExplainer={setExplainer}
         />
-      )}
-
-      {screen !== 'start' && screen !== 'guide' && (
-        <p className="muted small-note">
-          <button className="link subtle" onClick={() => setScreen('start')}>
-            Back to start
-          </button>
-        </p>
       )}
 
       {explainer && <ExplainerCard id={explainer} onClose={() => setExplainer(null)} />}

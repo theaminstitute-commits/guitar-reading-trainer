@@ -1,7 +1,9 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
-import type { Stage } from '../melody/stages';
+import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Track } from '../session/progression';
+import { BookIcon, CheckIcon, EarIcon, EyeIcon, GuitarIcon, LockIcon, MicIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
+import Ring from './Ring';
 
 export interface SessionStats {
   exercises: number;
@@ -27,11 +29,20 @@ interface StartScreenProps {
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
-const MODE_NOTE: Record<ExerciseMode, string> = {
-  watch: 'The fretboard lights up each note as it plays, and you write it on the staff.',
-  listen: 'Dictation by ear: no fretboard. The key note still sounds first from stage 3.',
-  play: 'You read the melody and play it on your guitar. The microphone hears the tones; only the notes and how many are graded, not the timing.',
-};
+const MODES: { id: ExerciseMode; label: string; icon: typeof EyeIcon; note: string }[] = [
+  { id: 'watch', label: 'Watch & write', icon: EyeIcon, note: 'The fretboard lights up each note as it plays. You write it on the staff.' },
+  { id: 'listen', label: 'Listen only', icon: EarIcon, note: 'Dictation by ear, no fretboard. The key note still sounds first from stage 3.' },
+  { id: 'play', label: 'Read & play', icon: GuitarIcon, note: 'Read the melody and play it on your guitar. The microphone hears the tones; notes and count are graded, not timing.' },
+];
+
+/** The ladder in parts, for the stage path. */
+const PARTS: { title: string; from: number; to: number }[] = [
+  { title: 'Part A · Major keys', from: 1, to: 11 },
+  { title: 'Part B · The whole neck', from: 12, to: 16 },
+  { title: 'Part C · Minor keys', from: 17, to: 20 },
+  { title: 'Free reading', from: MAIN_STAGE_COUNT, to: MAIN_STAGE_COUNT },
+  { title: 'Bonus · Longer melodies', from: MAIN_STAGE_COUNT + 1, to: 999 },
+];
 
 export default function StartScreen({
   stages,
@@ -50,100 +61,137 @@ export default function StartScreen({
 }: StartScreenProps) {
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(track.accuracySum, track.exercises);
-  const chip = (selected: boolean) => `chip${selected ? ' selected' : ''}`;
+  const next = track.unlocked < stages.length - 1 ? stages[track.unlocked + 1]! : null;
+  const onTop = track.stage === track.unlocked;
+  const mode = MODES.find((m) => m.id === progress.mode)!;
+  const stateOf = (i: number) => (i === track.stage ? 'current' : i <= track.unlocked ? 'reached' : 'locked');
 
   return (
     <section className="start">
-      <p className="lead">Hear a short melody, watch it on the fretboard, then write it on the staff. Or read a melody and play it. Every mistake gets explained.</p>
-
-      <div className="stats">
-        <div>
-          <span className="stat-label">This session</span>
-          <span className="stat-value">
-            {session.exercises} {session.exercises === 1 ? 'melody' : 'melodies'}
-            {sessionAccuracy ? ` · ${sessionAccuracy}` : ''}
-          </span>
+      {/* Current stage */}
+      <div className="panel hero">
+        <div className="hero-main">
+          <span className="eyebrow">{onTop ? 'Current stage' : 'Revisiting'}</span>
+          <h2 className="hero-title">
+            <span className="hero-number">{level.number}</span> {level.name}
+          </h2>
+          <p className="hero-summary">{level.summary}</p>
         </div>
-        <div>
-          <span className="stat-label">All time, {progress.mode === 'play' ? 'playing' : 'writing'}</span>
-          <span className="stat-value">
-            {track.exercises} {track.exercises === 1 ? 'melody' : 'melodies'}
-            {lifetimeAccuracy ? ` · ${lifetimeAccuracy}` : ''}
-          </span>
-        </div>
+        <Ring value={onTop ? track.tally / level.unlockAfter : 1} label={onTop ? `${track.tally}/${level.unlockAfter}` : '✓'} sub={onTop ? 'flawless' : 'reached'} />
       </div>
-
-      <div className="length-picker" role="group" aria-label="Mode">
-        <span className="muted">Mode</span>
-        <button className={chip(progress.mode === 'watch')} aria-pressed={progress.mode === 'watch'} onClick={() => onMode('watch')}>
-          Watch and write
-        </button>
-        <button className={chip(progress.mode === 'listen')} aria-pressed={progress.mode === 'listen'} onClick={() => onMode('listen')}>
-          Listen only
-        </button>
-        <button className={chip(progress.mode === 'play')} aria-pressed={progress.mode === 'play'} onClick={() => onMode('play')}>
-          Read and play
-        </button>
-      </div>
-      <p className="muted small-note">{MODE_NOTE[progress.mode]}</p>
-
-      <div className="length-picker" role="group" aria-label="Handedness">
-        <span className="muted">Guitar</span>
-        <button className={chip(progress.handedness === 'right')} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
-          Right-handed
-        </button>
-        <button className={chip(progress.handedness === 'left')} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
-          Left-handed
-        </button>
-      </div>
-
-      <div className="length-picker" role="group" aria-label="Stage">
-        <span className="muted">Stage</span>
-        {stages.slice(0, track.unlocked + 1).map((s, i) => (
-          <button key={s.id} className={chip(i === track.stage)} aria-pressed={i === track.stage} onClick={() => onStage(i)} title={s.name}>
-            {s.number}
-          </button>
-        ))}
-        {track.unlocked < stages.length - 1 && (
-          <span className="chip locked" title={`Stage ${stages[track.unlocked + 1]!.number} unlocks after ${stages[track.unlocked]!.unlockAfter} flawless melodies on stage ${stages[track.unlocked]!.number}`} aria-label="Next stage locked">
-            {stages[track.unlocked + 1]!.number} 🔒
-          </span>
-        )}
-      </div>
-      <p className="stage-summary">
-        <strong>{level.name}.</strong> {level.summary}
-      </p>
-      {track.unlocked < stages.length - 1 && (
-        <p className="muted small-note">
-          Stage {stages[track.unlocked + 1]!.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right.
-          {track.stage === track.unlocked && ` Flawless so far: ${track.tally} of ${level.unlockAfter}.`}
+      {next ? (
+        <p className="muted small-note hint">
+          <LockIcon size={14} /> Stage {next.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right.
+        </p>
+      ) : (
+        <p className="muted small-note hint">
+          <SparkIcon size={14} /> Every stage is open. Keep reading.
         </p>
       )}
 
-
-      <div className="controls">
-        <button className="primary big" onClick={onStart}>
-          Start
+      <div className="cta">
+        <button className="btn primary big" onClick={onStart}>
+          <PlayIcon size={22} /> Start stage {level.number}
         </button>
-        <button onClick={onGuide}>Stage guide</button>
-        {progress.mode === 'play' && <button onClick={onMicCheck}>Mic check</button>}
+        <div className="cta-row">
+          <button className="btn" onClick={onGuide}>
+            <BookIcon size={18} /> Stage guide
+          </button>
+          {progress.mode === 'play' && (
+            <button className="btn" onClick={onMicCheck}>
+              <MicIcon size={18} /> Mic check
+            </button>
+          )}
+        </div>
       </div>
 
-      <h2 className="section-title">Quick explainers</h2>
-      <ul className="explainer-list">
-        {EXPLAINER_ORDER.map((id) => (
-          <li key={id}>
-            <button className="link" onClick={() => onExplainer(id)}>
-              {EXPLAINERS[id].title}
+      {/* Mode */}
+      <div className="panel">
+        <span className="eyebrow">Mode</span>
+        <div className="segmented" role="group" aria-label="Mode">
+          {MODES.map((m) => (
+            <button key={m.id} className={`seg${progress.mode === m.id ? ' on' : ''}`} aria-pressed={progress.mode === m.id} onClick={() => onMode(m.id)}>
+              <m.icon size={18} />
+              <span>{m.label}</span>
             </button>
-          </li>
+          ))}
+        </div>
+        <p className="muted small-note">{mode.note}</p>
+        <div className="row-between">
+          <span className="muted">Guitar</span>
+          <div className="segmented compact" role="group" aria-label="Handedness">
+            <button className={`seg${progress.handedness === 'right' ? ' on' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
+              Right-handed
+            </button>
+            <button className={`seg${progress.handedness === 'left' ? ' on' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
+              Left-handed
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="stats">
+        <div className="panel stat">
+          <span className="stat-label">This session</span>
+          <span className="stat-value">{session.exercises}</span>
+          <span className="stat-sub">{session.exercises === 1 ? 'melody' : 'melodies'}{sessionAccuracy ? ` · ${sessionAccuracy}` : ''}</span>
+        </div>
+        <div className="panel stat">
+          <span className="stat-label">All time, {progress.mode === 'play' ? 'playing' : 'writing'}</span>
+          <span className="stat-value">{track.exercises}</span>
+          <span className="stat-sub">{track.exercises === 1 ? 'melody' : 'melodies'}{lifetimeAccuracy ? ` · ${lifetimeAccuracy}` : ''}</span>
+        </div>
+      </div>
+
+      {/* Path */}
+      <h2 className="section-title">Your path</h2>
+      <p className="muted small-note">Tap any stage you have reached to practise it again.</p>
+      <div className="path">
+        {PARTS.map((part) => {
+          const items = stages.map((s, i) => ({ s, i })).filter(({ s }) => s.number >= part.from && s.number <= part.to);
+          if (items.length === 0) return null;
+          return (
+            <div key={part.title} className="path-part">
+              <div className="path-part-title">{part.title}</div>
+              <ol className="path-list">
+                {items.map(({ s, i }) => {
+                  const state = stateOf(i);
+                  return (
+                    <li key={s.id} className={`path-item ${state}`}>
+                      <button className="path-node" onClick={() => onStage(i)} disabled={state === 'locked'} aria-current={state === 'current' ? 'step' : undefined} aria-label={`Stage ${s.number}: ${s.name}`}>
+                        <span className="node">{state === 'locked' ? <LockIcon size={14} /> : state === 'reached' ? <CheckIcon size={16} /> : s.number}</span>
+                        <span className="node-text">
+                          <span className="node-name">
+                            {s.number}. {s.name}
+                          </span>
+                          <span className="node-sub">{state === 'current' ? (onTop ? `${track.tally} of ${s.unlockAfter} flawless` : 'practising') : state === 'reached' ? 'reached' : 'locked'}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Explainers */}
+      <h2 className="section-title">Quick explainers</h2>
+      <div className="explainer-row">
+        {EXPLAINER_ORDER.map((id) => (
+          <button key={id} className="explainer-card" onClick={() => onExplainer(id)}>
+            <BookIcon size={18} />
+            <span>{EXPLAINERS[id].title}</span>
+          </button>
         ))}
-      </ul>
+      </div>
 
       {(progress.write.exercises > 0 || progress.play.exercises > 0) && (
-        <p className="muted small-note">
+        <p className="muted small-note reset-row">
           <button className="link subtle" onClick={onReset}>
-            Reset progress
+            <RefreshIcon size={14} /> Reset progress
           </button>
         </p>
       )}
