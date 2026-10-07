@@ -1,7 +1,7 @@
 GUITAR READING TRAINER for Linux Mint / Ubuntu - pick ONE of these
 ===================================================================
 
-1) guitar-reading-trainer_0.12.1_all.deb   (recommended)
+1) guitar-reading-trainer_0.12.2_all.deb   (recommended)
    Double-click it. Mint's Package Installer opens: click "Install Package"
    and enter your password. Guitar Reading Trainer then appears in the menu
    under Sound & Video and Education.

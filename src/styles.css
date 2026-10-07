@@ -23,6 +23,10 @@
   --info: #7cc4ff;
   --wood: #4a3524;
   --wood-edge: #2f2016;
+  --nut: #e8dcc4;
+  --wire: #b9b2a6;
+  --string: #d9d3c7;
+  --marker: #7a6350;
   --paper: #f8f1e3;
   --paper-ink: #1f1a13;
   --paper-muted: #7d7468;
@@ -66,6 +70,12 @@
   --glow: rgba(43, 108, 176, 0.12);
   --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
   --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
+  --wood: #e6c994;
+  --wood-edge: #c4a46c;
+  --nut: #f7efdc;
+  --wire: #8d8578;
+  --string: #6e6558;
+  --marker: #3b3127;
   color-scheme: light;
 }
 
@@ -95,6 +105,12 @@
     --glow: rgba(43, 108, 176, 0.12);
     --shadow: 0 10px 30px rgba(60, 40, 10, 0.14);
     --shadow-sm: 0 2px 8px rgba(60, 40, 10, 0.08);
+    --wood: #e6c994;
+    --wood-edge: #c4a46c;
+    --nut: #f7efdc;
+    --wire: #8d8578;
+    --string: #6e6558;
+    --marker: #3b3127;
     color-scheme: light;
   }
 }
@@ -804,20 +820,22 @@ button.link.subtle {
 }
 
 .fb-nut {
-  fill: #e8dcc4;
+  fill: var(--nut);
+  stroke: var(--wood-edge);
+  stroke-width: 0.5;
 }
 
 .fb-wire {
-  stroke: #b9b2a6;
+  stroke: var(--wire);
   stroke-width: 2;
 }
 
 .fb-string {
-  stroke: #d9d3c7;
+  stroke: var(--string);
 }
 
 .fb-marker {
-  fill: #7a6350;
+  fill: var(--marker);
 }
 
 .fb-fret-number,
