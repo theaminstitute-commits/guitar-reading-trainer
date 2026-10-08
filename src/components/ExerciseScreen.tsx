@@ -214,7 +214,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       </label>
 
       <div className="panel">
-        <span className="eyebrow">Write what you heard · {keyName(melody.key)}</span>
+        <span className="eyebrow">{showFretboard ? 'Write what you see' : 'Write what you heard'} · {keyName(melody.key)}</span>
         <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
       </div>
 

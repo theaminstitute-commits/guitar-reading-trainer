@@ -33,11 +33,11 @@ describe('stage ladder configs', () => {
 
   it('uses newly added frets or strings in every melody of the stage that adds them', () => {
     const introducing = STAGES.filter((s) => s.introduces && s.introduces.length > 0).map((s) => s.number);
-    expect(introducing).toEqual([2, 12, 13, 14, 15, 16, 21]);
+    expect(introducing).toEqual([2, 6, 12, 13, 18]);
     expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4', '4:4']);
-    expect(byNumber(12).introduces!.every((p) => p.string === 5)).toBe(true);
-    expect(byNumber(13).introduces!.every((p) => p.string === 6)).toBe(true);
-    expect(byNumber(16).introduces!.every((p) => p.fret >= 10)).toBe(true);
+    expect(byNumber(6).introduces!.every((p) => p.string >= 5)).toBe(true);
+    expect(byNumber(6).introduces).toHaveLength(10);
+    expect(byNumber(13).introduces!.every((p) => p.fret >= 10)).toBe(true);
     for (const stage of STAGES.filter((s) => s.introduces)) {
       for (const seed of SEEDS) {
         const melody = generateMelody(stage, seed);
@@ -96,8 +96,28 @@ describe('stage ladder configs', () => {
 
   it('has no optional stage and drops listens to two in Part B', () => {
     expect(STAGES.filter((s) => s.optional)).toEqual([]);
-    expect(STAGES.filter((s) => s.number >= 17).every((s) => s.maxListens === 2)).toBe(true);
-    expect(STAGES.filter((s) => s.number < 17).every((s) => s.maxListens === 3)).toBe(true);
+    expect(STAGES.filter((s) => s.number >= 14).every((s) => s.maxListens === 2)).toBe(true);
+    expect(STAGES.filter((s) => s.number < 14).every((s) => s.maxListens === 3)).toBe(true);
+  });
+
+  it('key-introducing stages use only their new keys; the others draw from every key so far (R18)', () => {
+    const ids = (n: number) => byNumber(n).keys.map((k) => keyId(k));
+    expect(ids(3)).toEqual(['G', 'F']);
+    expect(ids(4)).toEqual(['D', 'Bb']);
+    expect(ids(5)).toEqual(['C', 'G', 'F', 'D', 'Bb']);
+    expect(ids(6)).toEqual(['A', 'Eb']);
+    expect(ids(7)).toEqual(['C', 'G', 'F', 'D', 'Bb', 'A', 'Eb']);
+    expect(ids(8)).toEqual(['E', 'Ab']);
+    expect(ids(9)).toEqual(['B', 'Db']);
+    expect(ids(10)).toEqual(['F#', 'Gb']);
+    expect(ids(11)).toEqual(['C#', 'Cb']);
+    expect(ids(12)).toHaveLength(15);
+    expect(ids(13)).toHaveLength(15);
+    expect(ids(14)).toEqual(['Am', 'Em', 'Dm']);
+    expect(ids(15)).toEqual(['Bm', 'Gm', 'F#m', 'Cm']);
+    expect(ids(16)).toHaveLength(7);
+    expect(ids(17)).toHaveLength(7);
+    expect(ids(18)).toHaveLength(36);
   });
 
   it('every main-stage melody uses the top fret of its window and, in a key with a signature, a signature note', () => {
@@ -115,17 +135,18 @@ describe('stage ladder configs', () => {
     }
     // F major has no note on fret 4 in first position, so the top usable fret there is 3.
     expect(topFretPositions(byNumber(3), byNumber(3).keys.find((k) => keyId(k) === 'F')!).every((p) => p.fret === 3)).toBe(true);
-    expect(topFretPositions(byNumber(3), byNumber(3).keys.find((k) => keyId(k) === 'C')!)).toEqual([{ string: 3, fret: 4 }]);
+    expect(topFretPositions(byNumber(2), byNumber(2).keys[0]!)).toEqual([{ string: 3, fret: 4 }]);
   });
 
   it('covers the whole neck: six strings in two positions and up to fret 12', () => {
     expect(byNumber(1).strings).toEqual([1, 2, 3, 4]);
-    expect(byNumber(12).strings).toEqual([1, 2, 3, 4, 5]);
-    expect(byNumber(13).strings).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(byNumber(13).fretRange).toEqual([0, 4]);
-    expect(byNumber(14).fretRange).toEqual([5, 9]);
+    expect(byNumber(5).strings).toEqual([1, 2, 3, 4]);
+    expect(byNumber(6).strings).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(byNumber(6).fretRange).toEqual([0, 4]);
+    expect(byNumber(12).fretRange).toEqual([5, 9]);
+    expect(byNumber(12).strings).toHaveLength(6);
     expect(byNumber(15).strings).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(byNumber(16).fretRange).toEqual([9, 12]);
+    expect(byNumber(13).fretRange).toEqual([9, 12]);
     expect(byNumber(21).fretRange).toEqual([0, 12]);
     expect(byNumber(21).strings).toHaveLength(6);
   });
@@ -137,10 +158,10 @@ describe('stage ladder configs', () => {
     expect(writtenFromSounding(lowestOf(1))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
     expect(writtenFromSounding(lowestOf(1))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('E4')));
     // The fifth string brings the first ledger lines (written A3 to C4), the sixth the open low E (E3).
-    expect(writtenFromSounding(lowestOf(12))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('C4')));
-    expect(writtenFromSounding(lowestOf(12))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('A3')));
-    expect(writtenFromSounding(lowestOf(13))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('G3')));
-    expect(writtenFromSounding(highestOf(14))).toBeGreaterThan(midiFromSpelled(parseSpelled('A5')));
-    expect(writtenFromSounding(highestOf(16))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D6')));
+    // Strings 5 and 6 arrive at stage 6 (R19): ledger lines below, down to the open low E (written E3).
+    expect(writtenFromSounding(lowestOf(5))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
+    expect(writtenFromSounding(lowestOf(6))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('G3')));
+    expect(writtenFromSounding(highestOf(12))).toBeGreaterThan(midiFromSpelled(parseSpelled('A5')));
+    expect(writtenFromSounding(highestOf(13))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D6')));
   });
 });

@@ -91,7 +91,7 @@ describe('stage ladder progression', () => {
     }
     expect(t.stage).toBe(last);
     expect(rounds).toBe(10 * last);
-    expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(200);
+    expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(170);
   });
 
   it('remembers the melodies given on a stage so none repeats there (R16)', () => {

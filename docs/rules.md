@@ -15,14 +15,17 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R7 | A stage that adds frets or strings puts at least one note on a newly added position in every melody. **(user)** | 2026-10-05 | `Stage.introduces`, `melody/generator.ts` |
 | R8 | A stage unlocks after ten flawless melodies (every note and every length right). Melodies with any mistake neither count nor cost. Two weak rounds in a row drop a stage. **(user)** | 2026-10-05 | `session/progression.ts` |
 | R9 | Every main stage (1 to 21) is one bar of 4/4. There is no length control anywhere. **(user)** | 2026-10-05 | `melody/levelConfig.ts`, `components/StartScreen.tsx` |
-| R10 | Extra counts exist only as bonus stages after free reading: 22 to 33 carry 5 to 16 counts, fixed, with random keys from every major and minor form and positions over the whole neck. **(user)** | 2026-10-05 | `melody/stages.ts` |
+| R10 | Extra counts exist only as bonus stages after free reading: 19 to 30 (22 to 33 until 2026-10-08) carry 5 to 16 counts, fixed, with random keys from every major and minor form and positions over the whole neck. **(user)** | 2026-10-05 | `melody/stages.ts` |
 | R11 | The count-in and both metronomes use the Tempus click: one uniform click, no accent. The metronome is off by default. **(user)** | 2026-10-05 | `audio/click.ts`, `audio/player.ts` |
 | R12 | A stage guide page opens before a stage the first time it is met and from a button on the start screen. There is no optional stage. **(user)** | 2026-10-05 | `components/StageGuide.tsx` |
-| R13 | The newest fret stays in use: every melody on a main stage puts at least one note on the highest fret of the stage's window that has an in-key note on one of the stage's strings. Where the top fret has none (F major in first position has no note on fret 4 on any string), the next fret down counts. Waived on the stages that add a string (12, 13, 15), see the conflict log. **(user, rule 1 of 2026-10-06)** | 2026-10-06 | `LevelConfig.featureFret`, `melody/generator.ts` |
+| R13 | The newest fret stays in use: every melody on a main stage puts at least one note on the highest fret of the stage's window that has an in-key note on one of the stage's strings. Where the top fret has none (F major in first position has no note on fret 4 on any string), the next fret down counts. Waived on the stage that adds strings (6, under R19; 12, 13 and 15 of the old ladder before that), see the conflict log. **(user, rule 1 of 2026-10-06)** | 2026-10-06 | `LevelConfig.featureFret`, `melody/generator.ts` |
 | R14 | In a key with a key signature, every melody contains at least one note altered by that signature (a B♭ in F major, an F♯ or C♯ in D major). Raised minor degrees do not count; they are not in the signature. **(user, rule 2 of 2026-10-06)** | 2026-10-06 | `melody/generator.ts` |
 | R15 | Stage 1 reads from written D4 to G5: strings 1 to 4, frets 0 to 3. **(user, rule 3 of 2026-10-06)** | 2026-10-06 | `melody/levelConfig.ts` |
 | R16 | No melody is given twice on the same stage. Two melodies are the same when their key, pitches and lengths match; where the notes are played does not count. The app remembers what each stage has given (per track, up to 400 melodies a stage) and draws again until it has something new. **(user, rule 4 of 2026-10-06)** | 2026-10-06 | `session/progression.ts` (`fingerprint`, `withMelodyHeard`), `App.tsx` |
 | R17 | A stage lost through demotion shows its guide page again when it is won back. **(user, rule 5 of 2026-10-06)** | 2026-10-06 | `App.tsx` (`record`) |
+| R18 | A stage that introduces keys uses only those keys, so the learner meets what the stage is about from the first melody (stage 3: G and F; 4: D and B♭; 6: A and E♭; 8: E and A♭; 9: B and D♭; 10: F♯ and G♭; 11: C♯ and C♭; 14: A, E and D minor; 15: B, G, F♯ and C minor). Every other stage draws from all the keys introduced so far. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
+| R19 | The fifth and sixth strings arrive with A and E♭ major (stage 6), from the open low E, and stay in every stage after that, including the keys introduced earlier when those come round again. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
+| R20 | In Watch and write the staff panel says "Write what you see"; in Listen only, "Write what you heard". **(user, 2026-10-08)** | 2026-10-08 | `components/ExerciseScreen.tsx` |
 
 ## How a rule is enforced
 
@@ -34,6 +37,23 @@ fret 4 of the third string). R14 is about pitch, so only a redraw can meet it. T
 checks all three over every stage and forty seeds.
 
 ## Conflict log
+
+- **2026-10-08, R19 against the ladder settled under R15.** With strings 5 and 6 arriving at
+  stage 6, the old stages 12 (fifth string), 13 (sixth string) and 15 (low strings in fifth
+  position) taught nothing new. Settled by removing them: the main ladder is now 18 stages (fifth
+  position at 12 on all six strings, the octave at 13, minors 14 to 17, free reading 18) and the
+  bonus stages are 19 to 30. Saved progress is moved onto the new numbering (version 5 records):
+  anyone on the removed stages lands on fifth position, later stages shift down by three.
+- **2026-10-08, R19 against R13.** Stage 6 adds strings, so under the earlier settlement the
+  top-fret rule is waived there (the new strings are the feature) and enforced again from stage 7.
+- **2026-10-08, R18 against R5 and the stage guide.** R5 said keys are random within a stage's
+  set; R18 narrows the set on key-introducing stages, which is a refinement, not a conflict. The
+  guide page of such a stage now shows its pitches in the first new key (G major on stage 3)
+  rather than in C, since C is no longer in the set.
+- **2026-10-08, R18 against R14 on stage 6.** Every melody must carry a signature note *and* a
+  note on the new strings, in A or E♭ major on one bar. C♯ and G♯ on the fifth and sixth strings
+  (A major) and B♭ on the fifth (E♭ major) satisfy both at once; the test suite confirms every
+  seed draws clean.
 
 - **2026-10-06, R16 against the size of a stage.** A one-bar stage in one key (stage 1: eleven
   pitches, quarters and halves, R4 and R13 on top) has a few thousand distinct melodies, and the

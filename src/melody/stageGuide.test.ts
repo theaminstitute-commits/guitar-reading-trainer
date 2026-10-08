@@ -20,18 +20,20 @@ describe('stage guide', () => {
     const g = stageGuide(byNumber(2), byNumber(1));
     // Fret 4 adds no new in-key pitch in C on strings 1-3 (G#, C#, F#), so nothing is new.
     expect(g.pitches.filter((p) => p.isNew)).toHaveLength(0);
-    const fifth = stageGuide(byNumber(12), byNumber(11));
-    expect(fifth.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['A3', 'B3', 'C4']);
-    const low = stageGuide(byNumber(13), byNumber(12));
+    // Stage 6 brings strings 5 and 6, shown in its first key, A major: the open low E up to C♯ on the fifth string.
+    const low = stageGuide(byNumber(6), byNumber(5));
+    expect(keyId(low.key)).toBe('A');
     expect(low.pitches[0]!.name).toBe('E3');
-    expect(low.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['E3', 'F3', 'G3']);
+    expect(low.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['E3', 'F♯3', 'G♯3', 'A3', 'B3', 'C♯4']);
+    // Stage 3 shows its first new key, G major, not C.
+    expect(keyId(stageGuide(byNumber(3), byNumber(2)).key)).toBe('G');
   });
 
   it('shows minor stages in their first key and lists the keys in words', () => {
-    const g = stageGuide(byNumber(17), byNumber(16));
+    const g = stageGuide(byNumber(14), byNumber(13));
     expect(keyId(g.key)).toBe('Am');
     expect(g.keys).toBe('A minor, E minor and D minor, chosen at random');
-    const h = stageGuide(byNumber(19), byNumber(18));
+    const h = stageGuide(byNumber(16), byNumber(15));
     expect(h.pitches.some((p) => p.name.startsWith('G♯'))).toBe(true);
   });
 

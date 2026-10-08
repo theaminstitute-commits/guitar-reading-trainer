@@ -94,7 +94,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [progress, setProgress] = useState<Progress>(() => {
     const loaded = store.load(STAGES);
-    // `?unlock=33` opens every stage up to that number on both tracks, for trying stages out.
+    // Write the record back at once, so a migration from an older ladder is saved even before the first result.
+    store.save(loaded);
+    // `?unlock=30` opens every stage up to that number on both tracks, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
     return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES), play: withUnlocked(loaded.play, unlock - 1, STAGES) };

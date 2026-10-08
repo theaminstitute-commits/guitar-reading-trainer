@@ -1,6 +1,11 @@
 /**
- * The stage ladder (docs/stage-ladder.md). One dimension changes per stage.
- * Each stage is a full LevelConfig plus a number, a name and a one-line summary.
+ * The stage ladder (docs/stage-ladder.md, rules in docs/rules.md). One
+ * dimension changes per stage. Each stage is a full LevelConfig plus a number,
+ * a name and a one-line summary.
+ *
+ * R18: a stage that introduces keys uses only those keys; every other stage
+ * draws from all the keys introduced so far. R19: the fifth and sixth strings
+ * arrive with A and E♭ major (stage 6) and stay for every stage after it.
  */
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
@@ -11,11 +16,13 @@ export interface Stage extends LevelConfig {
   number: number;
   name: string;
   summary: string;
-  /** Skipped by the ladder unless the learner opts in (the seven-accidental stage). */
+  /** Skipped by the ladder unless the learner opts in (no stage is optional today). */
   optional?: boolean;
 }
 
 const K = (...ids: string[]): Key[] => ids.map((id) => keyFromId(id)!);
+
+const ALL_STRINGS = [1, 2, 3, 4, 5, 6];
 
 const STAGE_1: Stage = {
   ...LEVEL_1,
@@ -43,8 +50,8 @@ const STAGE_3: Stage = {
   number: 3,
   name: 'First key signatures',
   title: 'Stage 3: first key signatures',
-  summary: 'C, G and F major, chosen at random. The tonic sounds before the count-in.',
-  keys: K('C', 'G', 'F'),
+  summary: 'G major and F major only: one sharp or one flat. The tonic sounds before the count-in.',
+  keys: K('G', 'F'),
   tonicReference: true,
 };
 
@@ -54,8 +61,8 @@ const STAGE_4: Stage = {
   number: 4,
   name: 'Two accidentals',
   title: 'Stage 4: two accidentals',
-  summary: 'D and B♭ major join the set.',
-  keys: K('C', 'G', 'F', 'D', 'Bb'),
+  summary: 'D major and B♭ major only.',
+  keys: K('D', 'Bb'),
 };
 
 const STAGE_5: Stage = {
@@ -64,7 +71,8 @@ const STAGE_5: Stage = {
   number: 5,
   name: 'Eighth notes',
   title: 'Stage 5: eighth notes',
-  summary: 'Pairs of beamed eighths on a beat, in the keys so far.',
+  summary: 'Pairs of beamed eighths on a beat, in every key so far.',
+  keys: K('C', 'G', 'F', 'D', 'Bb'),
   durations: ['q', 'h', 'e'],
 };
 
@@ -72,10 +80,13 @@ const STAGE_6: Stage = {
   ...STAGE_5,
   id: 'stage-6',
   number: 6,
-  name: 'Three accidentals',
-  title: 'Stage 6: three accidentals',
-  summary: 'A and E♭ major join the set.',
-  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb'),
+  name: 'Three accidentals, low strings',
+  title: 'Stage 6: three accidentals, on all six strings',
+  summary: 'A major and E♭ major only, now on all six strings from the open low E. Ledger lines below the staff begin.',
+  keys: K('A', 'Eb'),
+  strings: ALL_STRINGS,
+  // R13 is waived while strings are being added (rules.md, conflict log): the new strings are the feature here.
+  featureFret: false,
 };
 
 const STAGE_7: Stage = {
@@ -84,8 +95,10 @@ const STAGE_7: Stage = {
   number: 7,
   name: 'Whole and dotted notes',
   title: 'Stage 7: whole notes and dotted quarters',
-  summary: 'Whole notes, and a dotted quarter followed by an eighth.',
+  summary: 'Whole notes, and a dotted quarter followed by an eighth, in every key so far on all six strings.',
+  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb'),
   durations: ['q', 'h', 'e', 'w', 'q.'],
+  featureFret: true,
 };
 
 const STAGE_8: Stage = {
@@ -94,8 +107,8 @@ const STAGE_8: Stage = {
   number: 8,
   name: 'Four accidentals',
   title: 'Stage 8: four accidentals',
-  summary: 'E and A♭ major join the set.',
-  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab'),
+  summary: 'E major and A♭ major only.',
+  keys: K('E', 'Ab'),
 };
 
 const STAGE_9: Stage = {
@@ -104,8 +117,8 @@ const STAGE_9: Stage = {
   number: 9,
   name: 'Five accidentals',
   title: 'Stage 9: five accidentals',
-  summary: 'B and D♭ major join the set.',
-  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab', 'B', 'Db'),
+  summary: 'B major and D♭ major only.',
+  keys: K('B', 'Db'),
 };
 
 const STAGE_10: Stage = {
@@ -114,8 +127,8 @@ const STAGE_10: Stage = {
   number: 10,
   name: 'Six accidentals',
   title: 'Stage 10: six accidentals, the enharmonic pair',
-  summary: 'F♯ and G♭ major: the same sound, two spellings. Strict spelling decides.',
-  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'),
+  summary: 'F♯ major and G♭ major only: the same sound, two spellings. Strict spelling decides.',
+  keys: K('F#', 'Gb'),
 };
 
 const STAGE_11: Stage = {
@@ -124,125 +137,96 @@ const STAGE_11: Stage = {
   number: 11,
   name: 'Seven accidentals',
   title: 'Stage 11: seven accidentals',
-  summary: 'C♯ and C♭ major, where E♯, B♯, F♭ and C♭ are ordinary notes.',
-  keys: MAJOR_KEYS,
+  summary: 'C♯ major and C♭ major only, where E♯, B♯, F♭ and C♭ are ordinary notes.',
+  keys: K('C#', 'Cb'),
 };
 
 const STAGE_12: Stage = {
-  ...STAGE_10,
+  ...STAGE_11,
   id: 'stage-12',
   number: 12,
-  name: 'Fifth string',
-  title: 'Stage 12: the fifth string',
-  summary: 'Strings 1 to 5, frets 0 to 4. The A string takes the melody below middle C: the first ledger lines.',
-  strings: [1, 2, 3, 4, 5],
-  // R13 is waived while a string is being added (rules.md, conflict log): the new string is the feature here.
-  featureFret: false,
+  name: 'Fifth position',
+  title: 'Stage 12: fifth position',
+  summary: 'Frets 5 to 9 on all six strings, in any major key. Reading away from the nut, up to the ledger lines above.',
+  keys: MAJOR_KEYS,
+  fretRange: [5, 9],
+  featureFret: true,
 };
 
 const STAGE_13: Stage = {
   ...STAGE_12,
   id: 'stage-13',
   number: 13,
-  name: 'Sixth string',
-  title: 'Stage 13: the sixth string',
-  summary: 'All six strings, frets 0 to 4. The open low E sits three ledger lines below the staff.',
-  strings: [1, 2, 3, 4, 5, 6],
+  name: 'Up to the octave',
+  title: 'Stage 13: up to the octave',
+  summary: 'Frets 9 to 12 on all six strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.',
+  fretRange: [9, 12],
 };
 
+const MINORS_A = K('Am', 'Em', 'Dm');
+const MINORS_B = K('Bm', 'Gm', 'F#m', 'Cm');
+const ALL_MINORS = [...MINORS_A, ...MINORS_B];
+
 const STAGE_14: Stage = {
-  ...STAGE_12,
+  ...STAGE_13,
   id: 'stage-14',
   number: 14,
-  name: 'Fifth position',
-  title: 'Stage 14: fifth position',
-  summary: 'Frets 5 to 9 on strings 1 to 4. Reading away from the nut, up to the ledger lines above.',
-  fretRange: [5, 9],
-  featureFret: true,
+  name: 'Natural minor',
+  title: 'Stage 14: natural minor',
+  summary: 'A, E and D minor only. The same signature as the relative major, a different centre. Two listens from here on.',
+  keys: MINORS_A,
+  maxListens: 2,
 };
 
 const STAGE_15: Stage = {
   ...STAGE_14,
   id: 'stage-15',
   number: 15,
-  name: 'Low strings, fifth position',
-  title: 'Stage 15: low strings, fifth position',
-  summary: 'All six strings, frets 5 to 9. The same low notes in a new place on the neck.',
-  strings: [1, 2, 3, 4, 5, 6],
-  featureFret: false,
+  name: 'Natural minor, more keys',
+  title: 'Stage 15: natural minor across the cycle',
+  summary: 'B, G, F♯ and C minor only.',
+  keys: MINORS_B,
 };
 
 const STAGE_16: Stage = {
   ...STAGE_15,
   id: 'stage-16',
   number: 16,
-  name: 'Up to the octave',
-  title: 'Stage 16: up to the octave',
-  summary: 'Frets 9 to 12 on all six strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.',
-  fretRange: [9, 12],
-  featureFret: true,
+  name: 'Harmonic minor',
+  title: 'Stage 16: harmonic minor',
+  summary: 'All seven minor keys in their harmonic form. The raised seventh is written with a sign, and a sign lasts for the bar.',
+  keys: ALL_MINORS.map((k) => withMode(k, 'harmonic-minor')),
 };
-
-const MINORS_A = K('Am', 'Em', 'Dm');
-const MINORS_B = K('Am', 'Em', 'Dm', 'Bm', 'Gm', 'F#m', 'Cm');
 
 const STAGE_17: Stage = {
   ...STAGE_16,
   id: 'stage-17',
   number: 17,
-  name: 'Natural minor',
-  title: 'Stage 17: natural minor',
-  summary: 'A, E and D minor. The same signature as the relative major, a different centre. Two listens from here on.',
-  keys: MINORS_A,
-  maxListens: 2,
+  name: 'Melodic minor',
+  title: 'Stage 17: melodic minor',
+  summary: 'All seven minor keys in their melodic form. Raised sixth and seventh going up, natural coming down. Spelling is graded strictly.',
+  keys: ALL_MINORS.map((k) => withMode(k, 'melodic-minor')),
 };
 
 const STAGE_18: Stage = {
   ...STAGE_17,
   id: 'stage-18',
   number: 18,
-  name: 'Natural minor, more keys',
-  title: 'Stage 18: natural minor across the cycle',
-  summary: 'B, G, F♯ and C minor join the set.',
-  keys: MINORS_B,
-};
-
-const STAGE_19: Stage = {
-  ...STAGE_18,
-  id: 'stage-19',
-  number: 19,
-  name: 'Harmonic minor',
-  title: 'Stage 19: harmonic minor',
-  summary: 'The raised seventh is written with a sign, and a sign lasts for the bar.',
-  keys: MINORS_B.map((k) => withMode(k, 'harmonic-minor')),
-};
-
-const STAGE_20: Stage = {
-  ...STAGE_19,
-  id: 'stage-20',
-  number: 20,
-  name: 'Melodic minor',
-  title: 'Stage 20: melodic minor',
-  summary: 'Raised sixth and seventh going up, natural coming down. Spelling is graded strictly.',
-  keys: MINORS_B.map((k) => withMode(k, 'melodic-minor')),
-};
-
-const STAGE_21: Stage = {
-  ...STAGE_20,
-  id: 'stage-21',
-  number: 21,
   name: 'Free reading',
-  title: 'Stage 21: free reading',
+  title: 'Stage 18: free reading',
   summary: 'Any major key, any minor form, every rhythm, all six strings from the nut to fret 12.',
   keys: [
     ...MAJOR_KEYS,
-    ...MINORS_B,
-    ...MINORS_B.map((k) => withMode(k, 'harmonic-minor')),
-    ...MINORS_B.map((k) => withMode(k, 'melodic-minor')),
+    ...ALL_MINORS,
+    ...ALL_MINORS.map((k) => withMode(k, 'harmonic-minor')),
+    ...ALL_MINORS.map((k) => withMode(k, 'melodic-minor')),
   ],
-  strings: [1, 2, 3, 4, 5, 6],
+  strings: ALL_STRINGS,
   fretRange: [0, 12],
 };
+
+/** Free reading is the last of the main ladder; everything after it is a bonus stage. */
+export const MAIN_STAGE_COUNT = 18;
 
 /**
  * Bonus stages after free reading: one count more each, so every length beyond
@@ -253,9 +237,9 @@ const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - MIN_COUNTS }, (_, i) =>
   const counts = MIN_COUNTS + i + 1;
   const meter = describeMeter(barBeatsForCounts(counts));
   return {
-    ...STAGE_21,
+    ...STAGE_18,
     id: `bonus-${i + 1}`,
-    number: 22 + i,
+    number: MAIN_STAGE_COUNT + 1 + i,
     name: `Bonus ${i + 1}: ${counts} counts`,
     title: `Bonus stage ${i + 1}: ${counts} counts (${meter})`,
     summary: `${meter}. Any key, any minor form, anywhere on the neck. The melody is ${counts} counts long every time.`,
@@ -271,7 +255,7 @@ function positionsOf(level: LevelConfig): FretPosition[] {
   return out;
 }
 
-/** Positions a stage adds compared with the stage before it; melodies there must use one of them. */
+/** Positions a stage adds compared with the stage before it; melodies there must use one of them (R7). */
 function introducedBy(stage: Stage, previous: Stage): FretPosition[] {
   const before = positionsOf(previous);
   return positionsOf(stage).filter((p) => !before.some((q) => q.string === p.string && q.fret === p.fret));
@@ -279,7 +263,7 @@ function introducedBy(stage: Stage, previous: Stage): FretPosition[] {
 
 const MAIN: Stage[] = [
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
-  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18, STAGE_19, STAGE_20, STAGE_21,
+  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18,
 ].map((stage, i, all) => {
   if (i === 0) return stage;
   const introduces = introducedBy(stage, all[i - 1]!);
@@ -287,9 +271,6 @@ const MAIN: Stage[] = [
 });
 
 export const STAGES: readonly Stage[] = [...MAIN, ...BONUS];
-
-/** Stage 21, free reading: the last of the main ladder; everything after it is a bonus stage. */
-export const MAIN_STAGE_COUNT = 21;
 
 export function stageAt(index: number): Stage {
   return STAGES[Math.max(0, Math.min(STAGES.length - 1, index))]!;
