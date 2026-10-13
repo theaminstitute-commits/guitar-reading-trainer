@@ -33,6 +33,9 @@
   --paper-active: #1f6fb2;
   --paper-bad: #c9402b;
   --glow: rgba(79, 143, 232, 0.12);
+  /* System bar insets: the browser gives them through env(); the Android wrapper sets them from the window insets. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --radius: 16px;
   --radius-sm: 12px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -140,7 +143,7 @@ h3 {
 .app {
   max-width: 680px;
   margin: 0 auto;
-  padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: calc(12px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
 }
 
 /* ---------- App bar ---------- */
@@ -385,7 +388,7 @@ button.big,
 .sticky-cta {
   position: sticky;
   bottom: 0;
-  padding: 12px 0 calc(8px + env(safe-area-inset-bottom));
+  padding: 12px 0 calc(8px + var(--safe-bottom));
   margin: 8px -16px 0;
   padding-left: 16px;
   padding-right: 16px;
@@ -1308,7 +1311,7 @@ button.undo span {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px 20px 0 0;
-  padding: 14px 18px calc(18px + env(safe-area-inset-bottom));
+  padding: 14px 18px calc(18px + var(--safe-bottom));
   width: 100%;
   max-width: 680px;
   max-height: 88vh;

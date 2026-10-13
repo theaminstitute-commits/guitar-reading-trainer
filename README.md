@@ -17,6 +17,8 @@ node tools/single-file.mjs  # one self-contained HTML file from dist/
 
 Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.16.1 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
+The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.16.1` in PowerShell builds `dist/GuitarReadingTrainer-v0.16.1.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
+
 ## Music rules baked into the code
 
 - **Guitar is a transposing instrument.** Every pitch is stored as the *sounding* MIDI number. Written pitch is sounding plus one octave, computed only in `src/music/pitch.ts` (`writtenFromSounding` / `soundingFromWritten`). Audio and the fretboard use sounding pitch; the staff uses written pitch.

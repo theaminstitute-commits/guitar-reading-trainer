@@ -1,0 +1,17 @@
+GUITAR READING TRAINER for Android
+==================================
+
+GuitarReadingTrainer-v<version>.apk
+
+1) Copy the .apk to the phone (Drive app, USB, or open the Drive link on the phone).
+2) Tap it. Android asks to allow installs from this source the first time; allow it.
+3) Tap Install. Guitar Reading Trainer appears in the app list with a staff icon.
+
+A newer .apk installs over the old one and keeps your progress. The app works
+offline: the guitar sounds and music fonts are inside it, and nothing leaves
+the phone. It is signed with a test key, so Play Protect may ask once whether
+to install anyway.
+
+The same app also runs in the phone's browser at
+https://theaminstitute-commits.github.io/guitar-reading-trainer/ and can be
+added to the home screen from the browser menu.

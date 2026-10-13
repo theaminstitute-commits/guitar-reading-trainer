@@ -179,6 +179,8 @@ export default function App() {
       else rootEl.dataset.theme = progress.theme;
       const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14181f' : '#efeae2');
+      // The Android wrapper colours its status and navigation bar icons to match (android/src/.../MainActivity.java).
+      (window as Window & { AndroidTheme?: { set(dark: boolean): void } }).AndroidTheme?.set(dark);
     };
     if (!themeApplied.current) {
       themeApplied.current = true;
