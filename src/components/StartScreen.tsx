@@ -111,17 +111,20 @@ export default function StartScreen({
           ))}
         </div>
         <p className="muted small-note">{mode.note}</p>
-        <div className="row-between">
-          <span className="muted">Guitar</span>
-          <div className="segmented compact" role="group" aria-label="Handedness">
-            <button className={`seg${progress.handedness === 'right' ? ' on' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
-              Right-handed
-            </button>
-            <button className={`seg${progress.handedness === 'left' ? ' on' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
-              Left-handed
-            </button>
+        {/* Listen only shows no fretboard, so handedness has nothing to mirror there. */}
+        {progress.mode === 'watch' && (
+          <div className="row-between">
+            <span className="muted">Guitar</span>
+            <div className="segmented compact" role="group" aria-label="Handedness">
+              <button className={`seg${progress.handedness === 'right' ? ' on' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
+                Right-handed
+              </button>
+              <button className={`seg${progress.handedness === 'left' ? ' on' : ''}`} aria-pressed={progress.handedness === 'left'} onClick={() => onHandedness('left')}>
+                Left-handed
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         <div className="row-between">
           <span className="muted">Theme</span>
           <div className="segmented compact" role="group" aria-label="Theme">
