@@ -85,7 +85,7 @@ function overlayFor(layout: StaffLayout, bars: RenderBar[], names: Map<number, s
  * wrote. On both, green notes agree, red notes differ; grey notes on the top
  * staff were missed, red notes on the bottom staff with no partner are extra.
  * Numbered badges point to the explanations. While a version plays, its own
- * staff follows the sounding note in amber.
+ * staff follows the sounding note in blue.
  */
 export default function FeedbackStaff({ melody, musicKey, result, yours, activeTarget, activeAnswer }: FeedbackStaffProps) {
   const wrapRef = useRef<HTMLDivElement>(null);

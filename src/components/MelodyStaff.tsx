@@ -12,7 +12,7 @@ import { renderStaff, type RenderBar } from '../notation/renderStaff';
 interface MelodyStaffProps {
   melody: Melody;
   musicKey: Key;
-  /** Note sounding now, highlighted in amber. */
+  /** Note sounding now, highlighted in blue. */
   activeIndex?: number | null;
 }
 

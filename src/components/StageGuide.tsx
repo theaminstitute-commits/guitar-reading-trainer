@@ -25,7 +25,7 @@ const NOTES_PER_BAR = 4;
 
 /**
  * A page shown before a stage starts: every pitch the stage can draw on,
- * named and placed on the staff, with the new ones in amber, and where those
+ * named and placed on the staff, with the new ones in blue, and where those
  * pitches sit on the fretboard. Tapping a note plays it.
  */
 export default function StageGuide({ stage, previous, leftHanded, onStart, onBack }: StageGuideProps) {
@@ -139,7 +139,7 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       </h3>
       <p className="muted small-note">
         {guide.pitches.length} pitches, lowest to highest, named as written for guitar (an octave above where they sound).
-        {newCount > 0 && previous ? ` The ${newCount} in amber are new in this stage.` : ''}
+        {newCount > 0 && previous ? ` The ${newCount} in blue are new in this stage.` : ''}
       </p>
       <div ref={wrapRef} className="guide-staff">
         <div ref={canvasRef} className="staff-canvas static" />

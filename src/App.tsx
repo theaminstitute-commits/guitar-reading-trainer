@@ -193,7 +193,7 @@ export default function App() {
       if (progress.theme === 'system') delete rootEl.dataset.theme;
       else rootEl.dataset.theme = progress.theme;
       const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#15130f' : '#efeae2');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14181f' : '#efeae2');
     };
     if (!themeApplied.current) {
       themeApplied.current = true;
