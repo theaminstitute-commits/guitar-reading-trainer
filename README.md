@@ -15,7 +15,7 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.13.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.14.0 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
 ## Music rules baked into the code
 
@@ -48,7 +48,7 @@ Target and answer are aligned with an edit-distance pass so an extra or missing 
 
 ## Modes
 
-**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; a row of pips shows how far the melody has got. **Read and play** reverses the task: the melody is shown as a score, the learner plays it on the guitar and the microphone listens. Only the tones and how many were played are graded, never the timing, and reading and playing keep separate progress tracks on the ladder. The mode is chosen on the start screen and remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
+**Watch and write** lights up each note on the fretboard as it plays. **Listen only** hides the fretboard for dictation by ear; the starting note is shown on a short staff with the key signature, as a place only, no name and no length (`src/notation/startNote.ts`, `src/components/StartNote.tsx`), because relative pitch can be trained and perfect pitch mostly cannot; a row of pips shows how far the melody has got. **Read and play** reverses the task: the melody is shown as a score, the learner plays it on the guitar and the microphone listens. Only the tones and how many were played are graded, never the timing, and reading and playing keep separate progress tracks on the ladder. The mode is chosen on the start screen and remembered with the rest of the progress, as is the guitar handedness: the left-handed view mirrors the fretboard with the nut on the right.
 
 ### Interface
 

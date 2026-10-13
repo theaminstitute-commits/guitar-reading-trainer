@@ -21,6 +21,7 @@ import {
 import Fretboard from './Fretboard';
 import { CheckIcon, PlayIcon, SlowIcon, StopIcon } from './icons';
 import StaffInput from './StaffInput';
+import StartNote from './StartNote';
 
 export const SLOW_RATE = 0.7;
 
@@ -166,7 +167,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           </span>
         )}
         {status === 'playing' && activeIndex !== null && `Note ${activeIndex + 1} of ${melody.notes.length}`}
-        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only, no fretboard. '}You get ${level.maxListens} listens.`}
+        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only: the starting note is on the staff above, the rest is yours to hear. '}You get ${level.maxListens} listens.`}
         {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
@@ -182,8 +183,10 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} />
         </div>
       ) : (
-        <div className="listen-only" aria-hidden="true">
-          <span className={`ear${status === 'playing' ? ' on' : ''}`}>
+        <div className="listen-only">
+          <span className="eyebrow">Starting note · the melody begins here</span>
+          <StartNote melody={melody} />
+          <span className={`ear${status === 'playing' ? ' on' : ''}`} aria-hidden="true">
             {Array.from({ length: melody.notes.length }, (_, i) => (
               <span key={i} className={`pip${activeIndex !== null && i <= activeIndex ? ' on' : ''}`} />
             ))}

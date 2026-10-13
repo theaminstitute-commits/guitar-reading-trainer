@@ -26,6 +26,7 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R18 | A stage that introduces keys uses only those keys, so the learner meets what the stage is about from the first melody (stage 3: G and F; 4: D and B♭; 6: A and E♭; 8: E and A♭; 9: B and D♭; 10: F♯ and G♭; 11: C♯ and C♭; 14: A, E and D minor; 15: B, G, F♯ and C minor). Every other stage draws from all the keys introduced so far. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
 | R19 | The fifth and sixth strings arrive with A and E♭ major (stage 6), from the open low E, and stay in every stage after that, including the keys introduced earlier when those come round again. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
 | R20 | In Watch and write the staff panel says "Write what you see"; in Listen only, "Write what you heard". **(user, 2026-10-08)** | 2026-10-08 | `components/ExerciseScreen.tsx` |
+| R21 | In Listen only, the starting note of every melody is shown on the staff before it plays: its place only, with the key signature, no name and no length. Few people have perfect pitch; relative pitch can be trained, so the ear gets an anchor to hear from. The learner still writes the first note; it is graded like the others. **(user, 2026-10-13)** | 2026-10-13 | `notation/startNote.ts`, `components/StartNote.tsx`, `components/ExerciseScreen.tsx` |
 
 ## How a rule is enforced
 
@@ -37,6 +38,14 @@ fret 4 of the third string). R14 is about pitch, so only a redraw can meet it. T
 checks all three over every stage and forty seeds.
 
 ## Conflict log
+
+- **2026-10-13, R21 against R3 and the idea of Listen only.** R3 already gives the tonic by ear from
+  stage 3; R21 adds the first note by eye. They do not clash: the tonic names the key, the starting
+  note anchors the melody within it, and from stage 3 both are given. Listen only was described as
+  "the ear does all the work", which R21 softens on purpose; the fretboard stays hidden and every
+  note after the first is still heard, not seen. No other rule is touched: the note is drawn as a
+  whole note so no length leaks (R8 grades the length the learner writes), the sign follows the
+  key's spelling (R1), and the note is given in every melody, repeats or not (R16).
 
 - **2026-10-08, R19 against the ladder settled under R15.** With strings 5 and 6 arriving at
   stage 6, the old stages 12 (fifth string), 13 (sixth string) and 15 (low strings in fifth

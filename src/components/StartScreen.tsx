@@ -32,7 +32,7 @@ const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n
 
 const MODES: { id: ExerciseMode; label: string; icon: typeof EyeIcon; note: string }[] = [
   { id: 'watch', label: 'Watch & write', icon: EyeIcon, note: 'The fretboard lights up each note as it plays. You write it on the staff.' },
-  { id: 'listen', label: 'Listen only', icon: EarIcon, note: 'Dictation by ear, no fretboard. The key note still sounds first from stage 3.' },
+  { id: 'listen', label: 'Listen only', icon: EarIcon, note: 'Dictation by ear, no fretboard. The starting note is shown on the staff; the key note still sounds first from stage 3.' },
   { id: 'play', label: 'Read & play', icon: GuitarIcon, note: 'Read the melody and play it on your guitar. The microphone hears the tones; notes and count are graded, not timing.' },
 ];
 

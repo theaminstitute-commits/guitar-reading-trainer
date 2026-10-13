@@ -873,16 +873,32 @@ button.link.subtle {
   }
 }
 
-/* Listen-only mode: a row of pips instead of the fretboard */
+/* Listen-only mode: the starting note on a short staff (R21) and a row of pips instead of the fretboard */
 .listen-only {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 6px;
   min-height: 96px;
+  padding: 12px 16px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin: 4px 0;
+}
+
+.start-note {
+  width: min(100%, 240px);
+  margin: 4px auto 0;
+}
+
+.start-note .staff-canvas {
+  min-height: 0;
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: 0 0 0 10px var(--paper);
+  margin: 10px 0 14px;
 }
 
 .ear {
