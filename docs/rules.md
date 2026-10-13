@@ -16,7 +16,7 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R8 | A stage unlocks after ten flawless melodies (every note and every length right). Melodies with any mistake neither count nor cost. Two weak rounds in a row drop a stage. **(user)** | 2026-10-05 | `session/progression.ts` |
 | R9 | Every main stage (1 to 21) is one bar of 4/4. There is no length control anywhere. **(user)** | 2026-10-05 | `melody/levelConfig.ts`, `components/StartScreen.tsx` |
 | R10 | Extra counts exist only as bonus stages after free reading: 19 to 30 (22 to 33 until 2026-10-08) carry 5 to 16 counts, fixed, with random keys from every major and minor form and positions over the whole neck. **(user)** | 2026-10-05 | `melody/stages.ts` |
-| R11 | The count-in and both metronomes use the Tempus click: one uniform click, no accent. The metronome is off by default. **(user)** | 2026-10-05 | `audio/click.ts`, `audio/player.ts` |
+| R11 | The count-in and the metronome use the Tempus click: one uniform click, no accent. The metronome is off by default. **(user)** | 2026-10-05 | `audio/click.ts`, `audio/player.ts` |
 | R12 | A stage guide page opens before a stage the first time it is met and from a button on the start screen. There is no optional stage. **(user)** | 2026-10-05 | `components/StageGuide.tsx` |
 | R13 | The newest fret stays in use: every melody on a main stage puts at least one note on the highest fret of the stage's window that has an in-key note on one of the stage's strings. Where the top fret has none (F major in first position has no note on fret 4 on any string), the next fret down counts. Waived on the stage that adds strings (6, under R19; 12, 13 and 15 of the old ladder before that), see the conflict log. **(user, rule 1 of 2026-10-06)** | 2026-10-06 | `LevelConfig.featureFret`, `melody/generator.ts` |
 | R14 | In a key with a key signature, every melody contains at least one note altered by that signature (a B♭ in F major, an F♯ or C♯ in D major). Raised minor degrees do not count; they are not in the signature. **(user, rule 2 of 2026-10-06)** | 2026-10-06 | `melody/generator.ts` |
@@ -26,6 +26,7 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R18 | A stage that introduces keys uses only those keys, so the learner meets what the stage is about from the first melody (stage 3: G and F; 4: D and B♭; 6: A and E♭; 8: E and A♭; 9: B and D♭; 10: F♯ and G♭; 11: C♯ and C♭; 14: A, E and D minor; 15: B, G, F♯ and C minor). Every other stage draws from all the keys introduced so far. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
 | R19 | The fifth and sixth strings arrive with A and E♭ major (stage 6), from the open low E, and stay in every stage after that, including the keys introduced earlier when those come round again. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
 | R20 | In Watch and write the staff panel says "Write what you see"; in Listen only, "Write what you heard". **(user, 2026-10-08)** | 2026-10-08 | `components/ExerciseScreen.tsx` |
+| R22 | The app has two modes, Watch and write and Listen only, on one progress track. Read and play (the microphone grading what the learner played) was removed on 2026-10-13 and is not to come back as a graded mode: its grades depended on the microphone, the room and the guitar's overtones, and the app's promise is that a grade is always right. **(user, 2026-10-13)** | 2026-10-13 | `session/progression.ts`, `storage/progress.ts` |
 | R21 | In Listen only, the starting note of every melody is shown on the staff before it plays: its place only, with the key signature, no name and no length. Few people have perfect pitch; relative pitch can be trained, so the ear gets an anchor to hear from. The learner still writes the first note; it is graded like the others. **(user, 2026-10-13)** | 2026-10-13 | `notation/startNote.ts`, `components/StartNote.tsx`, `components/ExerciseScreen.tsx` |
 
 ## How a rule is enforced
@@ -38,6 +39,8 @@ fret 4 of the third string). R14 is about pitch, so only a redraw can meet it. T
 checks all three over every stage and forty seeds.
 
 ## Conflict log
+
+- **2026-10-13, R22 against R11 and the saved progress.** R11 spoke of "both metronomes"; the free-running one existed only for read and play and went with it, so R11 now reads "the metronome". Saved records of versions 4 and 5 carried a playing track; version 6 drops it and keeps the writing track, so nobody loses their place on the ladder. A saved mode of "play" becomes Watch and write. No other rule mentions the mode.
 
 - **2026-10-13, R21 against R3 and the idea of Listen only.** R3 already gives the tonic by ear from
   stage 3; R21 adds the first note by eye. They do not clash: the tonic names the key, the starting

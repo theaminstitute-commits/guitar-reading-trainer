@@ -4,7 +4,7 @@
  */
 import { MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
-import { initialProgress, initialTrack, type Progress, type Track } from '../session/progression';
+import { initialProgress, type Progress, type Track } from '../session/progression';
 
 export interface ProgressStore {
   load(stages: readonly Stage[]): Progress;
@@ -72,25 +72,17 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
 
 /**
  * Accept every record shape so far: versions 1-3 kept one set of counters at
- * the top level (that becomes the writing track); version 4 has two tracks.
+ * the top level; versions 4 and 5 had a second, playing track (read and play,
+ * removed 2026-10-13), which is dropped; version 6 has the one track.
  */
 function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
   if (!isRecord(value)) return null;
-  let write: Track | null;
-  let play: Track | null;
-  const remap = value.version === 5 ? (i: number) => i : remapStageIndex;
-  if (value.version === 4 || value.version === 5) {
-    write = migrateTrack(value.write, stages, remap);
-    play = migrateTrack(value.play, stages, remap);
-    if (!write || !play) return null;
-  } else {
-    write = migrateTrack(value, stages, remap);
-    if (!write) return null;
-    play = initialTrack(stages);
-  }
-  const mode = value.mode === 'listen' || value.mode === 'play' ? value.mode : 'watch';
+  const remap = value.version === 5 || value.version === 6 ? (i: number) => i : remapStageIndex;
+  const write: Track | null = typeof value.version === 'number' && value.version >= 4 ? migrateTrack(value.write, stages, remap) : migrateTrack(value, stages, remap);
+  if (!write) return null;
+  const mode = value.mode === 'listen' ? 'listen' : 'watch';
   return {
-    version: 5,
+    version: 6,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
     theme: value.theme === 'light' || value.theme === 'dark' ? value.theme : 'system',
@@ -99,7 +91,6 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
       ? [...new Set(value.seenGuides.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))]
       : [],
     write,
-    play,
   };
 }
 

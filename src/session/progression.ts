@@ -1,9 +1,8 @@
 /**
  * How the learner moves along the stage ladder (docs/stage-ladder.md).
  *
- * Progress is kept in two independent tracks, one for writing (watch and
- * listen modes) and one for playing (read-and-play), because they are
- * different skills.
+ * Both modes (watch and write, listen only) share one track: they are the
+ * same skill, reading and writing notation, with and without the fretboard.
  *
  * A stage unlocks after ten flawless melodies: every note and every length
  * right. Melodies with any mistake do not count, and do not take anything
@@ -15,11 +14,10 @@ import type { Melody } from '../melody/types';
 import { keyId } from '../music/key';
 import type { Stage } from '../melody/stages';
 
-export type ExerciseMode = 'watch' | 'listen' | 'play';
+export type ExerciseMode = 'watch' | 'listen';
 export type Handedness = 'right' | 'left';
 /** Colour theme: follow the device, or a fixed choice. */
 export type Theme = 'system' | 'light' | 'dark';
-export type TrackId = 'write' | 'play';
 
 export interface Track {
   /** Index into the stage list. */
@@ -58,16 +56,15 @@ export function withMelodyHeard(track: Track, stageNumber: number, melody: Melod
 }
 
 export interface Progress {
-  version: 5;
+  version: 6;
   mode: ExerciseMode;
   handedness: Handedness;
   theme: Theme;
-  /** Click on every beat during playback, and while playing in read-and-play. */
+  /** Click on every beat during playback. */
   metronome: boolean;
   /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
   seenGuides: number[];
   write: Track;
-  play: Track;
 }
 
 export const CLEAN_THRESHOLD = 0.9;
@@ -87,19 +84,15 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 5, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), play: initialTrack(stages) };
-}
-
-export function trackIdFor(mode: ExerciseMode): TrackId {
-  return mode === 'play' ? 'play' : 'write';
+  return { version: 6, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages) };
 }
 
 export function trackOf(progress: Progress): Track {
-  return progress[trackIdFor(progress.mode)];
+  return progress.write;
 }
 
 export function withTrack(progress: Progress, track: Track): Progress {
-  return { ...progress, [trackIdFor(progress.mode)]: track };
+  return { ...progress, write: track };
 }
 
 /** One number for "how did that go": the mean of pitch and rhythm scores. */

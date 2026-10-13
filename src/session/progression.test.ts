@@ -144,16 +144,13 @@ describe('stage ladder progression', () => {
     expect(withStage(open, 2, STAGES).tally).toBe(0);
   });
 
-  it('keeps writing and playing progress apart', () => {
+  it('both modes share one track', () => {
     let p = initialProgress(STAGES);
     expect(trackOf(p)).toBe(p.write);
     p = withTrack(p, run(p.write, perfect, 10).t);
     expect(p.write.stage).toBe(1);
-    expect(p.play.stage).toBe(0);
-    p = { ...p, mode: 'play' };
-    expect(trackOf(p)).toBe(p.play);
-    p = withTrack(p, run(p.play, perfect, 10).t);
-    expect(p.play.stage).toBe(1);
-    expect(p.write.stage).toBe(1);
+    p = { ...p, mode: 'listen' };
+    expect(trackOf(p)).toBe(p.write);
+    expect(trackOf(p).stage).toBe(1);
   });
 });

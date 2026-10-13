@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Take } from './audio/mic';
 import { sharedPlayer } from './audio/player';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import ExerciseScreen from './components/ExerciseScreen';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
-import MicCheck from './components/MicCheck';
-import PlayScreen from './components/PlayScreen';
 import { ChevronLeftIcon } from './components/icons';
 import StageGuide from './components/StageGuide';
 import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
-import { gradeAnswer, gradePlayed, type GradeResult } from './grading/grade';
+import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
 import { describeMeter } from './melody/meter';
 import { STAGES, type Stage } from './melody/stages';
@@ -36,7 +33,7 @@ import {
   withMelodyHeard,
   type Track,
 } from './session/progression';
-import { hearRecording, hearWrittenAnswer, yoursFromAnswer, yoursFromTake, type HearMine } from './session/yours';
+import { hearWrittenAnswer, yoursFromAnswer, type HearMine } from './session/yours';
 import { localProgressStore } from './storage/progress';
 
 function randomSeed(): number {
@@ -79,16 +76,14 @@ function makeExercise(track: Track): { exercise: Exercise; track: Track } {
 }
 
 const params = new URLSearchParams(window.location.search);
-/** `?selfplay=1`: in read-and-play, the app plays the melody into its own detector instead of listening to the microphone. */
-const SELF_PLAY = params.get('selfplay') === '1';
 const store = localProgressStore;
 
-const MODE_LABEL: Record<ExerciseMode, string> = { watch: '', listen: ' · listen only', play: ' · read and play' };
+const MODE_LABEL: Record<ExerciseMode, string> = { watch: '', listen: ' · listen only' };
 
 /**
  * Session flow: start -> (guide) -> exercise -> feedback -> next exercise.
- * Progress (two tracks: writing and playing, each with a stage) persists
- * through the storage module; session counts live only while the page is open.
+ * Progress (stage, flawless count and lifetime counts) persists through
+ * the storage module; session counts live only while the page is open.
  */
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
@@ -96,17 +91,16 @@ export default function App() {
     const loaded = store.load(STAGES);
     // Write the record back at once, so a migration from an older ladder is saved even before the first result.
     store.save(loaded);
-    // `?unlock=30` opens every stage up to that number on both tracks, for trying stages out.
+    // `?unlock=30` opens every stage up to that number, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
-    return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES), play: withUnlocked(loaded.play, unlock - 1, STAGES) };
+    return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES) };
   });
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const track = trackOf(progress);
   const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track).exercise);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
-  const [micCheck, setMicCheck] = useState(false);
 
   /** The stage the current track is on, for the start screen and the guide. */
   const level = withKeyOverride(STAGES[track.stage]!);
@@ -140,15 +134,6 @@ export default function App() {
   const onCheck = (answerBars: AnswerNote[][]) => {
     const result = gradeAnswer(melody, answerBars, melody.key);
     record(result, yoursFromAnswer(answerBars, melody, melody.key), hearWrittenAnswer(answerBars, melody, melody.key));
-  };
-
-  const onPlayed = (take: Take) => {
-    const result = gradePlayed(
-      melody,
-      take.notes.map((n) => n.midi),
-      melody.key,
-    );
-    record(result, yoursFromTake(take, melody.key), hearRecording(take));
   };
 
   const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
@@ -256,7 +241,6 @@ export default function App() {
           onMode={onMode}
           onHandedness={onHandedness}
           onTheme={onTheme}
-          onMicCheck={() => setMicCheck(true)}
           onExplainer={setExplainer}
           onReset={onReset}
         />
@@ -272,20 +256,17 @@ export default function App() {
         />
       )}
 
-      {screen === 'exercise' &&
-        (progress.mode === 'play' ? (
-          <PlayScreen melody={melody} level={exercise.level} selfPlay={SELF_PLAY} metronome={progress.metronome} onMetronome={onMetronome} onDone={onPlayed} />
-        ) : (
-          <ExerciseScreen
-            melody={melody}
-            level={exercise.level}
-            showFretboard={progress.mode === 'watch'}
-            leftHanded={progress.handedness === 'left'}
-            metronome={progress.metronome}
-            onMetronome={onMetronome}
-            onCheck={onCheck}
-          />
-        ))}
+      {screen === 'exercise' && (
+        <ExerciseScreen
+          melody={melody}
+          level={exercise.level}
+          showFretboard={progress.mode === 'watch'}
+          leftHanded={progress.handedness === 'left'}
+          metronome={progress.metronome}
+          onMetronome={onMetronome}
+          onCheck={onCheck}
+        />
+      )}
 
       {screen === 'feedback' && checked && (
         <FeedbackScreen
@@ -303,7 +284,6 @@ export default function App() {
       )}
 
       {explainer && <ExplainerCard id={explainer} onClose={() => setExplainer(null)} />}
-      {micCheck && <MicCheck musicKey={melody.key} onClose={() => setMicCheck(false)} />}
 
       <footer className="muted small">{SAMPLE_CREDIT}</footer>
     </main>

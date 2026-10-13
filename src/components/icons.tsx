@@ -40,14 +40,6 @@ export const EarIcon = (p: IconProps) => (
   </svg>
 );
 
-export const GuitarIcon = (p: IconProps) => (
-  <svg {...base(p)}>
-    <path d="M14 10l6-6" />
-    <path d="M17 7l1.5 1.5" />
-    <path d="M13 11a4 4 0 0 0-5.5 5.2A3.5 3.5 0 1 0 12 19a4 4 0 0 0 1-8z" />
-  </svg>
-);
-
 export const LockIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <rect x="5" y="11" width="14" height="10" rx="2" />
@@ -71,14 +63,6 @@ export const BookIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
     <path d="M4 19a2 2 0 0 1 2-2h13" />
-  </svg>
-);
-
-export const MicIcon = (p: IconProps) => (
-  <svg {...base(p)}>
-    <rect x="9" y="3" width="6" height="11" rx="3" />
-    <path d="M5 11a7 7 0 0 0 14 0" />
-    <path d="M12 18v3" />
   </svg>
 );
 

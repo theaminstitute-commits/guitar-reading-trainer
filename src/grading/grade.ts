@@ -7,7 +7,7 @@
  * major is F sharp and a courtesy sign is not a mistake. Spelling is strict:
  * E# for F is a mistake even though it sounds the same.
  *
- * Played answers (microphone) are graded on tone and count only: the pitch
+ * Timing can be left out of a grade (`gradeSequences(..., false)`): the pitch
  * heard is spelled the way the key would spell it, durations are not compared.
  */
 import type { Melody } from '../melody/types';
@@ -174,15 +174,6 @@ export function gradeAnswer(melody: Melody, answerBars: readonly (readonly Answe
     });
   });
   return gradeSequences(gradedTargets(melody, key), answers, true);
-}
-
-/** Grade notes the learner played (sounding MIDI, in order): tone and count only. */
-export function gradePlayed(melody: Melody, playedMidis: readonly number[], key: Key): GradeResult {
-  const answers: GradedAnswer[] = playedMidis.map((sounding, index) => {
-    const midi = writtenFromSounding(sounding);
-    return { index, id: index + 1, bar: 0, written: spellInKey(midi, key), midi, duration: 'q' };
-  });
-  return gradeSequences(gradedTargets(melody, key), answers, false);
 }
 
 /** Beats of a duration, exposed for explanations. */

@@ -1,15 +1,13 @@
 /**
  * The learner's side of the feedback screen: how to draw what they produced
- * and how to play it back. One builder per mode.
+ * and how to play it back.
  */
-import type { Take } from '../audio/mic';
 import { sharedPlayer, type PlayableNote } from '../audio/player';
 import type { YoursStaff } from '../components/FeedbackStaff';
 import { timeSignaturesFor } from '../melody/meter';
 import type { Melody } from '../melody/types';
-import { spellInKey, type Key } from '../music/key';
-import { spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
-import { displaySignsForBars } from '../notation/accidentals';
+import type { Key } from '../music/key';
+import { spelledName, type SpelledNote } from '../music/pitch';
 import { answerBarToSounding, resolveAnswerBar, type AnswerNote } from '../notation/answer';
 
 export interface HearMine {
@@ -50,61 +48,3 @@ export function hearWrittenAnswer(answerBars: readonly (readonly AnswerNote[])[]
   };
 }
 
-/**
- * Notes the learner played, transcribed as quarter notes four to a bar (no
- * time signature: timing was not graded), spelled the way the key would.
- */
-export function yoursFromTake(take: Take, key: Key): YoursStaff {
-  const written = take.notes.map((n) => spellInKey(writtenFromSounding(n.midi), key));
-  const bars: { notes: { step: number; sign: 'none' | 'sharp' | 'flat' | 'natural'; duration: 'q' }[] }[] = [];
-  for (let i = 0; i < written.length; i += 4) bars.push({ notes: [] });
-  if (bars.length === 0) bars.push({ notes: [] });
-  const signsPerBar = displaySignsForBars(
-    bars.map((_, b) => written.slice(b * 4, b * 4 + 4)),
-    key,
-  );
-  written.forEach((w, i) => {
-    const b = Math.floor(i / 4);
-    bars[b]!.notes.push({ step: staffStep(w), sign: signsPerBar[b]![i - b * 4]!, duration: 'q' });
-  });
-  return { caption: 'You played', bars, names: written.map(name), showTimeSignature: false };
-}
-
-/** The recording of the take, with the note highlight following the recorded times. */
-export function hearRecording(take: Take): HearMine | null {
-  if (!take.recordingUrl) return null;
-  let audio: HTMLAudioElement | null = null;
-  let frame = 0;
-  return {
-    play(onNote) {
-      return new Promise<void>((resolve) => {
-        audio = new Audio(take.recordingUrl!);
-        const tick = () => {
-          if (!audio) return;
-          const t = audio.currentTime + take.armedAt;
-          let index: number | null = null;
-          take.notes.forEach((n, i) => {
-            if (n.start <= t && (n.end === null || t < n.end + 0.15)) index = i;
-          });
-          onNote(index);
-          frame = requestAnimationFrame(tick);
-        };
-        const finish = () => {
-          cancelAnimationFrame(frame);
-          onNote(null);
-          audio = null;
-          resolve();
-        };
-        audio.onended = finish;
-        audio.onerror = finish;
-        audio.onpause = finish;
-        void audio.play().then(() => {
-          frame = requestAnimationFrame(tick);
-        }, finish);
-      });
-    },
-    stop() {
-      audio?.pause();
-    },
-  };
-}

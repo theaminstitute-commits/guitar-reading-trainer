@@ -8,7 +8,7 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 
 The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 
-- **Two tracks**: writing (watch and write, listen only) and playing (read and play) each keep their own stage, length and streaks on this ladder. Read and play grades tones and their number only, so its clean rounds are judged on pitch alone.
+- **One track**: watch and write and listen only share the same stage, flawless count and streaks on this ladder. (Read and play, which had its own track, was removed on 2026-10-13, R22.)
 
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
 - **Move up a stage**: ten flawless melodies on the stage, every note and every length right (decided 2026-10-05). A melody with any mistake does not count and takes nothing away. Reaching free reading takes 170 flawless melodies, the whole game with its bonus stages 290. (History: clean-round streaks at growing lengths, then a points tally where imperfect rounds also counted; the user rejected both: only flawless melodies count.)
@@ -75,4 +75,4 @@ The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 3. Listens drop from 3 to 2 in Part B.
 4. Eighth notes arrive early (stage 5) so rhythm and keys grow together and sessions stay varied.
 5. Stage 11 (seven accidentals) was optional until 2026-10-05; it is now an ordinary stage and the opt-in checkbox is gone.
-6. Every stage has a guide page (2026-10-05) that opens by itself the first time the stage is met and from a Stage guide button on the start screen: the stage's pitches named on the staff (new ones in amber), the same pitches dotted on the fretboard, keys, note lengths, range and listens. A metronome can be switched on under the Play buttons; it clicks on every beat during playback with an accent on each bar, off by default. In read and play the same setting gives a free-running click at the melody tempo while the learner plays; the listener ignores the frames around each click.
+6. Every stage has a guide page (2026-10-05) that opens by itself the first time the stage is met and from a Stage guide button on the start screen: the stage's pitches named on the staff (new ones in blue), the same pitches dotted on the fretboard, keys, note lengths, range and listens. A metronome can be switched on under the Play buttons; it clicks on every beat during playback, off by default.

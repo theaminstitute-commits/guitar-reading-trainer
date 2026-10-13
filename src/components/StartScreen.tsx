@@ -2,7 +2,7 @@ import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Theme, Track } from '../session/progression';
-import { BookIcon, CheckIcon, EarIcon, EyeIcon, GuitarIcon, LockIcon, MicIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
+import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
 
 export interface SessionStats {
@@ -14,7 +14,7 @@ interface StartScreenProps {
   stages: readonly Stage[];
   level: Stage;
   progress: Progress;
-  /** The track of the current mode. */
+  /** The learner's progress on the ladder. */
   track: Track;
   session: SessionStats;
   onStart: () => void;
@@ -23,7 +23,6 @@ interface StartScreenProps {
   onMode: (mode: ExerciseMode) => void;
   onHandedness: (handedness: Handedness) => void;
   onTheme: (theme: Theme) => void;
-  onMicCheck: () => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
 }
@@ -33,7 +32,6 @@ const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n
 const MODES: { id: ExerciseMode; label: string; icon: typeof EyeIcon; note: string }[] = [
   { id: 'watch', label: 'Watch & write', icon: EyeIcon, note: 'The fretboard lights up each note as it plays. You write it on the staff.' },
   { id: 'listen', label: 'Listen only', icon: EarIcon, note: 'Dictation by ear, no fretboard. The starting note is shown on the staff; the key note still sounds first from stage 3.' },
-  { id: 'play', label: 'Read & play', icon: GuitarIcon, note: 'Read the melody and play it on your guitar. The microphone hears the tones; notes and count are graded, not timing.' },
 ];
 
 /** The ladder in parts, for the stage path. */
@@ -57,7 +55,6 @@ export default function StartScreen({
   onMode,
   onHandedness,
   onTheme,
-  onMicCheck,
   onExplainer,
   onReset,
 }: StartScreenProps) {
@@ -99,11 +96,6 @@ export default function StartScreen({
           <button className="btn" onClick={onGuide}>
             <BookIcon size={18} /> Stage guide
           </button>
-          {progress.mode === 'play' && (
-            <button className="btn" onClick={onMicCheck}>
-              <MicIcon size={18} /> Mic check
-            </button>
-          )}
         </div>
       </div>
 
@@ -150,7 +142,7 @@ export default function StartScreen({
           <span className="stat-sub">{session.exercises === 1 ? 'melody' : 'melodies'}{sessionAccuracy ? ` · ${sessionAccuracy}` : ''}</span>
         </div>
         <div className="panel stat">
-          <span className="stat-label">All time, {progress.mode === 'play' ? 'playing' : 'writing'}</span>
+          <span className="stat-label">All time</span>
           <span className="stat-value">{track.exercises}</span>
           <span className="stat-sub">{track.exercises === 1 ? 'melody' : 'melodies'}{lifetimeAccuracy ? ` · ${lifetimeAccuracy}` : ''}</span>
         </div>
@@ -200,7 +192,7 @@ export default function StartScreen({
         ))}
       </div>
 
-      {(progress.write.exercises > 0 || progress.play.exercises > 0) && (
+      {progress.write.exercises > 0 && (
         <p className="muted small-note reset-row">
           <button className="link subtle" onClick={onReset}>
             <RefreshIcon size={14} /> Reset progress

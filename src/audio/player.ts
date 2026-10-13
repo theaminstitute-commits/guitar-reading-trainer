@@ -58,7 +58,7 @@ function uiAt(fn: () => void, time: number): void {
 const GATE = 0.92;
 
 export class GuitarPlayer {
-  /** The guitar sampler once loaded; the self-play check listens to it directly. */
+  /** The guitar sampler once loaded. */
   sampler: Tone.Sampler | null = null;
   private click: Tone.ToneAudioBuffer | null = null;
   private clickGain: Tone.Gain | null = null;
@@ -66,7 +66,6 @@ export class GuitarPlayer {
   private scheduledIds: number[] = [];
   private currentEvents: PlayerEvents | null = null;
   private _isPlaying = false;
-  private metronomeTimer: ReturnType<typeof setInterval> | null = null;
 
   get isPlaying(): boolean {
     return this._isPlaying;
@@ -202,45 +201,6 @@ export class GuitarPlayer {
     if (this._isPlaying) this.finish(false);
   }
 
-  /**
-   * A free-running click at a tempo, accented on the first beat of each bar
-   * (the bar lengths cycle), independent of melody playback. `onTick` gets the
-   * audio-context time of every click so a listener can ignore it.
-   */
-  async startMetronome(tempo: number, barBeats: readonly number[], onTick?: (contextTime: number, accent: boolean) => void): Promise<void> {
-    await this.load();
-    this.stopMetronome();
-    const secondsPerBeat = 60 / tempo;
-    const lookahead = 0.12;
-    let next = Tone.now() + 0.1;
-    let beatInBar = 0;
-    let bar = 0;
-    const schedule = () => {
-      while (next < Tone.now() + lookahead) {
-        const accent = beatInBar === 0;
-        this.tick(next, accent);
-        onTick?.(next, accent);
-        next += secondsPerBeat;
-        beatInBar += 1;
-        if (beatInBar >= (barBeats[bar % Math.max(1, barBeats.length)] ?? 4)) {
-          beatInBar = 0;
-          bar += 1;
-        }
-      }
-    };
-    schedule();
-    this.metronomeTimer = setInterval(schedule, 30);
-  }
-
-  stopMetronome(): void {
-    if (this.metronomeTimer !== null) clearInterval(this.metronomeTimer);
-    this.metronomeTimer = null;
-  }
-
-  get metronomeRunning(): boolean {
-    return this.metronomeTimer !== null;
-  }
-
   private finish(completed: boolean): void {
     const transport = Tone.getTransport();
     for (const id of this.scheduledIds) transport.clear(id);
@@ -256,7 +216,6 @@ export class GuitarPlayer {
 
   dispose(): void {
     this.stop();
-    this.stopMetronome();
     this.sampler?.dispose();
     this.click?.dispose();
     this.clickGain?.dispose();

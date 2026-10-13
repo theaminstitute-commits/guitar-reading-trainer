@@ -1291,7 +1291,7 @@ button.undo span {
   font-size: 0.9rem;
 }
 
-/* ---------- Sheets (explainers, mic check) ---------- */
+/* ---------- Sheets (explainers) ---------- */
 .card-backdrop {
   position: fixed;
   inset: 0;
@@ -1388,50 +1388,6 @@ button.undo span {
 
 .guide .fretboard {
   margin: 0.4rem 0 0.6rem;
-}
-
-/* ---------- Read and play ---------- */
-.melody-staff {
-  margin: 8px 0 4px;
-}
-
-.listen-meter {
-  height: 10px;
-  border-radius: 5px;
-  background: var(--surface-3);
-  overflow: hidden;
-  margin: 10px 0 4px;
-}
-
-.meter-bar {
-  height: 100%;
-  width: 0;
-  background: var(--border-strong);
-  transition: width 0.06s linear;
-}
-
-.meter-bar.live {
-  background: var(--good);
-}
-
-.tuner {
-  text-align: center;
-  padding: 12px 0 4px;
-}
-
-.tuner-note {
-  font-size: 3rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.tuner-cents {
-  color: var(--muted);
-  margin-top: 6px;
-}
-
-.tuner-cents.in-tune {
-  color: var(--good);
 }
 
 /* ---------- Misc ---------- */
