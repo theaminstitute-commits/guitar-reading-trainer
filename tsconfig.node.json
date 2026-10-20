@@ -9,7 +9,8 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "composite": true
+    "composite": true,
+    "resolveJsonModule": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "package.json"]
 }

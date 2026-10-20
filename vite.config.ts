@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { version } from './package.json';
 
 export default defineConfig({
   plugins: [
@@ -30,6 +31,8 @@ export default defineConfig({
       },
     }),
   ],
+  // The app version, shown on the About and licences screen.
+  define: { __APP_VERSION__: JSON.stringify(version) },
   base: './',
   build: { assetsInlineLimit: 4 * 1024 * 1024 },
   server: { port: 5181 },

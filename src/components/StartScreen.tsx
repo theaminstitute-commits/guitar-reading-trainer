@@ -25,6 +25,7 @@ interface StartScreenProps {
   onTheme: (theme: Theme) => void;
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
+  onAbout: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
@@ -57,6 +58,7 @@ export default function StartScreen({
   onTheme,
   onExplainer,
   onReset,
+  onAbout,
 }: StartScreenProps) {
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(track.accuracySum, track.exercises);
@@ -195,13 +197,16 @@ export default function StartScreen({
         ))}
       </div>
 
-      {progress.write.exercises > 0 && (
-        <p className="muted small-note reset-row">
+      <p className="muted small-note reset-row">
+        <button className="link subtle" onClick={onAbout}>
+          <BookIcon size={14} /> About and licences
+        </button>
+        {progress.write.exercises > 0 && (
           <button className="link subtle" onClick={onReset}>
             <RefreshIcon size={14} /> Reset progress
           </button>
-        </p>
-      )}
+        )}
+      </p>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sharedPlayer } from './audio/player';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
+import AboutScreen from './components/AboutScreen';
 import ExerciseScreen from './components/ExerciseScreen';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
@@ -40,7 +41,7 @@ function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000_000);
 }
 
-type Screen = 'start' | 'guide' | 'exercise' | 'feedback';
+type Screen = 'start' | 'guide' | 'exercise' | 'feedback' | 'about';
 
 /** One exercise: the stage it was drawn for and its melody, fixed when it starts. */
 interface Exercise {
@@ -221,13 +222,15 @@ export default function App() {
           <div>
             <h1>Guitar Reading Trainer</h1>
             <p>
-              {screen === 'start' || screen === 'guide'
+              {screen === 'about'
+                ? 'About and licences'
+                : screen === 'start' || screen === 'guide'
                 ? level.title
                 : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${melody.counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
             </p>
           </div>
         </div>
-        {screen !== 'start' && <span className="stage-pill">Stage {screen === 'guide' ? level.number : exercise.level.number}</span>}
+        {screen !== 'start' && screen !== 'about' && <span className="stage-pill">Stage {screen === 'guide' ? level.number : exercise.level.number}</span>}
       </header>
 
       {screen === 'start' && (
@@ -245,6 +248,7 @@ export default function App() {
           onTheme={onTheme}
           onExplainer={setExplainer}
           onReset={onReset}
+          onAbout={() => setScreen('about')}
         />
       )}
 
@@ -284,6 +288,8 @@ export default function App() {
           onExplainer={setExplainer}
         />
       )}
+
+      {screen === 'about' && <AboutScreen onBack={() => setScreen('start')} />}
 
       {explainer && <ExplainerCard id={explainer} onClose={() => setExplainer(null)} />}
 

@@ -9,7 +9,7 @@ Licence: Creative Commons Attribution 3.0 (CC BY 3.0),
 https://creativecommons.org/licenses/by/3.0/us/
 
 Attribution: FluidR3_GM soundfont by Frank Wen; MP3 rendering by Benjamin Gleitzman
-(midi-js-soundfonts). The app credits this in its About text.
+(midi-js-soundfonts). The app credits this in its footer and on its About and licences screen.
 
 Only the notes the app needs are included. Tone.js pitch-shifts from the nearest
 sample for anything in between.

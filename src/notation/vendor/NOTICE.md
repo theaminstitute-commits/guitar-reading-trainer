@@ -4,7 +4,7 @@
 (`build/esm/src/fonts/`), which ships them as base64 data URIs.
 
 - **Bravura** (SMuFL music font) by Steinberg Media Technologies, SIL Open Font License 1.1.
-- **Academico** (text font) by Daniel Spreadbury and others, SIL Open Font License 1.1.
+- **Academico** (text font) by Steinberg Media Technologies GmbH, SIL Open Font License 1.1.
 - VexFlow itself is MIT licensed (Mohit Muthanna Cheppudira and contributors).
 
 They are copied rather than imported from the package because VexFlow's own
