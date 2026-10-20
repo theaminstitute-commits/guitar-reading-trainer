@@ -17,6 +17,8 @@ PKG="$WORK/guitar-reading-trainer"
 mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin" "$PKG/usr/share/guitar-reading-trainer" \
   "$PKG/usr/share/applications" "$PKG/usr/share/icons/hicolor/scalable/apps"
 install -m 644 "$HTML" "$PKG/usr/share/guitar-reading-trainer/guitar-reading-trainer.html"
+mkdir -p "$PKG/usr/share/doc/guitar-reading-trainer"
+install -m 644 "$ROOT/LICENSE.md" "$PKG/usr/share/doc/guitar-reading-trainer/copyright"
 install -m 755 "$ROOT/linux/guitar-reading-trainer.sh" "$PKG/usr/bin/guitar-reading-trainer"
 install -m 644 "$ROOT/linux/guitar-reading-trainer.svg" "$PKG/usr/share/icons/hicolor/scalable/apps/guitar-reading-trainer.svg"
 cat > "$PKG/usr/share/applications/guitar-reading-trainer.desktop" <<DESKTOP

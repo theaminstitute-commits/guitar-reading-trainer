@@ -15,9 +15,9 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.16.2 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.16.3 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
-The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.16.2` in PowerShell builds `dist/GuitarReadingTrainer-v0.16.2.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
+The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.16.3` in PowerShell builds `dist/GuitarReadingTrainer-v0.16.3.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
 
 ## Music rules baked into the code
 
@@ -69,3 +69,9 @@ The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.
 ## Levels
 
 A stage is a `LevelConfig` object (`src/melody/levelConfig.ts`) with a number, name and summary (`src/melody/stages.ts`). Stage 1: C major, 4/4, 1 to 4 bars, strings 1-3, frets 0-3, quarter and half notes, leaps up to a third, start and end on a chord tone, 72 bpm, three listens.
+
+## Licence
+
+Copyright 2026 Dirk Swanepoel. The app's own code and content are licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md): free to use, study, change and share for any noncommercial purpose, including personal practice, teaching, schools, charities and public research. Commercial use, such as selling the app or a modified copy, or building a paid product on it, needs a separate licence from the copyright holder. Anyone who passes the software on must include the licence terms and the "Required Notice" line.
+
+Third-party parts keep their own licences: VexFlow and Tone.js (MIT), the bundled Bravura and Academico music fonts (SIL Open Font License 1.1, see `src/notation/vendor/NOTICE.md`), and the FluidR3_GM guitar samples by Frank Wen via midi-js-soundfonts (CC BY 3.0, credited in the app footer).
