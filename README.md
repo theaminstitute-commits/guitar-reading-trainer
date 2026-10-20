@@ -1,6 +1,6 @@
 # Guitar Reading Trainer
 
-A web app that teaches self-learning guitarists to read standard notation while training their ear. The app plays a short melody, shows it on a fretboard, and the learner writes it on a treble staff. Every mistake is graded and explained.
+A web app that teaches self-learning guitarists to read standard notation while training their ear. Created and maintained by Dirk Swanepoel. The app plays a short melody, shows it on a fretboard, and the learner writes it on a treble staff. Every mistake is graded and explained.
 
 Live: https://theaminstitute-commits.github.io/guitar-reading-trainer/ (installable as a PWA from the browser menu). Every push to `main` runs the tests, builds, and deploys to GitHub Pages through `.github/workflows/deploy.yml`.
 
@@ -15,9 +15,9 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.16.1 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.16.2 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
-The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.16.1` in PowerShell builds `dist/GuitarReadingTrainer-v0.16.1.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
+The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.16.2` in PowerShell builds `dist/GuitarReadingTrainer-v0.16.2.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
 
 ## Music rules baked into the code
 

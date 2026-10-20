@@ -1,7 +1,8 @@
 {
   "name": "guitar-reading-trainer",
   "private": true,
-  "version": "0.16.1",
+  "version": "0.16.2",
+  "author": "Dirk Swanepoel",
   "type": "module",
   "scripts": {
     "dev": "vite",

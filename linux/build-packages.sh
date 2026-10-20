@@ -35,7 +35,7 @@ cat > "$PKG/DEBIAN/control" <<CONTROL
 Package: guitar-reading-trainer
 Version: $VERSION
 Architecture: all
-Maintainer: Philip van der Walt <theaminstitute@gmail.com>
+Maintainer: Dirk Swanepoel
 Installed-Size: $SIZE
 Recommends: chromium | google-chrome-stable | firefox
 Section: sound
