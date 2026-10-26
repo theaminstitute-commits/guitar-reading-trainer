@@ -30,6 +30,7 @@ export type MistakeKind =
 export interface GradedTarget {
   index: number;
   bar: number;
+  chord?: number;
   written: SpelledNote;
   /** Written MIDI (sounding + 12). */
   midi: Midi;
@@ -40,6 +41,7 @@ export interface GradedAnswer {
   index: number;
   id: number;
   bar: number;
+  chord?: number;
   written: SpelledNote;
   midi: Midi;
   duration: DurationId;
@@ -98,7 +100,8 @@ export function gradedTargets(melody: Melody, key: Key): GradedTarget[] {
   splitIntoBars(melody.notes, melody.barBeats).forEach((bar, barIndex) => {
     for (const note of bar.notes) {
       const midi = writtenFromSounding(note.midi);
-      targets.push({ index: targets.length, bar: barIndex, written: spellInKey(midi, key), midi, duration: note.duration });
+      // A chord tone keeps the spelling its root gives it (a sharp nine is D sharp over C, whatever the key).
+      targets.push({ index: targets.length, bar: barIndex, chord: note.chord, written: note.spelled ?? spellInKey(midi, key), midi, duration: note.duration });
     }
   });
   return targets;
@@ -118,6 +121,8 @@ export function gradeSequences(targets: GradedTarget[], answers: GradedAnswer[],
   let extraCount = 0;
   let missingCount = 0;
   let lastTargetBar = 0;
+  // A chord has one length, so a wrong length is reported once for the chord, not once per note.
+  const lengthReported = new Set<number>();
 
   aligned.forEach((p, pairIndex) => {
     const target = p.target === null ? null : targets[p.target]!;
@@ -136,7 +141,10 @@ export function gradeSequences(targets: GradedTarget[], answers: GradedAnswer[],
       pair.pitchOk = kind === null;
       pair.durationOk = !timing || target.duration === answer.duration;
       if (kind) add(kind);
-      if (!pair.durationOk) add('wrong-duration');
+      if (!pair.durationOk) {
+        if (answer.chord === undefined || !lengthReported.has(answer.chord)) add('wrong-duration');
+        if (answer.chord !== undefined) lengthReported.add(answer.chord);
+      }
       if (pair.pitchOk) pitchCorrect++;
       if (pair.durationOk) rhythmCorrect++;
     } else if (target) {
@@ -170,7 +178,7 @@ export function gradeAnswer(melody: Melody, answerBars: readonly (readonly Answe
     const resolved = resolveAnswerBar(bar, key);
     bar.forEach((note, i) => {
       const written = resolved[i]!;
-      answers.push({ index: answers.length, id: note.id, bar: barIndex, written, midi: midiFromSpelled(written), duration: note.duration });
+      answers.push({ index: answers.length, id: note.id, bar: barIndex, chord: note.chord, written, midi: midiFromSpelled(written), duration: note.duration });
     });
   });
   return gradeSequences(gradedTargets(melody, key), answers, true);

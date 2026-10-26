@@ -4,7 +4,9 @@ import { keySignatureCount, keySignatureSpec, type Key } from '../music/key';
 import type { Sign } from '../notation/accidentals';
 import {
   addRejection,
+  answerReducer,
   capacityOf,
+  chordMates,
   durationRejection,
   findNote,
   isBarFull,
@@ -78,6 +80,8 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
   const selectedId = selection?.kind === 'note' ? selection.id : null;
   const [message, setMessage] = useState<string | null>(null);
   const [rejectedBar, setRejectedBar] = useState<number | null>(null);
+  /** Chord mode: a tap on the staff stacks a note onto the selected note instead of adding one after it. */
+  const [stacking, setStacking] = useState(false);
 
   useEffect(() => {
     ensureNotationFonts()
@@ -128,6 +132,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         step: n.step,
         sign: n.sign,
         duration: n.duration,
+        chord: n.chord,
         style: n.id === selectedId ? { fill: COLORS.selected, stroke: COLORS.selected } : undefined,
       })),
     }));
@@ -172,6 +177,30 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         return;
       }
 
+      // Chord mode: the tap adds a note to the selected note's chord, in its bar, at the tapped line or space.
+      if (stacking) {
+        const stave = staveAt(layout.staves, x, y);
+        if (!stave) return;
+        if (selection?.kind !== 'note') {
+          setMessage('Chord mode: tap a note first, then tap the line or space of the next note of its chord.');
+          return;
+        }
+        const found = findNote(answer, selection.id);
+        if (!found || found.bar !== stave.barIndex) {
+          setMessage(`The selected note is in bar ${found ? found.bar + 1 : '?'}; tap there to stack on it.`);
+          return;
+        }
+        const step = Math.min(limits.maxStep, Math.max(limits.minStep, stepFromY(y, stave)));
+        const action: AnswerAction = { type: 'stack', id: selection.id, step };
+        if (answerReducer(answer, action, limits) === answer) {
+          setMessage('That line or space is already in the chord. Tap another one.');
+          return;
+        }
+        dispatch(action);
+        setMessage(null);
+        return;
+      }
+
       // With a note selected, tapping the dashed cursor hands control back to it without adding
       // a note. Otherwise a tap inside the cursor adds a note there like any other tap.
       const slot = slots.find((s) => x >= s.x - 4 && x <= s.x + s.width + 4 && y >= s.y && y <= s.y + s.height);
@@ -205,11 +234,15 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       setSelection({ kind: 'slot', bar: stave.barIndex });
       setMessage(null);
     },
-    [answer, disabled, dispatch, duration, limits, scale, slots, selection],
+    [answer, disabled, dispatch, duration, limits, scale, slots, selection, stacking],
   );
 
   const hasSelection = selectedId !== null;
   const hasNotes = answer.bars.some((b) => b.length > 0);
+  const selectedChordSize = selectedId === null ? 0 : (() => {
+    const found = findNote(answer, selectedId);
+    return found ? chordMates(answer.bars[found.bar]!, found.note).length : 0;
+  })();
   const slotSelected = selection?.kind === 'slot' && slots.some((s) => s.bar === selection.bar);
   /** Duration palette: sets the length for the next note; with a note selected, changes that note instead. */
   const chooseDuration = (d: DurationId) => {
@@ -257,13 +290,17 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
 
       <div className="staff-message" aria-live="polite">
         {message ??
-          (hasNotes
+          (stacking
             ? hasSelection
-              ? 'Note selected: the palette, signs and arrows change it. Tap the dashed cursor to add the next note instead.'
-              : slotSelected
-                ? 'Pick a length, then tap a line or space to add the next note.'
-                : ''
-            : 'Tap a line or space to write the first note. The dashed box shows where the next note goes.')}
+              ? `Chord mode: tap a line or space to add a note to the selected ${selectedChordSize > 1 ? `chord of ${selectedChordSize}` : 'note'}. Tap Chord again to go back to single notes.`
+              : 'Chord mode: tap a note first, then tap where the next note of its chord goes.'
+            : hasNotes
+              ? hasSelection
+                ? 'Note selected: the palette, signs and arrows change it. Tap the dashed cursor to add the next note instead.'
+                : slotSelected
+                  ? 'Pick a length, then tap a line or space to add the next note.'
+                  : ''
+              : 'Tap a line or space to write the first note. The dashed box shows where the next note goes.')}
       </div>
 
       <div className="palette">
@@ -298,6 +335,18 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         </button>
         <button className="icon-button" onClick={() => nudge(-1)} disabled={disabled || !hasSelection} aria-label="Move note down">
           ▼
+        </button>
+        <button
+          className={`chord-toggle${stacking ? ' selected' : ''}`}
+          onClick={() => {
+            setStacking((s) => !s);
+            setMessage(null);
+          }}
+          aria-pressed={stacking}
+          title="Chord mode: stack notes on the selected note"
+          disabled={disabled}
+        >
+          Chord
         </button>
         <span className="palette-gap" />
         <button onClick={() => { if (selectedId !== null) { setMessage(null); dispatch({ type: 'delete', id: selectedId }); } }} disabled={disabled || !hasSelection}>

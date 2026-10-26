@@ -1,10 +1,12 @@
 /**
  * Render bars of notes to SVG with VexFlow and report where everything landed,
- * so the staff can be tapped (StaffInput) or overlaid (feedback).
+ * so the staff can be tapped (StaffInput) or overlaid (feedback). Notes that
+ * share a `chord` id are drawn as one chord on one stem.
  *
  * Coordinates in the returned layout are CSS pixels relative to the container.
  */
 import { Accidental, Annotation, BarlineType, Dot, Formatter, Renderer, Stave, StaveNote, type RenderContext } from 'vexflow/core';
+import { groupEvents } from '../melody/bars';
 import { DURATIONS, type DurationId } from '../music/duration';
 import { spelledFromStaffStep } from '../music/pitch';
 import type { Sign } from './accidentals';
@@ -21,6 +23,8 @@ export interface RenderNote {
   /** The sign drawn in front of the note. */
   sign: Sign;
   duration: DurationId;
+  /** Notes with the same id are one chord (listed low to high). */
+  chord?: number;
   style?: RenderNoteStyle;
   /** Text drawn under the note (explainer cards). */
   label?: string;
@@ -133,22 +137,32 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       }
       stave.draw();
 
-      const staveNotes = bar.notes.map((n) => {
+      // One StaveNote per event: a single note, or a chord with every note on one stem (keys ascending).
+      const events = groupEvents(bar.notes).map((group) => [...group].sort((a, b) => a.step - b.step));
+      const staveNotes = events.map((group) => {
+        const first = group[0]!;
         const note = new StaveNote({
-          keys: [vexKey(n.step)],
-          duration: DURATIONS[n.duration].vexflow,
+          keys: group.map((n) => vexKey(n.step)),
+          duration: DURATIONS[first.duration].vexflow,
           clef: 'treble',
           autoStem: true,
         });
-        if (n.sign !== 'none') {
-          note.addModifier(new Accidental(SIGN_GLYPH[n.sign]), 0);
-        }
-        if (DURATIONS[n.duration].dots > 0) {
+        group.forEach((n, k) => {
+          if (n.sign !== 'none') note.addModifier(new Accidental(SIGN_GLYPH[n.sign]), k);
+        });
+        if (DURATIONS[first.duration].dots > 0) {
           Dot.buildAndAttach([note], { all: true });
         }
-        if (n.style) note.setStyle({ fillStyle: n.style.fill, strokeStyle: n.style.stroke });
-        if (n.label) {
-          const annotation = new Annotation(n.label).setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
+        const styles = group.map((n) => n.style);
+        if (styles.every((s) => s && s.fill === styles[0]!.fill)) {
+          if (first.style) note.setStyle({ fillStyle: first.style.fill, strokeStyle: first.style.stroke });
+        } else {
+          group.forEach((n, k) => {
+            if (n.style) note.setKeyStyle(k, { fillStyle: n.style.fill, strokeStyle: n.style.stroke });
+          });
+        }
+        if (first.label) {
+          const annotation = new Annotation(first.label).setVerticalJustification(Annotation.VerticalJustify.BOTTOM);
           annotation.setStyle({ fillStyle: ink, strokeStyle: ink });
           note.addModifier(annotation, 0);
         }
@@ -158,13 +172,17 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       if (staveNotes.length > 0) {
         // autoBeam joins eighths into beamed pairs per beat.
         Formatter.FormatAndDraw(ctx, stave, staveNotes, { autoBeam: true, alignRests: false });
-        staveNotes.forEach((note, noteIndex) => {
-          layout.notes.push({
-            barIndex,
-            noteIndex,
-            id: bar.notes[noteIndex]!.id,
-            x: note.getAbsoluteX() * scale,
-            y: note.getYs()[0]! * scale,
+        let noteIndex = 0;
+        staveNotes.forEach((note, e) => {
+          const ys = note.getYs();
+          events[e]!.forEach((n, k) => {
+            layout.notes.push({
+              barIndex,
+              noteIndex: noteIndex++,
+              id: n.id,
+              x: note.getAbsoluteX() * scale,
+              y: ys[k]! * scale,
+            });
           });
         });
       }

@@ -1,6 +1,6 @@
 import type { DurationId } from '../music/duration';
 import type { Key } from '../music/key';
-import type { Midi } from '../music/pitch';
+import type { Midi, SpelledNote } from '../music/pitch';
 
 /**
  * One note of a target melody. `midi` is the SOUNDING pitch. `string`/`fret`
@@ -11,6 +11,10 @@ export interface MelodyNote {
   duration: DurationId;
   string: number;
   fret: number;
+  /** Notes with the same id sound together as one chord, share its duration, and are listed low to high. */
+  chord?: number;
+  /** The WRITTEN spelling (an octave above sounding) when it follows the chord's root rather than the key. */
+  spelled?: SpelledNote;
 }
 
 export interface Melody {

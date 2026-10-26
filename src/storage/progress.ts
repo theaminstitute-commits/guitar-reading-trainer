@@ -45,6 +45,15 @@ function remapStageIndex(old: number): number {
   return old - 3;
 }
 
+/**
+ * Stage indices of version 5 and 6 records (18 main stages) on the ladder with
+ * Part D (chords, 29 stages inserted before free reading, 2026-10-26): stages
+ * 1 to 17 keep their place; free reading and the bonus stages move up by 29.
+ */
+function remapForChords(old: number): number {
+  return old <= 16 ? old : old + 29;
+}
+
 /** A track from any older or current record shape; null if it is not one. */
 function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: number) => number): Track | null {
   if (!isRecord(value)) return null;
@@ -73,16 +82,18 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
 /**
  * Accept every record shape so far: versions 1-3 kept one set of counters at
  * the top level; versions 4 and 5 had a second, playing track (read and play,
- * removed 2026-10-13), which is dropped; version 6 has the one track.
+ * removed 2026-10-13), which is dropped; version 6 has the one track; version 7
+ * renumbers the stages after Part D (chords) was inserted.
  */
 function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
   if (!isRecord(value)) return null;
-  const remap = value.version === 5 || value.version === 6 ? (i: number) => i : remapStageIndex;
+  const remap =
+    value.version === 7 ? (i: number) => i : value.version === 5 || value.version === 6 ? remapForChords : (i: number) => remapForChords(remapStageIndex(i));
   const write: Track | null = typeof value.version === 'number' && value.version >= 4 ? migrateTrack(value.write, stages, remap) : migrateTrack(value, stages, remap);
   if (!write) return null;
   const mode = value.mode === 'listen' ? 'listen' : 'watch';
   return {
-    version: 6,
+    version: 7,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
     theme: value.theme === 'light' || value.theme === 'dark' ? value.theme : 'system',

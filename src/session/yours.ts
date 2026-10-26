@@ -22,7 +22,7 @@ const name = (s: SpelledNote) => `${spelledName(s)}${s.octave}`;
 export function yoursFromAnswer(answerBars: readonly (readonly AnswerNote[])[], melody: Melody, key: Key): YoursStaff {
   return {
     caption: 'Yours',
-    bars: answerBars.map((bar) => ({ notes: bar.map((n) => ({ step: n.step, sign: n.sign, duration: n.duration })) })),
+    bars: answerBars.map((bar) => ({ notes: bar.map((n) => ({ step: n.step, sign: n.sign, duration: n.duration, chord: n.chord })) })),
     names: answerBars.flatMap((bar) => resolveAnswerBar(bar, key).map(name)),
     barTimeSignatures: timeSignaturesFor(melody.barBeats),
     showTimeSignature: true,
@@ -33,7 +33,7 @@ export function yoursFromAnswer(answerBars: readonly (readonly AnswerNote[])[], 
 export function hearWrittenAnswer(answerBars: readonly (readonly AnswerNote[])[], melody: Melody, key: Key): HearMine {
   const notes: PlayableNote[] = answerBars.flatMap((bar) => {
     const sounding = answerBarToSounding(bar, key);
-    return bar.map((n, i) => ({ midi: sounding[i]!, duration: n.duration }));
+    return bar.map((n, i) => ({ midi: sounding[i]!, duration: n.duration, chord: n.chord }));
   });
   return {
     async play(onNote) {

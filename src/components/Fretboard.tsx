@@ -3,8 +3,8 @@ import type { FretPosition } from '../music/fretboard';
 interface FretboardProps {
   /** Inclusive fret window of the stage; only this part of the neck is drawn (at least five frets). */
   frets?: readonly [number, number];
-  /** The note sounding now. */
-  active: FretPosition | null;
+  /** The note or chord sounding now. */
+  active: FretPosition | readonly FretPosition[] | null;
   /** Notes already played this pass, drawn faintly so the shape of the melody stays visible. */
   played?: readonly FretPosition[];
   /** Left-handed view: the whole board mirrored, nut on the right. */
@@ -30,7 +30,9 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ frets = [0, 4], active, played = [], mirrored = false }: FretboardProps) {
+export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false }: FretboardProps) {
+  const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
+  const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
   const hasNut = frets[0] === 0;
   const fretCount = last - first + 1;
@@ -59,7 +61,7 @@ export default function Fretboard({ frets = [0, 4], active, played = [], mirrore
       className="fretboard"
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label={active ? `String ${active.string}, fret ${active.fret}${mirrored ? ', left-handed view' : ''}` : `Fretboard, frets ${first} to ${last}`}
+      aria-label={active ? `${actives.map((a) => `string ${a.string} fret ${a.fret}`).join(', ')}${mirrored ? ', left-handed view' : ''}` : `Fretboard, frets ${first} to ${last}`}
     >
       <g transform={boardTransform}>
       {/* Wood */}
@@ -114,18 +116,18 @@ export default function Fretboard({ frets = [0, 4], active, played = [], mirrore
 
       {/* Faint trail of notes already played */}
       {played
-        .filter((p) => inWindow(p) && (!active || !same(p, active)))
+        .filter((p) => inWindow(p) && !actives.some((a) => same(p, a)))
         .map((p, i) => (
           <circle key={`p${i}`} cx={noteX(p.fret)} cy={stringY(p.string)} r={8} className="fb-played" />
         ))}
 
-      {/* The note sounding now */}
-      {active && inWindow(active) && (
-        <g className="fb-active">
-          <circle cx={noteX(active.fret)} cy={stringY(active.string)} r={13} className="fb-active-glow" />
-          <circle cx={noteX(active.fret)} cy={stringY(active.string)} r={9} className="fb-active-dot" />
+      {/* The note, or every note of the chord, sounding now */}
+      {actives.filter(inWindow).map((a, i) => (
+        <g key={`a${i}`} className="fb-active">
+          <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
+          <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
         </g>
-      )}
+      ))}
       </g>
     </svg>
   );

@@ -27,6 +27,7 @@ stated are marked **(user)**; the rest are defaults the user accepted.
 | R19 | The fifth and sixth strings arrive with A and E♭ major (stage 6), from the open low E, and stay in every stage after that, including the keys introduced earlier when those come round again. **(user, 2026-10-08)** | 2026-10-08 | `melody/stages.ts` |
 | R20 | In Watch and write the staff panel says "Write what you see"; in Listen only, "Write what you heard". **(user, 2026-10-08)** | 2026-10-08 | `components/ExerciseScreen.tsx` |
 | R22 | The app has two modes, Watch and write and Listen only, on one progress track. Read and play (the microphone grading what the learner played) was removed on 2026-10-13 and is not to come back as a graded mode: its grades depended on the microphone, the room and the guitar's overtones, and the app's promise is that a grade is always right. **(user, 2026-10-13)** | 2026-10-13 | `session/progression.ts`, `storage/progress.ts` |
+| R23 | Part D, chords: 29 stages between melodic minor (17) and free reading sit at 18 to 46, in the user's order: power chords; thirds and sixths; fourths, octaves and tenths; open major triads; open minor triads; open triads with F and B minor; barre chords (E and A shapes); diminished, augmented and suspended triads; dominant, minor, major, half-diminished, diminished, minor-major and augmented sevenths with 7sus4; sixth, added-note and six-nine chords; ninths, elevenths, thirteenths; altered dominants; slash chords and inversions; drop 2 and drop 3; quartal and cluster voicings; polychords; chord melody. The learner writes every note of each chord on the staff. Free reading (47) and the bonus stages (48 to 59) mix chords and melody, with the melody note on top of every chord. Chord tones are spelled from the chord's root (a sharp nine over C is D♯). **(user, 2026-10-26)** | 2026-10-26 | `chords/` (formulas, voicings, vocabulary, generator), `melody/stages.ts`, `notation/answer.ts` (chord mode) |
 | R21 | In Listen only, the starting note of every melody is shown on the staff before it plays: its place only, with the key signature, no name and no length. Few people have perfect pitch; relative pitch can be trained, so the ear gets an anchor to hear from. The learner still writes the first note; it is graded like the others. **(user, 2026-10-13)** | 2026-10-13 | `notation/startNote.ts`, `components/StartNote.tsx`, `components/ExerciseScreen.tsx` |
 
 ## How a rule is enforced
@@ -39,6 +40,19 @@ fret 4 of the third string). R14 is about pitch, so only a redraw can meet it. T
 checks all three over every stage and forty seeds.
 
 ## Conflict log
+
+- **2026-10-26, R23 (chords) against the rules written for single notes.** Checked one by one:
+  - **R9, one bar of 4/4.** Holds: a chord stage is one bar, with one or two chords (dyads: two to four).
+  - **R13, top fret in use.** A chord's notes are fixed by its voicing, and the chord stages span the whole neck, so there is no top fret to feature. Waived on the pure chord stages (18 to 45), as it already is on the bonus stages. It still holds on chord melody (46) and free reading (47), where only the single notes may move to satisfy it; chord tones never move.
+  - **R14, a signature note in every melody.** A power chord in G major has no F♯ to give. Waived on the pure chord stages; on chord melody, free reading and the bonus stages the melody notes carry it.
+  - **R7, new frets and strings used at once.** Chord stages add no frets or strings (Part C already covers the neck), so nothing is introduced and nothing is forced.
+  - **R18, key stages use only their new keys.** Chord stages introduce chord types, not keys; they draw from every major key (chord melody adds the natural minors) so the signature is read every time. No conflict.
+  - **R1, strict spelling.** Kept, and made to follow the chord: every chord tone is spelled by its interval from the root, so C7♯9 carries D♯ even in a flat key, and a diminished seventh is spelled with its double flat where the root demands it. The root's own spelling is the key's when the root is in the key, unless that would force a double sign (D♭ diminished in G♭ major is written C♯ diminished).
+  - **R3, the tonic before the count-in.** Kept: the tonic of the key still sounds, which is how a reader hears the chord's place in the key.
+  - **R21, the starting note in Listen only.** When the melody opens with a chord, the bass note of that chord is shown.
+  - **R8 and R12.** Unchanged: ten flawless melodies per stage, a guide page per stage. The guide of a chord stage shows example chords, named, instead of a pitch list. Reaching free reading now takes 460 flawless melodies and the last bonus stage 580.
+  - **Listens.** Part C's two listens were for melody by ear; chords are harder to hear, so the chord stages return to three. Free reading keeps two.
+  - **Saved progress.** Version 7 records: stages 1 to 17 keep their index, free reading and the bonus stages move up by 29, and the guides seen and melodies remembered move with them.
 
 - **2026-10-13, R22 against R11 and the saved progress.** R11 spoke of "both metronomes"; the free-running one existed only for read and play and went with it, so R11 now reads "the metronome". Saved records of versions 4 and 5 carried a playing track; version 6 drops it and keeps the writing track, so nobody loses their place on the ladder. A saved mode of "play" becomes Watch and write. No other rule mentions the mode.
 

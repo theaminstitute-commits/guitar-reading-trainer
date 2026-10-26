@@ -37,8 +37,23 @@ describe('stage guide', () => {
     expect(h.pitches.some((p) => p.name.startsWith('G♯'))).toBe(true);
   });
 
-  it('gives every stage at least one pitch with a position inside the stage window', () => {
-    STAGES.forEach((s, i) => {
+  it('shows example chords for chord stages, each with a name and positions on the neck', () => {
+    for (const s of STAGES.filter((st) => st.chords)) {
+      const g = stageGuide(s, null);
+      expect(g.pitches).toEqual([]);
+      expect(g.chords!.length, s.id).toBeGreaterThanOrEqual(2);
+      for (const chord of g.chords!) {
+        expect(chord.name.length).toBeGreaterThan(0);
+        expect(chord.notes.length).toBeGreaterThanOrEqual(2);
+        expect(chord.positions.every((p) => p.fret >= 0 && p.fret <= 12)).toBe(true);
+      }
+      expect(new Set(g.chords!.map((c) => c.name + c.notes.map((n) => n.midi).join())).size).toBe(g.chords!.length);
+    }
+  });
+
+  it('gives every melodic stage at least one pitch with a position inside the stage window', () => {
+    STAGES.filter((s) => !s.chords).forEach((s) => {
+      const i = STAGES.indexOf(s);
       const g = stageGuide(s, i > 0 ? STAGES[i - 1]! : null);
       expect(g.pitches.length).toBeGreaterThan(5);
       for (const p of g.pitches) {

@@ -7,6 +7,8 @@
  * draws from all the keys introduced so far. R19: the fifth and sixth strings
  * arrive with A and E♭ major (stage 6) and stay for every stage after it.
  */
+import { keyFitsVocabulary } from '../chords/generator';
+import { FREE_READING_CHORDS, PART_D } from '../chords/vocabulary';
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
 import type { FretPosition } from '../music/fretboard';
@@ -208,25 +210,61 @@ const STAGE_17: Stage = {
   keys: ALL_MINORS.map((k) => withMode(k, 'melodic-minor')),
 };
 
-const STAGE_18: Stage = {
+const ALL_KEYS: Key[] = [
+  ...MAJOR_KEYS,
+  ...ALL_MINORS,
+  ...ALL_MINORS.map((k) => withMode(k, 'harmonic-minor')),
+  ...ALL_MINORS.map((k) => withMode(k, 'melodic-minor')),
+];
+
+/**
+ * Part D, chords (R23): 29 stages from power chords to chord melody, on all six
+ * strings up to fret 12. The learner writes every note of each chord. Chord
+ * stages draw from every major key; chord melody adds the natural minors. The
+ * top-fret rule (R13) and the signature-note rule (R14) are waived on pure chord
+ * stages (rules.md, conflict log), and three listens return because chords are
+ * harder to hear.
+ */
+export const PART_D_FIRST = 18;
+const PART_D_STAGES: Stage[] = PART_D.map((d, i) => {
+  const number = PART_D_FIRST + i;
+  const mixed = d.config.mix !== undefined;
+  // A pure chord stage is drawn only in keys that hold at least one of its chords (the open-chord stages:
+  // C, G, D, A and E major belong to seven keys, not fifteen), so the key signature is never a stranger.
+  const fitting = mixed ? [] : MAJOR_KEYS.filter((key) => keyFitsVocabulary(d.config, key));
+  return {
+    ...STAGE_17,
+    id: `stage-${number}`,
+    number,
+    name: d.name,
+    title: `Stage ${number}: ${d.name}`,
+    summary: d.summary,
+    keys: mixed ? [...MAJOR_KEYS, ...ALL_MINORS] : fitting.length > 0 ? fitting : MAJOR_KEYS,
+    strings: ALL_STRINGS,
+    fretRange: [0, 12],
+    durations: mixed ? STAGE_17.durations : d.config.durations,
+    maxListens: 3,
+    featureFret: false,
+    chords: d.config,
+  };
+});
+
+const FREE_READING_NUMBER = PART_D_FIRST + PART_D.length;
+const STAGE_FREE: Stage = {
   ...STAGE_17,
-  id: 'stage-18',
-  number: 18,
+  id: `stage-${FREE_READING_NUMBER}`,
+  number: FREE_READING_NUMBER,
   name: 'Free reading',
-  title: 'Stage 18: free reading',
-  summary: 'Any major key, any minor form, every rhythm, all six strings from the nut to fret 12.',
-  keys: [
-    ...MAJOR_KEYS,
-    ...ALL_MINORS,
-    ...ALL_MINORS.map((k) => withMode(k, 'harmonic-minor')),
-    ...ALL_MINORS.map((k) => withMode(k, 'melodic-minor')),
-  ],
+  title: `Stage ${FREE_READING_NUMBER}: free reading`,
+  summary: 'Any major key, any minor form, every rhythm, chords under the melody, all six strings from the nut to fret 12.',
+  keys: ALL_KEYS,
   strings: ALL_STRINGS,
   fretRange: [0, 12],
+  chords: FREE_READING_CHORDS,
 };
 
 /** Free reading is the last of the main ladder; everything after it is a bonus stage. */
-export const MAIN_STAGE_COUNT = 18;
+export const MAIN_STAGE_COUNT = FREE_READING_NUMBER;
 
 /**
  * Bonus stages after free reading: one count more each, so every length beyond
@@ -237,12 +275,12 @@ const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - MIN_COUNTS }, (_, i) =>
   const counts = MIN_COUNTS + i + 1;
   const meter = describeMeter(barBeatsForCounts(counts));
   return {
-    ...STAGE_18,
+    ...STAGE_FREE,
     id: `bonus-${i + 1}`,
     number: MAIN_STAGE_COUNT + 1 + i,
     name: `Bonus ${i + 1}: ${counts} counts`,
     title: `Bonus stage ${i + 1}: ${counts} counts (${meter})`,
-    summary: `${meter}. Any key, any minor form, anywhere on the neck. The melody is ${counts} counts long every time.`,
+    summary: `${meter}. Any key, any minor form, chords and melody, anywhere on the neck. The melody is ${counts} counts long every time.`,
     startCounts: counts,
     maxCounts: counts,
     featureFret: false,
@@ -263,9 +301,10 @@ function introducedBy(stage: Stage, previous: Stage): FretPosition[] {
 
 const MAIN: Stage[] = [
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
-  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, STAGE_18,
+  STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, ...PART_D_STAGES, STAGE_FREE,
 ].map((stage, i, all) => {
-  if (i === 0) return stage;
+  // Chord stages span the whole neck from the start; the voicings decide where notes fall, not R7.
+  if (i === 0 || stage.chords) return stage;
   const introduces = introducedBy(stage, all[i - 1]!);
   return introduces.length > 0 ? { ...stage, introduces } : stage;
 });

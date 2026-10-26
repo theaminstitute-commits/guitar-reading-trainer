@@ -7,10 +7,12 @@
  *  - consecutive notes never leap more than `maxLeapSteps` diatonic steps
  *  - the first note is on a start degree, the last note on an end degree
  */
+import { chordNotes, chordsWithTop, drawChord, type ChordChoice } from '../chords/generator';
+import type { ChordStageConfig } from '../chords/stageConfig';
 import { beatsOf, cellBeats, DURATIONS, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
-import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, keySignatureCount, spellInKey, type Key } from '../music/key';
-import { pitchClass } from '../music/pitch';
+import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, keySignatureAccidental, keySignatureCount, spellInKey, type Key } from '../music/key';
+import { pitchClass, writtenFromSounding } from '../music/pitch';
 import { barBeatsForCounts, MIN_COUNTS } from './meter';
 import { staffStep, type Midi } from '../music/pitch';
 import type { LevelConfig } from './levelConfig';
@@ -122,11 +124,11 @@ export function topFretPositions(config: LevelConfig, key: Key): FretPosition[] 
   return [];
 }
 
-/** R14: a note altered by the key signature (not a raised minor degree) is present. */
+/** R14: a note altered by the key signature (not a raised minor degree) is present. Chord tones count by their own spelling. */
 export function hasSignatureNote(melody: Melody): boolean {
   return melody.notes.some((n) => {
-    const info = degreeInfoOf(n.midi, melody.key);
-    return !!info && !info.raised && spellInKey(n.midi, melody.key).accidental !== 0;
+    const written = n.spelled ?? spellInKey(writtenFromSounding(n.midi), melody.key);
+    return written.accidental !== 0 && keySignatureAccidental(written.letter, melody.key) === written.accidental;
   });
 }
 
@@ -150,10 +152,11 @@ function settlePositions(melody: Melody, rules: readonly FretPosition[][]): Melo
   const notes = melody.notes.map((n) => ({ ...n }));
   // For each rule, the (note, position) pairs that would satisfy it: the note's own position when it
   // already qualifies (listed first, so nothing moves without need), or another place for the same pitch.
+  // A chord tone stays where its voicing put it: it can satisfy a rule, never move for one.
   const options = rules.map((set) =>
     notes.flatMap((n, i) => {
       const own = set.some((p) => samePlace(p, n)) ? [{ i, at: { string: n.string, fret: n.fret } }] : [];
-      const moves = set.filter((p) => midiAt(p) === n.midi && !samePlace(p, n)).map((at) => ({ i, at }));
+      const moves = n.chord !== undefined ? [] : set.filter((p) => midiAt(p) === n.midi && !samePlace(p, n)).map((at) => ({ i, at }));
       return [...own, ...moves];
     }),
   );
@@ -191,7 +194,8 @@ export function generateMelody(config: LevelConfig, seed: number, counts: number
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const drawn = attempt === 0 ? first : generateOnce(config, seed + attempt * REDRAW_STEP, counts, first.key);
     const rules = positionRules(config, drawn.key);
-    const needsSignature = keySignatureCount(drawn.key) !== 0;
+    // R14 is waived on pure chord stages (rules.md, conflict log): a power chord in G major has no F sharp to give.
+    const needsSignature = keySignatureCount(drawn.key) !== 0 && !(config.chords && config.chords.mix === undefined);
     const signatureOk = !needsSignature || hasSignatureNote(drawn);
     const settled = settlePositions(drawn, rules);
     if (settled && signatureOk) return { ...settled, seed };
@@ -214,6 +218,10 @@ function generateOnce(config: LevelConfig, seed: number, counts: number, fixedKe
 
   const rhythm = generateRhythm(config, rng, barBeats);
   const count = rhythm.length;
+
+  if (config.chords && config.chords.mix === undefined) {
+    return assemble(config, seed, key, barBeats, counts, chordBar(config.chords, key, rng, rhythm));
+  }
 
   // Which notes fall on the first beat of a bar: those prefer chord tones so the
   // melody keeps its footing in the key, whatever the meter.
@@ -267,6 +275,10 @@ function generateOnce(config: LevelConfig, seed: number, counts: number, fixedKe
     notes.push({ midi: p.midi, duration: rhythm[i]!, string: position.string, fret: position.fret });
   });
 
+  return assemble(config, seed, key, barBeats, counts, config.chords ? mixChords(config.chords, key, rng, notes) : notes);
+}
+
+function assemble(config: LevelConfig, seed: number, key: Key, barBeats: number[], counts: number, notes: MelodyNote[]): Melody {
   return {
     seed,
     levelId: config.id,
@@ -278,4 +290,30 @@ function generateOnce(config: LevelConfig, seed: number, counts: number, fixedKe
     counts,
     notes,
   };
+}
+
+/** A pure chord stage: every rhythm slot is a chord from the stage's vocabulary, no chord twice in a row. */
+function chordBar(chords: ChordStageConfig, key: Key, rng: Rng, rhythm: readonly DurationId[]): MelodyNote[] {
+  const notes: MelodyNote[] = [];
+  let previous: ChordChoice | undefined;
+  rhythm.forEach((duration, i) => {
+    const choice = drawChord(chords, key, rng, previous);
+    notes.push(...chordNotes(choice, duration, i + 1));
+    previous = choice;
+  });
+  return notes;
+}
+
+/**
+ * A mixed stage: a share of the melody notes become chords with that note on
+ * top (at least one when any note can carry a chord); the rest stay single.
+ */
+function mixChords(chords: ChordStageConfig, key: Key, rng: Rng, notes: readonly MelodyNote[]): MelodyNote[] {
+  const candidates = notes.map((n, i) => (chords.durations.includes(n.duration) && chordsWithTop(chords, key, n.midi).length > 0 ? i : -1)).filter((i) => i >= 0);
+  if (candidates.length === 0) return [...notes];
+  const wanted = Math.min(candidates.length, Math.max(1, Math.round((chords.mix ?? 0) * notes.length)));
+  const chosen = new Set<number>();
+  while (chosen.size < wanted) chosen.add(rng.pick(candidates));
+  let id = 1;
+  return notes.flatMap((n, i) => (chosen.has(i) ? chordNotes(rng.pick(chordsWithTop(chords, key, n.midi)), n.duration, id++) : [n]));
 }

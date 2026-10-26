@@ -91,7 +91,9 @@ describe('stage ladder progression', () => {
     }
     expect(t.stage).toBe(last);
     expect(rounds).toBe(10 * last);
-    expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(170);
+    // 46 stages before free reading since Part D (chords) arrived: 460 flawless melodies to free reading, 580 to the last bonus stage.
+    expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(460);
+    expect(10 * last).toBe(580);
   });
 
   it('remembers the melodies given on a stage so none repeats there (R16)', () => {

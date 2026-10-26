@@ -40,6 +40,7 @@ const PARTS: { title: string; from: number; to: number }[] = [
   { title: 'Part A · Major keys', from: 1, to: 11 },
   { title: 'Part B · Up the neck', from: 12, to: 13 },
   { title: 'Part C · Minor keys', from: 14, to: 17 },
+  { title: 'Part D · Chords', from: 18, to: MAIN_STAGE_COUNT - 1 },
   { title: 'Free reading', from: MAIN_STAGE_COUNT, to: MAIN_STAGE_COUNT },
   { title: 'Bonus · Longer melodies', from: MAIN_STAGE_COUNT + 1, to: 999 },
 ];

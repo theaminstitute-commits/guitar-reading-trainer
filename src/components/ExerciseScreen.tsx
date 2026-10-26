@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { sharedPlayer } from '../audio/player';
 import type { LevelConfig } from '../melody/levelConfig';
 import type { Melody } from '../melody/types';
+import { eventAt, groupEvents } from '../melody/bars';
 import { beatsPerBar } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
 import { keyName } from '../music/key';
@@ -143,9 +144,12 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
 
   const busy = status === 'counting' || status === 'playing' || status === 'loading' || status === 'reference';
   const tonicName = spelledName(spellInKey(tonicReference(melody), melody.key));
-  const active: FretPosition | null =
-    activeIndex === null ? null : { string: melody.notes[activeIndex]!.string, fret: melody.notes[activeIndex]!.fret };
-  const played = activeIndex === null ? [] : melody.notes.slice(0, activeIndex + 1);
+  // The event sounding now: one note, or every note of a chord, lit together on the fretboard.
+  const activeEvent = activeIndex === null ? [] : eventAt(melody.notes, activeIndex);
+  const active: FretPosition[] = activeEvent.map((n) => ({ string: n.string, fret: n.fret }));
+  const played = activeIndex === null ? [] : melody.notes.slice(0, activeIndex + activeEvent.length);
+  const events = groupEvents(melody.notes);
+  const eventNumber = activeIndex === null ? 0 : events.findIndex((e) => e.includes(melody.notes[activeIndex]!)) + 1;
   const beatsInBar = beatsPerBar(melody.timeSignature);
   const written = noteCount(answer);
   const listensLeft = Math.max(0, level.maxListens - plays);
@@ -166,7 +170,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
             ))}
           </span>
         )}
-        {status === 'playing' && activeIndex !== null && `Note ${activeIndex + 1} of ${melody.notes.length}`}
+        {status === 'playing' && activeIndex !== null && `${activeEvent.length > 1 ? 'Chord' : 'Note'} ${eventNumber} of ${events.length}`}
         {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only: the starting note is on the staff above, the rest is yours to hear. '}You get ${level.maxListens} listens.`}
         {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
@@ -187,8 +191,8 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           <span className="eyebrow">Starting note · the melody begins here</span>
           <StartNote melody={melody} />
           <span className={`ear${status === 'playing' ? ' on' : ''}`} aria-hidden="true">
-            {Array.from({ length: melody.notes.length }, (_, i) => (
-              <span key={i} className={`pip${activeIndex !== null && i <= activeIndex ? ' on' : ''}`} />
+            {events.map((_, i) => (
+              <span key={i} className={`pip${eventNumber > i ? ' on' : ''}`} />
             ))}
           </span>
         </div>

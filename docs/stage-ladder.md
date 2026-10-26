@@ -11,16 +11,17 @@ The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 - **One track**: watch and write and listen only share the same stage, flawless count and streaks on this ladder. (Read and play, which had its own track, was removed on 2026-10-13, R22.)
 
 - **Clean round**: pitch and rhythm both at 90% or better. **Weak round**: average under 60%.
-- **Move up a stage**: ten flawless melodies on the stage, every note and every length right (decided 2026-10-05). A melody with any mistake does not count and takes nothing away. Reaching free reading takes 170 flawless melodies, the whole game with its bonus stages 290. (History: clean-round streaks at growing lengths, then a points tally where imperfect rounds also counted; the user rejected both: only flawless melodies count.)
+- **Move up a stage**: ten flawless melodies on the stage, every note and every length right (decided 2026-10-05). A melody with any mistake does not count and takes nothing away. Reaching free reading takes 460 flawless melodies (since Part D, chords, 2026-10-26), the last bonus stage 580. (History: clean-round streaks at growing lengths, then a points tally where imperfect rounds also counted; the user rejected both: only flawless melodies count.)
 - **Move down a stage**: two weak rounds in a row; the learner lands on the previous stage with the flawless count at zero.
-- **Length on the main ladder** is one bar of 4/4 on every stage, 1 to 21. There is no length control anywhere. Every bar starts on a chord tone of the key.
-- **New frets and strings are used at once**: a stage that adds frets or strings (2, 6, 12, 13 and 18) puts at least one note on a newly added position in every melody.
+- **Length on the main ladder** is one bar of 4/4 on every stage, 1 to 47. There is no length control anywhere. Every bar starts on a chord tone of the key.
+- **New frets and strings are used at once**: a stage that adds frets or strings (2, 6, 12 and 13) puts at least one note on a newly added position in every melody.
+- **Chords (Part D, R23)**: stages 18 to 46 teach chords from power chords to chord melody; the learner writes every note of each chord. Chord tones are spelled from the chord's root. Free reading and the bonus stages mix chords under the melody.
 - **A stage that introduces keys uses only those keys** (R18); the other stages draw from every key introduced so far.
 - **Strings 5 and 6 arrive at stage 6** with A and E♭ major (R19) and stay for every stage after it.
 - **Bonus stages** come after free reading (stages 19 to 30). Each adds one count, so every length beyond one bar lives here: bonus 1 is 5 counts (4/4 + 1/4), bonus 2 is 6 (4/4 + 2/4), bonus 4 is two bars, up to bonus 12 at 16 counts (four bars of 4/4). The length is fixed within a bonus stage. Keys come from all majors and all minor forms, positions from all six strings between the nut and fret 12. The time signature changes before the short bar.
 - **Keys are random within the unlocked set**, so the key signature must be read every time. New keys come in cycle-of-fifths order, one sharp key and one flat key per stage.
 - **Tonal reference**: from stage 3 on, the tonic note (or tonic chord) sounds before the count-in. The key name and key signature are always shown.
-- **Listens**: 3 per melody in Part A, 2 in Part B.
+- **Listens**: 3 per melody in Parts A, B and D, 2 in Part C and from free reading on.
 
 ## Part A: major keys
 
@@ -53,20 +54,61 @@ The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 | 15 | Natural minor, more keys | B, G, F#, C minor only | all | same | Reading minor across the cycle |
 | 16 | Harmonic minor | all seven minors, harmonic | all | same | The raised 7th written as an accidental, and how an accidental lasts for the bar |
 | 17 | Melodic minor | all seven minors, melodic | all | same | Raised 6 and 7 rising, natural falling; spelling graded strictly |
-| 18 | Free reading | any major or minor key | all | strings 1-6, frets 0-12 | Everything mixed, no hints beyond the key name |
+
+## Part D: chords (R23, 2026-10-26)
+
+Every chord stage is one bar of 4/4 with one or two chords (two to four for the dyads), on all six strings from the nut to fret 12, in any major key (the signature is drawn every time). The learner writes every note of each chord on the staff, lowest to highest, with Chord mode on the staff palette. Three listens.
+
+| Stage | Chords | Voicings | Teaches |
+|---|---|---|---|
+| 18 | Power chords (root and fifth) | open E5, A5, D5 and the moveable shape on strings 6, 5 and 4 | Two notes written as one chord; roots anywhere |
+| 19 | Thirds and sixths | adjacent string pairs, diatonic roots | Dyads that sound major or minor |
+| 20 | Fourths, octaves, tenths | fourths adjacent; octaves and tenths across a skipped string | String skipping; wider shapes |
+| 21 | Open major triads | C, G, D, A, E | Full open chords on the staff |
+| 22 | Open minor triads | Am, Em, Dm | |
+| 23 | Open triads continued | all open majors and minors, with F and Bm | The first partial barres |
+| 24 | Barre chords | E shape and A shape, major and minor, any root | Moveable shapes |
+| 25 | Diminished triads | three adjacent strings, any inversion | The flat fifth |
+| 26 | Augmented triads | three adjacent strings, any inversion | The raised fifth takes a sign |
+| 27 | Suspended triads | open sus2 and sus4, three- and four-string shapes | Second or fourth for the third |
+| 28 | Dominant sevenths | open E7, A7, D7, G7, C7, B7 and the E and A barres | The flat seventh |
+| 29 | Minor sevenths | barres and four-string voicings | |
+| 30 | Major sevenths | barres and four-string voicings | The leading-note seventh |
+| 31 | Half-diminished sevenths | four strings | |
+| 32 | Diminished sevenths | four strings, any inversion | The diminished seventh and its spelling |
+| 33 | Minor-major sevenths | four strings | The raised seventh over a minor triad |
+| 34 | Augmented sevenths and 7sus4 | four strings | |
+| 35 | Sixth chords | major and minor sixth | |
+| 36 | Added-note chords | add9, add11 | A triad plus one note |
+| 37 | Six-nine chords | four or five strings | |
+| 38 | Ninths | dominant, major, minor; fifth optional | |
+| 39 | Elevenths | minor 11, dominant 11 (no third) | |
+| 40 | Thirteenths | dominant, major, minor | |
+| 41 | Altered dominants | 7♭9, 7♯9, 7♭5, 7♯5, 7♯11, 7alt, any root | Altered tones spelled from the root |
+| 42 | Slash chords and inversions | triads with the third or fifth in the bass | C/E, G/B |
+| 43 | Drop 2 and drop 3 | seventh chords, every inversion, across the string sets | Jazz four-note voicings |
+| 44 | Quartal and cluster voicings | stacked fourths; three adjacent scale steps | |
+| 45 | Polychords | a major triad over a different bass: II, ♭VI, ♭VII over the root | Upper structures |
+| 46 | Chord melody | triads and sevenths under about half the melody notes, melody on top | Reading melody and harmony together |
+
+## Free reading
+
+| Stage | Adds | Keys | Rhythm | Range | Teaches |
+|---|---|---|---|---|---|
+| 47 | Free reading | any major or minor key | all, chords under about a third of the notes | strings 1-6, frets 0-12 | Everything mixed, no hints beyond the key name |
 
 ## Bonus stages
 
 | Stage | Length | Keys and range | Teaches |
 |---|---|---|---|
-| 19 | 5 counts, 4/4 + 1/4 | any key, strings 1-6, frets 0-12 | Holding a longer melody; the short last bar |
-| 20 | 6 counts, 4/4 + 2/4 | same | |
-| 21 | 7 counts, 4/4 + 3/4 | same | |
-| 22 | 8 counts, two bars | same | |
-| 23 to 25 | 9, 10, 11 counts | same | |
-| 26 | 12 counts, three bars | same | |
-| 27 to 29 | 13, 14, 15 counts | same | |
-| 30 | 16 counts, four bars | same | The longest melody in the app |
+| 48 | 5 counts, 4/4 + 1/4 | any key, chords and melody, strings 1-6, frets 0-12 | Holding a longer melody; the short last bar |
+| 49 | 6 counts, 4/4 + 2/4 | same | |
+| 50 | 7 counts, 4/4 + 3/4 | same | |
+| 51 | 8 counts, two bars | same | |
+| 52 to 54 | 9, 10, 11 counts | same | |
+| 55 | 12 counts, three bars | same | |
+| 56 to 58 | 13, 14, 15 counts | same | |
+| 59 | 16 counts, four bars | same | The longest melody in the app |
 
 ## Decisions
 

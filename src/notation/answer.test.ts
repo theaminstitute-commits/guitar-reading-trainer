@@ -5,6 +5,7 @@ import {
   addRejection,
   answerBarToSounding,
   answerReducer,
+  barBeats,
   createAnswer,
   durationRejection,
   flattenAnswer,
@@ -161,5 +162,45 @@ describe('reading an answer under a key signature', () => {
     expect(answerBarToSounding(s.bars[0]!, C_MAJOR)).toEqual([60]);
     s = reduce(s, { type: 'setSign', id: 1, sign: 'sharp' });
     expect(answerBarToSounding(s.bars[0]!, C_MAJOR)).toEqual([61]);
+  });
+});
+
+describe('chords in the answer', () => {
+  it('stacks notes onto a note to make a chord: sorted low to high, one length, counted once', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'h' });
+    s = reduce(s, { type: 'stack', id: 1, step: C5 + 4 }); // G5
+    s = reduce(s, { type: 'stack', id: 1, step: C5 + 2 }); // E5
+    expect(s.bars[0]!.map((n) => n.step)).toEqual([C5, C5 + 2, C5 + 4]);
+    expect(s.bars[0]!.every((n) => n.chord === 1 && n.duration === 'h')).toBe(true);
+    expect(barBeats(s.bars[0]!)).toBe(2);
+    expect(reduce(s, { type: 'stack', id: 1, step: C5 + 2 })).toBe(s);
+    s = reduce(s, { type: 'setDuration', id: 2, duration: 'q' });
+    expect(s.bars[0]!.every((n) => n.duration === 'q')).toBe(true);
+    s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'h' });
+    expect(barBeats(s.bars[0]!)).toBe(3);
+    expect(s.bars[0]![3]!.chord).toBeUndefined();
+  });
+
+  it('nudging a chord note keeps the chord sorted and refuses to land on another chord note', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'h' });
+    s = reduce(s, { type: 'stack', id: 1, step: C5 + 2 });
+    expect(reduce(s, { type: 'nudge', id: 1, delta: 2 })).toBe(s);
+    s = reduce(s, { type: 'nudge', id: 1, delta: 4 }); // C5 -> G5, now above the E5
+    expect(s.bars[0]!.map((n) => n.step)).toEqual([C5 + 2, C5 + 4]);
+    expect(s.bars[0]!.map((n) => n.id)).toEqual([2, 1]);
+  });
+
+  it('deleting down to one note makes it a single note again; a second chord gets its own id', () => {
+    let s = createAnswer(1);
+    s = reduce(s, { type: 'add', bar: 0, step: C5, duration: 'q' });
+    s = reduce(s, { type: 'stack', id: 1, step: C5 + 2 });
+    s = reduce(s, { type: 'add', bar: 0, step: F5, duration: 'q' });
+    s = reduce(s, { type: 'stack', id: 3, step: F5 + 2 });
+    expect(s.bars[0]!.map((n) => n.chord)).toEqual([1, 1, 2, 2]);
+    s = reduce(s, { type: 'delete', id: 2 });
+    expect(s.bars[0]![0]!.chord).toBeUndefined();
+    expect(barBeats(s.bars[0]!)).toBe(2);
   });
 });

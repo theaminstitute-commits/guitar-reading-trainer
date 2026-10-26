@@ -43,7 +43,8 @@ describe('starting note (R21)', () => {
     for (const stage of STAGES) {
       for (const seed of [3, 17, 101]) {
         const melody = generateMelody(stage, seed);
-        const written = spellInKey(writtenFromSounding(melody.notes[0]!.midi), melody.key);
+        const first = melody.notes[0]!;
+        const written = first.spelled ?? spellInKey(writtenFromSounding(first.midi), melody.key);
         expect(startNoteBar(melody).notes[0]!.step, stage.id).toBe(staffStep(written));
       }
     }

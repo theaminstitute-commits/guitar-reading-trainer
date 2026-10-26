@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { sharedPlayer } from '../audio/player';
+import { sharedPlayer, type PlayableNote } from '../audio/player';
+import { eventAt } from '../melody/bars';
 import { stageGuide } from '../melody/stageGuide';
 import type { Stage } from '../melody/stages';
 import { keyName, keySignatureCount, keySignatureSpec, spellInKey } from '../music/key';
@@ -26,14 +27,17 @@ const NOTES_PER_BAR = 4;
 /**
  * A page shown before a stage starts: every pitch the stage can draw on,
  * named and placed on the staff, with the new ones in blue, and where those
- * pitches sit on the fretboard. Tapping a note plays it.
+ * pitches sit on the fretboard. A chord stage shows example chords instead,
+ * one per bar, named underneath. Tapping Hear plays them in order.
  */
 export default function StageGuide({ stage, previous, leftHanded, onStart, onBack }: StageGuideProps) {
   const guide = useMemo(() => stageGuide(stage, previous), [stage, previous]);
+  const chords = guide.chords;
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
+  /** The pitch (melodic stages) or chord index (chord stages) sounding now. */
   const [sounding, setSounding] = useState<number | null>(null);
   const [layout, setLayout] = useState<StaffLayout | null>(null);
 
@@ -63,24 +67,38 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
   useLayoutEffect(() => {
     const el = canvasRef.current;
     if (!el || !fontsReady || width === 0) return;
-    const chunks: typeof guide.pitches[] = [];
-    for (let i = 0; i < guide.pitches.length; i += NOTES_PER_BAR) chunks.push(guide.pitches.slice(i, i + NOTES_PER_BAR));
-    const writtenBars = chunks.map((bar) => bar.map((p) => spellInKey(writtenFromSounding(p.midi), guide.key)));
-    const signs = displaySignsForBars(writtenBars, guide.key);
-    const bars: RenderBar[] = chunks.map((bar, b) => ({
-      notes: bar.map((p, i) => ({
-        id: b * NOTES_PER_BAR + i,
-        step: p.step,
-        sign: signs[b]![i]!,
-        duration: 'q' as const,
-        style: p.isNew || sounding === p.midi ? { fill: NEW, stroke: NEW } : undefined,
-      })),
-    }));
+    let bars: RenderBar[];
+    if (chords) {
+      bars = chords.map((chord, c) => ({
+        notes: chord.notes.map((n, k) => ({
+          id: c * 16 + k,
+          step: n.step,
+          sign: n.sign,
+          duration: 'w' as const,
+          chord: c + 1,
+          style: sounding === c ? { fill: NEW, stroke: NEW } : undefined,
+        })),
+      }));
+    } else {
+      const chunks: typeof guide.pitches[] = [];
+      for (let i = 0; i < guide.pitches.length; i += NOTES_PER_BAR) chunks.push(guide.pitches.slice(i, i + NOTES_PER_BAR));
+      const writtenBars = chunks.map((bar) => bar.map((p) => spellInKey(writtenFromSounding(p.midi), guide.key)));
+      const signs = displaySignsForBars(writtenBars, guide.key);
+      bars = chunks.map((bar, b) => ({
+        notes: bar.map((p, i) => ({
+          id: b * NOTES_PER_BAR + i,
+          step: p.step,
+          sign: signs[b]![i]!,
+          duration: 'q' as const,
+          style: p.isNew || sounding === p.midi ? { fill: NEW, stroke: NEW } : undefined,
+        })),
+      }));
+    }
     setLayout(
       renderStaff(el, bars, {
         timeSignature: [4, 4],
         width,
-        barsPerRow: width < 480 ? 2 : 3,
+        barsPerRow: chords ? (width < 480 ? 2 : 4) : width < 480 ? 2 : 3,
         scale,
         ink: INK,
         showTimeSignature: false,
@@ -88,30 +106,47 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
         keySignatureAccidentals: Math.abs(keySignatureCount(guide.key)),
       }),
     );
-  }, [guide, width, scale, fontsReady, sounding]);
+  }, [guide, chords, width, scale, fontsReady, sounding]);
 
-  // Pitch names on one baseline under each staff row, clear of three ledger lines, instead of
+  // Names on one baseline under each staff row, clear of three ledger lines, instead of
   // VexFlow's per-note annotations that follow the stems up and down.
   const labelSize = 9 * scale;
   const labels = layout
-    ? layout.notes.map((n) => {
-        const stave = layout.staves[n.barIndex] ?? layout.staves[layout.staves.length - 1]!;
-        const pitch = guide.pitches[n.id];
-        return { x: n.x, y: stave.topLineY + stave.lineSpacing * 8.4, text: pitch?.name ?? '', isNew: pitch?.isNew ?? false };
-      })
+    ? chords
+      ? layout.staves.map((stave) => ({
+          x: stave.x + (stave.noteStartX - stave.x + stave.width) / 2,
+          y: stave.topLineY + stave.lineSpacing * 8.4,
+          text: chords[stave.barIndex]?.name ?? '',
+          isNew: sounding === stave.barIndex,
+        }))
+      : layout.notes.map((n) => {
+          const stave = layout.staves[n.barIndex] ?? layout.staves[layout.staves.length - 1]!;
+          const pitch = guide.pitches[n.id];
+          return { x: n.x, y: stave.topLineY + stave.lineSpacing * 8.4, text: pitch?.name ?? '', isNew: pitch?.isNew ?? false };
+        })
     : [];
 
   const playAll = async () => {
     const player = sharedPlayer();
+    if (chords) {
+      const notes: PlayableNote[] = chords.flatMap((chord, c) => chord.notes.map((n) => ({ midi: n.midi, duration: 'h' as const, chord: c + 1 })));
+      await player.play(
+        notes,
+        { tempo: 72, timeSignature: [4, 4], countIn: false },
+        { onNote: (i) => setSounding(chords.findIndex((chord) => chord.notes.some((n) => n.midi === eventAt(notes, i)[0]!.midi) && notes.indexOf(eventAt(notes, i)[0]!) === i)), onEnd: () => setSounding(null) },
+      );
+      return;
+    }
     await player.play(
-      guide.pitches.map((p) => ({ midi: p.midi, duration: 'q' as const, string: p.positions[0]!.string, fret: p.positions[0]!.fret })),
+      guide.pitches.map((p) => ({ midi: p.midi, duration: 'q' as const })),
       { tempo: 96, timeSignature: [4, 4], countIn: false },
       { onNote: (i) => setSounding(guide.pitches[i]!.midi), onEnd: () => setSounding(null) },
     );
   };
 
   const newCount = guide.pitches.filter((p) => p.isNew).length;
-  const positions = guide.pitches.flatMap((p) => p.positions);
+  const positions = chords ? (chords[sounding ?? -1]?.positions ?? chords[0]?.positions ?? []) : guide.pitches.flatMap((p) => p.positions);
+  const active = chords ? (sounding === null ? null : (chords[sounding]?.positions ?? null)) : (guide.pitches.find((p) => p.midi === sounding)?.positions[0] ?? null);
 
   return (
     <section className="guide">
@@ -135,11 +170,12 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       </ul>
 
       <h3 className="section-title">
-        The notes of this stage <span className="muted key-name">· shown in {keyName(guide.key)}</span>
+        {chords ? 'Chords of this stage' : 'The notes of this stage'} <span className="muted key-name">· shown in {keyName(guide.key)}</span>
       </h3>
       <p className="muted small-note">
-        {guide.pitches.length} pitches, lowest to highest, named as written for guitar (an octave above where they sound).
-        {newCount > 0 && previous ? ` The ${newCount} in blue are new in this stage.` : ''}
+        {chords
+          ? `${chords.length} example chords, named underneath. Write every note of a chord on the staff, lowest to highest; the stage draws its chords from any root.`
+          : `${guide.pitches.length} pitches, lowest to highest, named as written for guitar (an octave above where they sound).${newCount > 0 && previous ? ` The ${newCount} in blue are new in this stage.` : ''}`}
       </p>
       <div ref={wrapRef} className="guide-staff">
         <div ref={canvasRef} className="staff-canvas static" />
@@ -161,8 +197,9 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
         )}
       </div>
 
-      <h3 className="section-title">Where they are on the fretboard</h3>
-      <Fretboard frets={stage.fretRange} active={guide.pitches.find((p) => p.midi === sounding)?.positions[0] ?? null} played={positions} mirrored={leftHanded} />
+      <h3 className="section-title">{chords ? 'The first chord on the fretboard' : 'Where they are on the fretboard'}</h3>
+      {chords && <p className="muted small-note">While the chords play, the fretboard follows the one sounding.</p>}
+      <Fretboard frets={stage.fretRange} active={active} played={positions} mirrored={leftHanded} />
 
       <div className="controls">
         <button className="primary big" onClick={onStart}>

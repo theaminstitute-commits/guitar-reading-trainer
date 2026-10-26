@@ -9,6 +9,7 @@
  */
 import * as Tone from 'tone';
 import { seikoClick } from './click';
+import { groupEvents, totalBeats as countBeats } from '../melody/bars';
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import type { Midi } from '../music/pitch';
 import { loadSampleBuffers } from './loadSamples';
@@ -17,7 +18,12 @@ import { GUITAR_SAMPLES } from './sampleMap';
 export interface PlayableNote {
   midi: Midi;
   duration: DurationId;
+  /** Notes with the same id sound together, strummed from the lowest up. */
+  chord?: number;
 }
+
+/** Seconds between the notes of a strummed chord. */
+const STRUM = 0.022;
 
 export interface PlayOptions {
   tempo: number;
@@ -148,7 +154,7 @@ export class GuitarPlayer {
     }
 
     if (options.metronome) {
-      const totalBeats = notes.reduce((sum, n) => sum + beatsOf(n.duration), 0);
+      const totalBeats = countBeats(notes);
       let beatInBar = 0;
       let bar = 0;
       for (let beat = 0; beat < totalBeats; beat++) {
@@ -167,18 +173,24 @@ export class GuitarPlayer {
       }
     }
 
-    notes.forEach((note, index) => {
+    let index = 0;
+    for (const group of groupEvents(notes)) {
       const at = cursor;
-      const length = beatsOf(note.duration) * secondsPerBeat;
-      const name = Tone.Frequency(note.midi, 'midi').toNote();
-      this.scheduledIds.push(
-        transport.schedule((time) => {
-          sampler.triggerAttackRelease(name, length * GATE, time);
-          uiAt(() => events.onNote?.(index), time);
-        }, at),
-      );
+      const length = beatsOf(group[0]!.duration) * secondsPerBeat;
+      const firstIndex = index;
+      index += group.length;
+      group.forEach((note, k) => {
+        const name = Tone.Frequency(note.midi, 'midi').toNote();
+        const offset = k * STRUM;
+        this.scheduledIds.push(
+          transport.schedule((time) => {
+            sampler.triggerAttackRelease(name, Math.max(0.05, length * GATE - offset), time);
+            if (k === 0) uiAt(() => events.onNote?.(firstIndex), time);
+          }, at + offset),
+        );
+      });
       cursor += length;
-    });
+    }
 
     this.scheduledIds.push(
       transport.schedule((time) => {

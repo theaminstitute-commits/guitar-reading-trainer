@@ -92,7 +92,7 @@ export default function App() {
     const loaded = store.load(STAGES);
     // Write the record back at once, so a migration from an older ladder is saved even before the first result.
     store.save(loaded);
-    // `?unlock=30` opens every stage up to that number, for trying stages out.
+    // `?unlock=59` opens every stage up to that number, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
     return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES) };

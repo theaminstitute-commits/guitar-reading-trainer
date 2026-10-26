@@ -33,7 +33,7 @@ describe('stage ladder configs', () => {
 
   it('uses newly added frets or strings in every melody of the stage that adds them', () => {
     const introducing = STAGES.filter((s) => s.introduces && s.introduces.length > 0).map((s) => s.number);
-    expect(introducing).toEqual([2, 6, 12, 13, 18]);
+    expect(introducing).toEqual([2, 6, 12, 13]);
     expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4', '4:4']);
     expect(byNumber(6).introduces!.every((p) => p.string >= 5)).toBe(true);
     expect(byNumber(6).introduces).toHaveLength(10);
@@ -71,17 +71,20 @@ describe('stage ladder configs', () => {
           bars.forEach((bar, i) => expect(bar.beats).toBe(melody.barBeats[i]));
           for (const note of melody.notes) {
             expect(stage.durations).toContain(note.duration);
-            expect(isDiatonic(note.midi, melody.key)).toBe(true);
+            // Chord tones follow their chord, which may leave the key (an augmented fifth, a sharp nine).
+            if (note.chord === undefined) expect(isDiatonic(note.midi, melody.key)).toBe(true);
             expect(stage.strings).toContain(note.string);
             expect(note.fret).toBeGreaterThanOrEqual(stage.fretRange[0]);
             expect(note.fret).toBeLessThanOrEqual(stage.fretRange[1]);
             expect(midiAt({ string: note.string, fret: note.fret })).toBe(note.midi);
-            const step = staffStep(spellInKey(writtenFromSounding(note.midi), melody.key));
+            const step = staffStep(note.spelled ?? spellInKey(writtenFromSounding(note.midi), melody.key));
             expect(step).toBeGreaterThanOrEqual(LOWEST_WRITTEN);
             expect(step).toBeLessThanOrEqual(HIGHEST_WRITTEN);
           }
-          expect(stage.startDegrees).toContain(degreeOf(melody.notes[0]!.midi, melody.key));
-          expect(stage.endDegrees).toContain(degreeOf(melody.notes[melody.notes.length - 1]!.midi, melody.key));
+          if (!stage.chords) {
+            expect(stage.startDegrees).toContain(degreeOf(melody.notes[0]!.midi, melody.key));
+            expect(stage.endDegrees).toContain(degreeOf(melody.notes[melody.notes.length - 1]!.midi, melody.key));
+          }
         }
       }
     }
@@ -94,10 +97,12 @@ describe('stage ladder configs', () => {
     expect(seen.size).toBe(stage.keys.length);
   });
 
-  it('has no optional stage and drops listens to two in Part B', () => {
+  it('has no optional stage; listens drop to two from Part C, return to three for chords, and are two again from free reading', () => {
     expect(STAGES.filter((s) => s.optional)).toEqual([]);
-    expect(STAGES.filter((s) => s.number >= 14).every((s) => s.maxListens === 2)).toBe(true);
     expect(STAGES.filter((s) => s.number < 14).every((s) => s.maxListens === 3)).toBe(true);
+    expect(STAGES.filter((s) => s.number >= 14 && s.number <= 17).every((s) => s.maxListens === 2)).toBe(true);
+    expect(STAGES.filter((s) => s.number >= 18 && s.number <= 46).every((s) => s.maxListens === 3)).toBe(true);
+    expect(STAGES.filter((s) => s.number >= 47).every((s) => s.maxListens === 2)).toBe(true);
   });
 
   it('key-introducing stages use only their new keys; the others draw from every key so far (R18)', () => {
@@ -117,7 +122,10 @@ describe('stage ladder configs', () => {
     expect(ids(15)).toEqual(['Bm', 'Gm', 'F#m', 'Cm']);
     expect(ids(16)).toHaveLength(7);
     expect(ids(17)).toHaveLength(7);
-    expect(ids(18)).toHaveLength(36);
+    // Part D chord stages draw from every major key; chord melody adds the natural minors; free reading has every form.
+    expect(ids(18)).toHaveLength(15);
+    expect(ids(46)).toHaveLength(22);
+    expect(ids(47)).toHaveLength(36);
   });
 
   it('every main-stage melody uses the top fret of its window and, in a key with a signature, a signature note', () => {
@@ -130,7 +138,8 @@ describe('stage ladder configs', () => {
           expect(top.length, label).toBeGreaterThan(0);
           expect(melody.notes.some((n) => top.some((p) => p.string === n.string && p.fret === n.fret)), label).toBe(true);
         }
-        if (keySignatureCount(melody.key) !== 0) expect(hasSignatureNote(melody), label).toBe(true);
+        // R14 is waived on pure chord stages (rules.md): their vocabulary may have no note the signature alters.
+        if (keySignatureCount(melody.key) !== 0 && !(stage.chords && stage.chords.mix === undefined)) expect(hasSignatureNote(melody), label).toBe(true);
       }
     }
     // F major has no note on fret 4 in first position, so the top usable fret there is 3.
@@ -149,6 +158,8 @@ describe('stage ladder configs', () => {
     expect(byNumber(13).fretRange).toEqual([9, 12]);
     expect(byNumber(21).fretRange).toEqual([0, 12]);
     expect(byNumber(21).strings).toHaveLength(6);
+    expect(byNumber(47).fretRange).toEqual([0, 12]);
+    expect(byNumber(47).strings).toHaveLength(6);
   });
 
   it('low-string stages reach the ledger lines below; the octave stage reaches three above', () => {

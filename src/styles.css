@@ -1110,6 +1110,18 @@ button.link.subtle {
   height: 26px;
 }
 
+.chord-toggle {
+  min-height: 44px;
+  padding: 0 14px;
+  font-weight: 600;
+}
+
+.chord-toggle.selected {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
 .palette.undo-row {
   margin-top: 2px;
 }

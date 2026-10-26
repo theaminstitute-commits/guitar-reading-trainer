@@ -15,7 +15,7 @@ import { renderStaff, type RenderBar, type StaffLayout } from '../notation/rende
 /** What the learner produced, ready to draw: written on the staff, or played and transcribed. */
 export interface YoursStaff {
   caption: string;
-  bars: { notes: { step: number; sign: Sign; duration: DurationId }[] }[];
+  bars: { notes: { step: number; sign: Sign; duration: DurationId; chord?: number }[] }[];
   /** Pitch name per note, flattened in bar order. */
   names: string[];
   barTimeSignatures?: readonly (readonly [number, number])[];
@@ -144,7 +144,7 @@ export default function FeedbackStaff({ melody, musicKey, result, yours, activeT
 
     // --- Top staff: the correct melody, coloured by how the learner did on each note.
     const targetBars = splitIntoBars(melody.notes, melody.barBeats);
-    const writtenBars = targetBars.map((bar) => bar.notes.map((n) => spellInKey(writtenFromSounding(n.midi), musicKey)));
+    const writtenBars = targetBars.map((bar) => bar.notes.map((n) => n.spelled ?? spellInKey(writtenFromSounding(n.midi), musicKey)));
     const signs = displaySignsForBars(writtenBars, musicKey);
     const targetNames = new Map<number, string>();
     const targetBadges = new Map<number, string>();
@@ -161,7 +161,7 @@ export default function FeedbackStaff({ melody, musicKey, result, yours, activeT
         targetNames.set(index, pitchLabel(written));
         const numbers = numbersOf(pair);
         if (numbers) targetBadges.set(index, numbers);
-        return { id: index, step: staffStep(written), sign: signs[barIndex]![noteIndex]!, duration: n.duration, style: { fill: color, stroke: color } };
+        return { id: index, step: staffStep(written), sign: signs[barIndex]![noteIndex]!, duration: n.duration, chord: n.chord, style: { fill: color, stroke: color } };
       }),
     }));
     const targetLayout = renderStaff(targetEl, targetRender, options);
@@ -181,7 +181,7 @@ export default function FeedbackStaff({ melody, musicKey, result, yours, activeT
         answerNames.set(index, yours.names[index] ?? '');
         const numbers = numbersOf(pair);
         if (numbers) answerBadges.set(index, numbers);
-        return { id: index, step: n.step, sign: n.sign, duration: n.duration, style: { fill: color, stroke: color } };
+        return { id: index, step: n.step, sign: n.sign, duration: n.duration, chord: n.chord, style: { fill: color, stroke: color } };
       }),
     }));
     // A written answer keeps the melody's bars so the two staffs line up.

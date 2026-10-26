@@ -56,7 +56,7 @@ export function withMelodyHeard(track: Track, stageNumber: number, melody: Melod
 }
 
 export interface Progress {
-  version: 6;
+  version: 7;
   mode: ExerciseMode;
   handedness: Handedness;
   theme: Theme;
@@ -84,7 +84,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 6, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages) };
+  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages) };
 }
 
 export function trackOf(progress: Progress): Track {

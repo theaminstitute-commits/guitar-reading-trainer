@@ -1,3 +1,4 @@
+import type { ChordStageConfig } from '../chords/stageConfig';
 import type { DurationId } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
 import { C_MAJOR, type Key } from '../music/key';
@@ -39,6 +40,8 @@ export interface LevelConfig {
   /** Scale degrees the melody may start on and must end on. */
   startDegrees: readonly number[];
   endDegrees: readonly number[];
+  /** Chord stages (Part D) and mixed chord-and-melody stages: what chords may appear and how. */
+  chords?: ChordStageConfig;
 }
 
 export const LEVEL_1: LevelConfig = {
