@@ -62,8 +62,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     setMisses(0);
     setRetryText(null);
     setRing(null);
-    // Open-string questions sound on the first tap: have the guitar ready.
-    if (q.kind === 'staff-to-fret' && q.openOnly) void sharedPlayer().load();
+    // Fretboard taps sound at once: have the guitar ready before the first one.
+    if (q.kind === 'staff-to-fret') void sharedPlayer().load();
   }, [q]);
 
   /** A wrong try in retry mode: say what was picked, count it, keep the question open. */
@@ -182,12 +182,11 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
               outcome
                 ? undefined
                 : (tap) => {
-                    // An open-string question reads a tap anywhere on a string as that open string, and sounds it at once.
+                    // An open-string question reads a tap anywhere on a string as that open string.
                     const p = q.openOnly ? { string: tap.string, fret: 0 } : tap;
-                    if (q.openOnly) {
-                      void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
-                      setRing((r) => ({ at: p, n: (r?.n ?? 0) + 1 }));
-                    }
+                    // Every tapped note sounds at once and its string vibrates, right or wrong (the user: hear what you tap).
+                    void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
+                    setRing((r) => ({ at: p, n: (r?.n ?? 0) + 1 }));
                     setTappedFret(p);
                     const right = isRightFret(q, p);
                     if (q.openOnly) {
