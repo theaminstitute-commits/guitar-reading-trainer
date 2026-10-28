@@ -9,6 +9,12 @@ interface FretboardProps {
   played?: readonly FretPosition[];
   /** Left-handed view: the whole board mirrored, nut on the right. */
   mirrored?: boolean;
+  /** Text inside each lit dot, parallel to `active` (beginner hints, lessons). */
+  labels?: readonly string[];
+  /** Makes every string and fret tappable (lesson drills). */
+  onPick?: (position: FretPosition) => void;
+  /** Answer marks for drills: a green or red ring at a position. */
+  marks?: readonly { position: FretPosition; tone: 'good' | 'bad' }[];
 }
 
 const STRING_NAMES = ['E', 'B', 'G', 'D', 'A', 'E'];
@@ -30,7 +36,7 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false }: FretboardProps) {
+export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [] }: FretboardProps) {
   const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
   const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
@@ -107,9 +113,12 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
               className="fb-string"
               strokeWidth={1 + i * 0.35}
             />
-            <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle" transform={label(nutX - 24)}>
-              {name}
-            </text>
+            {/* A dot on the open string covers its name; the dot itself says the note. */}
+            {!(hasNut && [...actives, ...marks.map((m) => m.position)].some((a) => a.string === string && a.fret === 0)) && (
+              <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle" transform={label(nutX - 24)}>
+                {name}
+              </text>
+            )}
           </g>
         );
       })}
@@ -122,12 +131,46 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
         ))}
 
       {/* The note, or every note of the chord, sounding now */}
-      {actives.filter(inWindow).map((a, i) => (
-        <g key={`a${i}`} className="fb-active">
-          <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
-          <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
-        </g>
+      {actives.map((a, i) =>
+        inWindow(a) ? (
+          <g key={`a${i}`} className="fb-active">
+            <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
+            <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
+            {labels?.[i] && (
+              <text x={noteX(a.fret)} y={stringY(a.string) + 3.6} textAnchor="middle" className="fb-dot-label" transform={label(noteX(a.fret))}>
+                {labels[i]}
+              </text>
+            )}
+          </g>
+        ) : null,
+      )}
+
+      {/* Drill answer marks */}
+      {marks.filter((m) => inWindow(m.position)).map((m, i) => (
+        <circle key={`m${i}`} cx={noteX(m.position.fret)} cy={stringY(m.position.string)} r={11} className={`fb-mark ${m.tone}`} />
       ))}
+
+      {/* Tap targets: one cell per string and fret, the open-string zone left of the nut */}
+      {onPick &&
+        STRING_NAMES.flatMap((_, i) => {
+          const string = i + 1;
+          const cells = [...(hasNut ? [0] : []), ...drawn];
+          return cells.map((fret) => {
+            const x = fret === 0 ? nutX - 26 : fretX(fret) - fretWidth;
+            const w = fret === 0 ? 24 : fretWidth;
+            return (
+              <rect
+                key={`t${string}-${fret}`}
+                x={x}
+                y={stringY(string) - stringGap / 2}
+                width={w}
+                height={stringGap}
+                className="fb-tap"
+                onPointerDown={() => onPick({ string, fret })}
+              />
+            );
+          });
+        })}
       </g>
     </svg>
   );

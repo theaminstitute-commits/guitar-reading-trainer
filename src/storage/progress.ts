@@ -102,6 +102,9 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
       ? [...new Set(value.seenGuides.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))]
       : [],
     write,
+    tutorial: Array.isArray(value.tutorial) ? [...new Set(value.tutorial.filter((id): id is string => typeof id === 'string'))] : [],
+    tutorialSkipped: value.tutorialSkipped === true,
+    hints: value.hints !== false,
   };
 }
 

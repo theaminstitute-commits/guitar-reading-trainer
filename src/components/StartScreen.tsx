@@ -4,6 +4,7 @@ import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Theme, Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
+import { PART_0, STAGE_LESSONS, type Lesson } from '../tutorial/lessons';
 
 export interface SessionStats {
   exercises: number;
@@ -26,6 +27,10 @@ interface StartScreenProps {
   onExplainer: (id: ExplainerId) => void;
   onReset: () => void;
   onAbout: () => void;
+  onLesson: (lesson: Lesson) => void;
+  onPlacement: () => void;
+  onHints: (on: boolean) => void;
+  onDismissWelcome: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
@@ -60,7 +65,16 @@ export default function StartScreen({
   onExplainer,
   onReset,
   onAbout,
+  onLesson,
+  onPlacement,
+  onHints,
+  onDismissWelcome,
 }: StartScreenProps) {
+  /** A brand-new learner: no melodies, no lessons, and they have not said they can read. */
+  const isNew = progress.write.exercises === 0 && progress.tutorial.length === 0 && !progress.tutorialSkipped && track.unlocked === 0;
+  const nextPart0 = PART_0.find((l) => !progress.tutorial.includes(l.id));
+  const part0Done = PART_0.filter((l) => progress.tutorial.includes(l.id)).length;
+  const stageLessons = STAGE_LESSONS.filter((l) => (l.stage ?? 0) - 1 <= track.unlocked);
   const sessionAccuracy = pct(session.accuracySum, session.exercises);
   const lifetimeAccuracy = pct(track.accuracySum, track.exercises);
   const next = track.unlocked < stages.length - 1 ? stages[track.unlocked + 1]! : null;
@@ -70,6 +84,30 @@ export default function StartScreen({
 
   return (
     <section className="start">
+      {/* Welcome for a brand-new learner: the tutorial, or the placement test (R24, R25) */}
+      {isNew && (
+        <div className="panel welcome">
+          <span className="eyebrow">New here?</span>
+          <h2 className="hero-title">Learn to read music from scratch</h2>
+          <p className="hero-summary">
+            Five short lessons teach the staff, where the notes are on the guitar, and rhythm, then a first melody with a coach. About twenty minutes in all, and you can stop at any point.
+          </p>
+          <div className="cta">
+            <button className="btn primary big" onClick={() => onLesson(PART_0[0]!)}>
+              <BookIcon size={20} /> Start the tutorial
+            </button>
+            <div className="cta-row">
+              <button className="btn" onClick={onPlacement}>
+                Skip, I can read: placement test
+              </button>
+            </div>
+            <button className="link subtle" onClick={onDismissWelcome}>
+              Hide this and start at stage 1
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Current stage */}
       <div className="panel hero">
         <div className="hero-main">
@@ -114,6 +152,9 @@ export default function StartScreen({
           ))}
         </div>
         <p className="muted small-note">{mode.note}</p>
+        <label className="toggle muted">
+          <input type="checkbox" checked={progress.hints} onChange={(e) => onHints(e.target.checked)} /> Beginner hints on stages 1 and 2: a coach for each note, note names on the fretboard, a slower first play
+        </label>
         {/* Listen only shows no fretboard, so handedness has nothing to mirror there. */}
         {progress.mode === 'watch' && (
           <div className="row-between">
@@ -186,6 +227,48 @@ export default function StartScreen({
           );
         })}
       </div>
+
+      {/* Tutorial and lessons */}
+      <h2 className="section-title">Learn</h2>
+      <p className="muted small-note">
+        {nextPart0 ? `Tutorial: ${part0Done} of ${PART_0.length} lessons done.` : 'Tutorial finished. Replay any lesson whenever you like.'}
+      </p>
+      <div className="lesson-list">
+        {PART_0.map((l) => (
+          <button key={l.id} className={`lesson-card${progress.tutorial.includes(l.id) ? ' done' : ''}${l === nextPart0 ? ' next' : ''}`} onClick={() => onLesson(l)}>
+            <span className="lesson-mark" aria-hidden="true">{progress.tutorial.includes(l.id) ? <CheckIcon size={16} /> : <BookIcon size={16} />}</span>
+            <span className="node-text">
+              <span className="node-name">{l.title}</span>
+              <span className="node-sub">{l.summary}</span>
+            </span>
+          </button>
+        ))}
+        <button className="lesson-card" onClick={onPlacement}>
+          <span className="lesson-mark" aria-hidden="true">
+            <SparkIcon size={16} />
+          </span>
+          <span className="node-text">
+            <span className="node-name">Placement test</span>
+            <span className="node-sub">Already read? Find your starting stage.</span>
+          </span>
+        </button>
+      </div>
+      {stageLessons.length > 0 && (
+        <>
+          <p className="muted small-note">Lessons before the stages you have reached:</p>
+          <div className="lesson-list">
+            {stageLessons.map((l) => (
+              <button key={l.id} className={`lesson-card${progress.tutorial.includes(l.id) ? ' done' : ''}`} onClick={() => onLesson(l)}>
+                <span className="lesson-mark" aria-hidden="true">{progress.tutorial.includes(l.id) ? <CheckIcon size={16} /> : <BookIcon size={16} />}</span>
+                <span className="node-text">
+                  <span className="node-name">{l.title}</span>
+                  <span className="node-sub">Before stage {l.stage}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Explainers */}
       <h2 className="section-title">Quick explainers</h2>

@@ -4,6 +4,10 @@ Agreed on 2026-09-30, reshaped on 2026-10-05. One ladder, one dimension changes 
 reading the staff and the fretboard; remembering long melodies is secondary, so stages unlock by a tally of
 clean rounds and melody length is only a side effect. Clean rounds are the only thing that moves a learner up.
 
+## Before stage 1: the tutorial (R24 to R27)
+
+A new learner is offered Part 0, five short lessons (the staff, the guitar octave, notes on the neck, beat and rhythm, a coached first melody), or a placement test that starts readers at the stage they need. Stages 3, 5, 6, 7, 12, 14 and 18 open with a short lesson before their guide page. Beginner hints (a note-by-note coach, letter names on the fretboard, a slower first play) run on stages 1 and 2 unless switched off. None of this counts towards the ladder.
+
 ## Rules that apply to every stage
 
 The full, numbered rule set with its conflict log is in [rules.md](rules.md).

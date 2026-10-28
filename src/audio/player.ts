@@ -201,6 +201,31 @@ export class GuitarPlayer {
     transport.start();
   }
 
+  /** The audio context's clock in seconds: what click times and tap times are compared on. */
+  now(): number {
+    return Tone.getContext().currentTime;
+  }
+
+  /**
+   * A plain click track: `countIn` clicks, then `beats` more, at a tempo. Returns the
+   * context times of the clicks after the count-in, so taps can be graded against them.
+   */
+  async clickTrack(tempo: number, beats: number, countIn = 4, onTick?: (index: number) => void): Promise<number[]> {
+    await this.load();
+    this.stop();
+    const spb = 60 / tempo;
+    const start = this.now() + 0.35;
+    const graded: number[] = [];
+    for (let i = 0; i < countIn + beats; i++) {
+      const time = start + i * spb;
+      this.tick(time, false);
+      if (i >= countIn) graded.push(time);
+      const index = i;
+      uiAt(() => onTick?.(index), time);
+    }
+    return graded;
+  }
+
   /** One click at an audio-context time: one uniform click, like Tempus, with no accent (the `accent` flag is kept for callers and ignored). */
   private tick(time: number, accent: boolean): void {
     if (!this.click || !this.clickGain) return;

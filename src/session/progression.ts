@@ -65,6 +65,12 @@ export interface Progress {
   /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
   seenGuides: number[];
   write: Track;
+  /** Ids of the tutorial lessons finished (Part 0 and stage lessons). */
+  tutorial: string[];
+  /** The learner chose not to take the tutorial (skipped it, or took the placement test). */
+  tutorialSkipped: boolean;
+  /** Beginner hints on stages 1 and 2: a coach, note names on the fretboard, a slower first play (R26). */
+  hints: boolean;
 }
 
 export const CLEAN_THRESHOLD = 0.9;
@@ -84,7 +90,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages) };
+  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true };
 }
 
 export function trackOf(progress: Progress): Track {

@@ -3,6 +3,9 @@ import { sharedPlayer } from './audio/player';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
 import AboutScreen from './components/AboutScreen';
 import ExerciseScreen from './components/ExerciseScreen';
+import LessonRunner from './components/LessonRunner';
+import PlacementScreen from './components/PlacementScreen';
+import { lessonForStage, PART_0, type Lesson } from './tutorial/lessons';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
@@ -41,7 +44,10 @@ function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000_000);
 }
 
-type Screen = 'start' | 'guide' | 'exercise' | 'feedback' | 'about';
+type Screen = 'start' | 'guide' | 'exercise' | 'feedback' | 'about' | 'lesson' | 'placement';
+
+/** Where a lesson leads when it is finished. */
+type LessonThen = 'next-part-0' | 'guide' | 'start';
 
 /** One exercise: the stage it was drawn for and its melody, fixed when it starts. */
 interface Exercise {
@@ -102,6 +108,7 @@ export default function App() {
   const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track).exercise);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
+  const [lesson, setLesson] = useState<{ lesson: Lesson; then: LessonThen } | null>(null);
 
   /** The stage the current track is on, for the start screen and the guide. */
   const level = withKeyOverride(STAGES[track.stage]!);
@@ -140,11 +147,47 @@ export default function App() {
   const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
   const onMetronome = (on: boolean) => updateProgress({ ...progress, metronome: on });
 
-  /** Go to an exercise, by way of the stage guide the first time a stage is met. */
-  const begin = () => {
-    const number = STAGES[track.stage]!.number;
-    if (progress.seenGuides.includes(number)) startExercise(progress);
+  const openLesson = (l: Lesson, then: LessonThen) => {
+    setLesson({ lesson: l, then });
+    setScreen('lesson');
+  };
+
+  /**
+   * Go to an exercise, by way of the stage guide the first time a stage is met,
+   * and before the guide the stage's lesson when it has one not yet taken (R27).
+   */
+  const begin = (current: Progress = progress) => {
+    const number = STAGES[trackOf(current).stage]!.number;
+    if (current.seenGuides.includes(number)) {
+      startExercise(current);
+      return;
+    }
+    const stageLesson = lessonForStage(number);
+    if (stageLesson && !current.tutorial.includes(stageLesson.id)) openLesson(stageLesson, 'guide');
     else setScreen('guide');
+  };
+
+  const markLesson = useCallback(
+    (id: string) =>
+      setProgress((p) => {
+        if (p.tutorial.includes(id)) return p;
+        const next = { ...p, tutorial: [...p.tutorial, id] };
+        store.save(next);
+        return next;
+      }),
+    [],
+  );
+  const onLessonComplete = useCallback(() => {
+    if (lesson) markLesson(lesson.lesson.id);
+  }, [lesson, markLesson]);
+
+  /** The placement test (R25) opens every stage up to the result and starts there. */
+  const onPlaced = (stageNumber: number) => {
+    const index = stageNumber - 1;
+    const placed = withStage(withUnlocked(track, index, STAGES), index, STAGES);
+    const next = withTrack({ ...progress, tutorialSkipped: true }, placed);
+    updateProgress(next);
+    begin(next);
   };
 
   const onGuideStart = () => {
@@ -222,7 +265,13 @@ export default function App() {
           <div>
             <h1>Guitar Reading Trainer</h1>
             <p>
-              {screen === 'about'
+              {screen === 'lesson' && lesson
+                ? lesson.lesson.stage
+                  ? `Lesson before stage ${lesson.lesson.stage}`
+                  : 'Tutorial · Learn to read'
+                : screen === 'placement'
+                ? 'Placement test'
+                : screen === 'about'
                 ? 'About and licences'
                 : screen === 'start' || screen === 'guide'
                 ? level.title
@@ -230,7 +279,7 @@ export default function App() {
             </p>
           </div>
         </div>
-        {screen !== 'start' && screen !== 'about' && <span className="stage-pill">Stage {screen === 'guide' ? level.number : exercise.level.number}</span>}
+        {screen !== 'start' && screen !== 'about' && screen !== 'lesson' && screen !== 'placement' && <span className="stage-pill">Stage {screen === 'guide' ? level.number : exercise.level.number}</span>}
       </header>
 
       {screen === 'start' && (
@@ -240,7 +289,7 @@ export default function App() {
           progress={progress}
           track={track}
           session={session}
-          onStart={begin}
+          onStart={() => begin()}
           onGuide={() => setScreen('guide')}
           onStage={onStage}
           onMode={onMode}
@@ -249,6 +298,10 @@ export default function App() {
           onExplainer={setExplainer}
           onReset={onReset}
           onAbout={() => setScreen('about')}
+          onLesson={(l) => openLesson(l, l.stage ? 'start' : 'next-part-0')}
+          onPlacement={() => setScreen('placement')}
+          onHints={(hints) => updateProgress({ ...progress, hints })}
+          onDismissWelcome={() => updateProgress({ ...progress, tutorialSkipped: true })}
         />
       )}
 
@@ -271,6 +324,44 @@ export default function App() {
           metronome={progress.metronome}
           onMetronome={onMetronome}
           onCheck={onCheck}
+          {...(progress.hints && exercise.level.number <= 2 ? { coach: { revealAfter: 2 }, noteNames: true, firstPlayRate: 0.85 } : {})}
+        />
+      )}
+
+      {screen === 'lesson' && lesson && (() => {
+        const partIndex = PART_0.findIndex((l) => l.id === lesson.lesson.id);
+        const nextLesson = lesson.then === 'next-part-0' && partIndex >= 0 ? PART_0[partIndex + 1] : undefined;
+        const label =
+          lesson.then === 'guide' ? 'Continue to the stage guide' : nextLesson ? `Next: ${nextLesson.title}` : lesson.then === 'next-part-0' ? 'Start stage 1' : 'Back to start';
+        return (
+          <LessonRunner
+            lesson={lesson.lesson}
+            leftHanded={progress.handedness === 'left'}
+            metronome={progress.metronome}
+            onMetronome={onMetronome}
+            onComplete={onLessonComplete}
+            onExplainer={setExplainer}
+            continueLabel={label}
+            onExit={() => setScreen('start')}
+            onContinue={() => {
+              if (lesson.then === 'guide') setScreen('guide');
+              else if (nextLesson) openLesson(nextLesson, 'next-part-0');
+              else if (lesson.then === 'next-part-0') {
+                const first = withTrack(progress, withStage(track, 0, STAGES));
+                updateProgress(first);
+                begin(first);
+              } else setScreen('start');
+            }}
+          />
+        );
+      })()}
+
+      {screen === 'placement' && (
+        <PlacementScreen
+          leftHanded={progress.handedness === 'left'}
+          onPlaced={onPlaced}
+          onTutorial={() => openLesson(PART_0[0]!, 'next-part-0')}
+          onBack={() => setScreen('start')}
         />
       )}
 
@@ -284,7 +375,7 @@ export default function App() {
           nextTally={track.tally}
           yours={checked.yours}
           hearMine={checked.hearMine}
-          onNext={begin}
+          onNext={() => begin()}
           onExplainer={setExplainer}
         />
       )}

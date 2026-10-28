@@ -23,6 +23,8 @@ import Fretboard from './Fretboard';
 import { CheckIcon, PlayIcon, SlowIcon, StopIcon } from './icons';
 import StaffInput from './StaffInput';
 import StartNote from './StartNote';
+import { coachVerdict, isRightPitch, type CoachVerdict } from '../tutorial/coach';
+import { writtenFromSounding } from '../music/pitch';
 
 export const SLOW_RATE = 0.7;
 
@@ -41,6 +43,14 @@ interface ExerciseScreenProps {
   /** Mirror the fretboard for left-handed players. */
   leftHanded: boolean;
   onCheck: (answerBars: AnswerNote[][]) => void;
+  /** Beginner help (R26): a coach checks each note as it is written and names it after this many wrong tries. */
+  coach?: { revealAfter: number };
+  /** No listen limit (the coached lesson). */
+  unlimitedListens?: boolean;
+  /** Letter names inside the lit fretboard dots. */
+  noteNames?: boolean;
+  /** Playback rate of the first Play (beginner hints slow it a little). */
+  firstPlayRate?: number;
 }
 
 type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
@@ -48,7 +58,10 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate }: ExerciseScreenProps) {
+  const [coachSays, setCoachSays] = useState<CoachVerdict | null>(null);
+  /** Wrong tries per note position, for when the coach names a note. */
+  const wrongTries = useRef(new Map<number, number>());
   const [status, setStatus] = useState<Status>('idle');
   const [countBeat, setCountBeat] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -75,6 +88,8 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
     setPlays(0);
     if (melodyRef.current !== melody) {
       melodyRef.current = melody;
+      wrongTries.current = new Map();
+      setCoachSays(null);
       dispatchAnswer({ type: 'reset', bars: melody.bars });
     }
   }, [melody]);
@@ -111,7 +126,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         melody.notes,
         {
           tempo: melody.tempo,
-          rate,
+          rate: plays === 0 && firstPlayRate ? rate * firstPlayRate : rate,
           timeSignature: melody.timeSignature,
           countIn: true,
           metronome,
@@ -137,7 +152,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         },
       );
     },
-    [melody, level.tonicReference],
+    [melody, level.tonicReference, metronome, plays, firstPlayRate],
   );
 
   const stop = () => sharedPlayer().stop();
@@ -152,7 +167,24 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
   const eventNumber = activeIndex === null ? 0 : events.findIndex((e) => e.includes(melody.notes[activeIndex]!)) + 1;
   const beatsInBar = beatsPerBar(melody.timeSignature);
   const written = noteCount(answer);
-  const listensLeft = Math.max(0, level.maxListens - plays);
+  const listensLeft = unlimitedListens ? Infinity : Math.max(0, level.maxListens - plays);
+  const dotLabels = noteNames ? activeEvent.map((n) => spelledName(n.spelled ?? spellInKey(writtenFromSounding(n.midi), melody.key))) : undefined;
+
+  /** The staff's dispatch, with the coach listening in: it judges the note each action touched. */
+  const coachedDispatch = (action: AnswerAction) => {
+    dispatchAnswer(action);
+    if (!coach) return;
+    const next = answerReducer(answer, action, limits);
+    if (next === answer) return;
+    const id = action.type === 'add' || action.type === 'stack' ? next.nextId - 1 : action.type === 'setSign' || action.type === 'nudge' || action.type === 'setDuration' ? action.id : null;
+    if (id === null) {
+      setCoachSays(null);
+      return;
+    }
+    const index = next.bars.flat().findIndex((n) => n.id === id);
+    if (isRightPitch(melody, next.bars, id) === false) wrongTries.current.set(index, (wrongTries.current.get(index) ?? 0) + 1);
+    setCoachSays(coachVerdict(melody, next.bars, id, wrongTries.current.get(index) ?? 0, coach.revealAfter));
+  };
 
   return (
     <section className="exercise">
@@ -171,20 +203,22 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
           </span>
         )}
         {status === 'playing' && activeIndex !== null && `${activeEvent.length > 1 ? 'Chord' : 'Note'} ${eventNumber} of ${events.length}`}
-        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only: the starting note is on the staff above, the rest is yours to hear. '}You get ${level.maxListens} listens.`}
-        {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}. ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}
+        {status === 'idle' && plays === 0 && `Tap Play to hear the melody. ${showFretboard ? 'Watch the fretboard. ' : 'Listen only: the starting note is on the staff above, the rest is yours to hear. '}${unlimitedListens ? 'Listen as often as you like.' : `You get ${level.maxListens} listens.`}`}
+        {status === 'idle' && plays > 0 && listensLeft > 0 && `Heard ${plays} ${plays === 1 ? 'time' : 'times'}.${unlimitedListens ? '' : ` ${listensLeft} ${listensLeft === 1 ? 'listen' : 'listens'} left.`}`}
         {status === 'idle' && plays > 0 && listensLeft === 0 && 'No listens left. Write what you remember, then check.'}
       </div>
-      <div className="listens" aria-label={`${listensLeft} of ${level.maxListens} listens left`}>
-        {Array.from({ length: level.maxListens }, (_, i) => (
-          <span key={i} className={`dot${i < plays ? ' used' : ''}`} />
-        ))}
-      </div>
+      {!unlimitedListens && (
+        <div className="listens" aria-label={`${listensLeft} of ${level.maxListens} listens left`}>
+          {Array.from({ length: level.maxListens }, (_, i) => (
+            <span key={i} className={`dot${i < plays ? ' used' : ''}`} />
+          ))}
+        </div>
+      )}
       </div>
 
       {showFretboard ? (
         <div className="panel board">
-          <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} />
+          <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} labels={dotLabels} />
         </div>
       ) : (
         <div className="listen-only">
@@ -222,7 +256,12 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
 
       <div className="panel">
         <span className="eyebrow">{showFretboard ? 'Write what you see' : 'Write what you heard'} · {keyName(melody.key)}</span>
-        <StaffInput answer={answer} dispatch={dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
+        {coach && (
+          <div className={`coach-line ${coachSays?.tone ?? 'idle'}`} aria-live="polite">
+            {coachSays?.text ?? 'Coach: write a note and I will tell you if it is right.'}
+          </div>
+        )}
+        <StaffInput answer={answer} dispatch={coach ? coachedDispatch : dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
       </div>
 
       <div className="sticky-cta">

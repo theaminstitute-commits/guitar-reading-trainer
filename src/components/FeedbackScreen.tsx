@@ -26,6 +26,8 @@ interface FeedbackScreenProps {
   hearMine: HearMine | null;
   onNext: () => void;
   onExplainer: (id: ExplainerId) => void;
+  /** Practice outside the ladder (the coached lesson): no tally, no stage change, and the button says Continue. */
+  practice?: boolean;
 }
 
 const EXPLAINER_LABEL: Record<ExplainerId, string> = {
@@ -39,7 +41,7 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, yours, hearMine, onNext, onExplainer }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, yours, hearMine, onNext, onExplainer, practice = false }: FeedbackScreenProps) {
   const nextMeter = describeMeter(barBeatsForCounts(nextCounts));
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeTarget, setActiveTarget] = useState<number | null>(null);
@@ -116,7 +118,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
         </div>
       </div>
 
-      {change === null && (
+      {change === null && !practice && (
         <div className="tally-strip" aria-label={`${nextTally} of ${nextStage.unlockAfter} flawless melodies on this stage`}>
           <div className="tally-dots" aria-hidden="true">
             {Array.from({ length: nextStage.unlockAfter }, (_, i) => (
@@ -129,7 +131,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
         </div>
       )}
 
-      {change && (
+      {change && !practice && (
         <p className={`length-change ${change === 'stage-down' ? 'shorter' : 'longer'}`}>
           {change === 'stage-up' && `Stage ${nextStage.number} unlocked: ${nextStage.name}. ${nextStage.summary} Melodies are ${nextCounts} counts long (${nextMeter}).`}
           {change === 'stage-down' && `Back to stage ${nextStage.number}, ${nextStage.name}, at ${nextCounts} counts (${nextMeter}). Ten flawless melodies bring the next stage back.`}
@@ -158,7 +160,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
       </div>
       <div className="sticky-cta">
         <button className="btn primary big" onClick={onNext}>
-          Next melody
+          {practice ? 'Continue' : 'Next melody'}
         </button>
       </div>
 
