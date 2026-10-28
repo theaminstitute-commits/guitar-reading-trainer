@@ -16,7 +16,9 @@ import ExerciseScreen from './ExerciseScreen';
 import FeedbackScreen from './FeedbackScreen';
 import type { YoursStaff } from './FeedbackStaff';
 import Fretboard from './Fretboard';
-import { CheckIcon, PlayIcon, StopIcon } from './icons';
+import { CheckIcon, ChevronLeftIcon, PlayIcon, StopIcon } from './icons';
+import { PAPER } from '../notation/paper';
+import { LESSON_TEMPO } from '../tutorial/lessons';
 import MiniStaff, { miniNotes } from './MiniStaff';
 import QuestionCard from './QuestionCard';
 
@@ -69,6 +71,8 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
 
   const step = lesson.steps[index];
   const next = () => setIndex((i) => i + 1);
+  /** Back one screen; on the first screen the app bar's arrow leads home instead. */
+  const back = index > 0 ? () => setIndex((i) => Math.min(i, lesson.steps.length) - 1) : undefined;
 
   return (
     <section className="lesson">
@@ -77,7 +81,14 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
           <span key={i} className={i < index ? 'done' : i === index ? 'now' : ''} />
         ))}
       </div>
-      <span className="eyebrow">{lesson.title}</span>
+      <div className="lesson-head">
+        <span className="eyebrow">{lesson.title}</span>
+        {back && (
+          <button className="link subtle lesson-back" onClick={back}>
+            <ChevronLeftIcon size={14} /> Previous screen
+          </button>
+        )}
+      </div>
 
       {done && (
         <div className="panel lesson-done">
@@ -93,7 +104,7 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
         </div>
       )}
 
-      {step?.kind === 'explain' && <ExplainScreen step={step} leftHanded={leftHanded} onNext={next} />}
+      {step?.kind === 'explain' && <ExplainScreen key={`${lesson.id}-${index}`} step={step} leftHanded={leftHanded} onNext={next} onBack={back} />}
       {step?.kind === 'drill' && <DrillScreen key={`${lesson.id}-${index}`} title={step.title} intro={step.intro} make={step.make} leftHanded={leftHanded} onDone={next} />}
       {step?.kind === 'coached' && (
         <CoachedScreen key={`${lesson.id}-${index}`} intro={step.intro} leftHanded={leftHanded} metronome={metronome} onMetronome={onMetronome} onExplainer={onExplainer} onDone={next} />
@@ -102,14 +113,25 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
   );
 }
 
-function ExplainScreen({ step, leftHanded, onNext }: { step: ExplainStep; leftHanded: boolean; onNext: () => void }) {
+function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep; leftHanded: boolean; onNext: () => void; onBack?: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [lit, setLit] = useState<number | null>(null);
   const key = step.staff?.key ?? C_MAJOR;
   const bars = useMemo(() => {
     if (!step.staff) return [];
+    // The note sounding now is drawn in blue, with its name: the eye follows the ear. A chord lights as a whole.
+    const litNote = lit === null ? undefined : step.staff.notes[lit];
+    const isLit = (n: (typeof step.staff.notes)[number], i: number) =>
+      litNote !== undefined && (i === lit || (litNote.chord !== undefined && n.chord === litNote.chord));
     const notes = miniNotes(
-      step.staff.notes.map((n) => ({ note: parseSpelled(n.name), duration: n.duration, chord: n.chord, label: n.label, sign: n.sign })),
+      step.staff.notes.map((n, i) => ({
+        note: parseSpelled(n.name),
+        duration: n.duration,
+        chord: n.chord,
+        label: n.label,
+        sign: n.sign,
+        color: isLit(n, i) ? PAPER.active : undefined,
+      })),
       key,
     );
     if (step.staff.timeSignature) return [notes];
@@ -120,12 +142,12 @@ function ExplainScreen({ step, leftHanded, onNext }: { step: ExplainStep; leftHa
     const out: typeof notes[] = [];
     for (let i = 0; i < notes.length; i += perBar) out.push(notes.slice(i, i + perBar));
     return out;
-  }, [step, key]);
+  }, [step, key, lit]);
 
   const play = async () => {
     if (!step.play) return;
     setPlaying(true);
-    await sharedPlayer().play(step.play.notes, { tempo: step.play.tempo ?? 72, timeSignature: [4, 4], countIn: false }, { onNote: (i) => setLit(i), onEnd: () => { setPlaying(false); setLit(null); } });
+    await sharedPlayer().play(step.play.notes, { tempo: step.play.tempo ?? LESSON_TEMPO, timeSignature: [4, 4], countIn: false }, { onNote: (i) => setLit(i), onEnd: () => { setPlaying(false); setLit(null); } });
   };
 
   const dots = step.fretboard?.dots ?? [];
@@ -145,6 +167,7 @@ function ExplainScreen({ step, leftHanded, onNext }: { step: ExplainStep; leftHa
         />
       )}
       <div className="controls">
+        {onBack && <button onClick={onBack}>Back</button>}
         {step.play &&
           (playing ? (
             <button onClick={() => sharedPlayer().stop()}>

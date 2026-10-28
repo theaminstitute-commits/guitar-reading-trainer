@@ -70,6 +70,9 @@ export interface Lesson {
   stage?: number;
 }
 
+/** Lesson examples play slowly, so each note can be found on the staff as it lights up. */
+export const LESSON_TEMPO = 54;
+
 const n = (name: string, label?: string, duration: DurationId = 'q'): ExampleNote => ({ name, label, duration });
 const sounding = (name: string, duration: DurationId = 'q'): PlayableNote => ({ midi: soundingFromWritten(midiFromSpelled(parseSpelled(name))), duration });
 const at = (string: number, fret: number): FretPosition => ({ string, fret });
@@ -108,7 +111,7 @@ export const PART_0: readonly Lesson[] = [
           'The lines from the bottom are E G B D F: "Every Good Boy Deserves Fruit". The spaces spell F A C E.',
         ],
         staff: { notes: STAFF_ONLY.map((s) => n(`${s.letter}${s.octave}`, s.letter)) },
-        play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)), tempo: 100 },
+        play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)) },
       },
       { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => nameNotes(STAFF_ONLY, 6, rng) },
       { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs.', make: (rng) => placeNotes(STAFF_ONLY, 4, rng) },
@@ -148,7 +151,7 @@ export const PART_0: readonly Lesson[] = [
         ],
         staff: { notes: [n('E3', 'E 6th', 'w'), n('A3', 'A 5th', 'w'), n('D4', 'D 4th', 'w'), n('G4', 'G 3rd', 'w'), n('B4', 'B 2nd', 'w'), n('E5', 'E 1st', 'w')] },
         fretboard: { frets: [0, 4], dots: [at(6, 0), at(5, 0), at(4, 0), at(3, 0), at(2, 0), at(1, 0)], labels: ['E', 'A', 'D', 'G', 'B', 'E'] },
-        play: { notes: ['E3', 'A3', 'D4', 'G4', 'B4', 'E5'].map((x) => sounding(x)), tempo: 80 },
+        play: { notes: ['E3', 'A3', 'D4', 'G4', 'B4', 'E5'].map((x) => sounding(x)) },
       },
       {
         kind: 'drill',

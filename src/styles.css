@@ -1606,6 +1606,21 @@ html.theme-fade *::after {
   color: var(--good);
 }
 
+.lesson-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.lesson-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
 .lesson-progress {
   display: flex;
   gap: 4px;

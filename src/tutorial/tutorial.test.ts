@@ -5,7 +5,7 @@ import { STAGES } from '../melody/stages';
 import { gradedTargets } from '../grading/grade';
 import { midiAt } from '../music/fretboard';
 import { C_MAJOR, keyFromId } from '../music/key';
-import { parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
+import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
 import { ALL_LESSONS, lessonForStage, PART_0, STAGE_LESSONS } from './lessons';
@@ -154,6 +154,16 @@ describe('the coach', () => {
 });
 
 describe('lesson examples', () => {
+  it('play exactly the notes they show, in order, so each one can light up as it sounds', () => {
+    for (const lesson of ALL_LESSONS) {
+      for (const step of lesson.steps) {
+        if (step.kind !== 'explain' || !step.staff || !step.play) continue;
+        const shown = step.staff.notes.map((n) => midiFromSpelled(parseSpelled(n.name)) - 12);
+        expect(step.play.notes.map((p) => p.midi), `${lesson.id}: ${step.title}`).toEqual(shown);
+      }
+    }
+  });
+
   it('never need a sign the lesson did not ask for: every example note agrees with its key signature', async () => {
     const { displaySignsForBars } = await import('../notation/accidentals');
     for (const lesson of ALL_LESSONS) {
