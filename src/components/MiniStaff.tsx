@@ -33,6 +33,11 @@ interface MiniStaffProps {
   legend?: boolean;
   /** The legend letter to emphasise (the step of the note sounding now). */
   legendHighlight?: number | null;
+  /**
+   * The notes drop onto the staff each time this value changes (a new question); redraws
+   * with the same value (a tap, a resize) leave them still.
+   */
+  dropKey?: unknown;
 }
 
 /**
@@ -77,7 +82,11 @@ export function miniNotes(
  * A small staff on cream paper for lessons and questions: example notes with
  * names underneath, or an empty bar the learner taps a line or space on.
  */
-export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null }: MiniStaffProps) {
+/** Length of the drop-in animation (`.drop-in` in styles.css). */
+const DROP_MS = 600;
+
+export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null, dropKey }: MiniStaffProps) {
+  const dropped = useRef<{ key: unknown; at: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -135,7 +144,16 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
       }),
     );
-  }, [bars, musicKey, timeSignature, barsPerRow, width, staffWidth, scale, fontsReady, legend]);
+    if (dropKey !== undefined && dropKey !== dropped.current?.key) dropped.current = { key: dropKey, at: performance.now() };
+    // A redraw while the note is still falling (the first layout pass redraws at once) picks the fall up where it was.
+    const elapsed = dropped.current && dropKey === dropped.current.key ? performance.now() - dropped.current.at : Infinity;
+    if (elapsed < DROP_MS) {
+      el.querySelectorAll<SVGElement>('.vf-stavenote').forEach((g) => {
+        g.classList.add('drop-in');
+        g.style.animationDelay = `${-Math.round(elapsed)}ms`;
+      });
+    }
+  }, [bars, musicKey, timeSignature, barsPerRow, width, staffWidth, scale, fontsReady, legend, dropKey]);
 
   const flat = bars.flat();
   const labelSize = 9 * scale;

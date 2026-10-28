@@ -43,6 +43,8 @@ export interface StaffToFretQuestion {
   openOnly?: boolean;
   /** Beginner aid: every natural note on the fretboard carries its letter; sharps and flats stay blank. */
   fretNames?: boolean;
+  /** The note drops onto the staff as the question appears. */
+  dropIn?: boolean;
 }
 
 /** A lit fret: tap where its note is written on the staff. */

@@ -169,7 +169,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       }
       body = (
         <>
-          <MiniStaff bars={[miniNotes([{ note: q.note, duration: 'w' }], q.key)]} musicKey={q.key} barsPerRow={1} />
+          <MiniStaff bars={[miniNotes([{ note: q.note, duration: 'w' }], q.key)]} musicKey={q.key} barsPerRow={1} dropKey={q.dropIn ? q : undefined} />
           <Fretboard
             frets={q.frets}
             active={null}
