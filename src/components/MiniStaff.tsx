@@ -84,6 +84,8 @@ export function miniNotes(
  */
 /** Length of the drop-in animation (`.drop-in` in styles.css). */
 const DROP_MS = 600;
+/** Length of the head-shake a wrong note gives after it lands (`.wrong-note`). */
+const SHAKE_MS = 420;
 
 export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null, dropKey }: MiniStaffProps) {
   const dropped = useRef<{ key: unknown; at: number } | null>(null);
@@ -147,10 +149,15 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
     if (dropKey !== undefined && dropKey !== dropped.current?.key) dropped.current = { key: dropKey, at: performance.now() };
     // A redraw while the note is still falling (the first layout pass redraws at once) picks the fall up where it was.
     const elapsed = dropped.current && dropKey === dropped.current.key ? performance.now() - dropped.current.at : Infinity;
-    if (elapsed < DROP_MS) {
-      el.querySelectorAll<SVGElement>('.vf-stavenote').forEach((g) => {
+    if (elapsed < DROP_MS + SHAKE_MS) {
+      // One drawn note per event (a chord's notes share one); a wrong (red) note shakes its head once it lands.
+      const isWrong = (bar: MiniNote[], n: MiniNote) => n.color === PAPER.bad || (n.chord !== undefined && bar.some((m) => m.chord === n.chord && m.color === PAPER.bad));
+      const wrong = bars.flatMap((bar) => bar.filter((n, i) => n.chord === undefined || n.chord !== bar[i - 1]?.chord).map((n) => isWrong(bar, n)));
+      const e = Math.round(elapsed);
+      el.querySelectorAll<SVGElement>('.vf-stavenote').forEach((g, i) => {
         g.classList.add('drop-in');
-        g.style.animationDelay = `${-Math.round(elapsed)}ms`;
+        if (wrong[i]) g.classList.add('wrong-note');
+        g.style.animationDelay = wrong[i] ? `${-e}ms, ${DROP_MS - e}ms` : `${-e}ms`;
       });
     }
   }, [bars, musicKey, timeSignature, barsPerRow, width, staffWidth, scale, fontsReady, legend, dropKey]);

@@ -215,7 +215,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
 
       {/* Drill answer marks */}
       {marks.filter((m) => inWindow(m.position)).map((m, i) => (
-        <circle key={`m${i}`} cx={noteX(m.position.fret)} cy={stringY(m.position.string)} r={11} className={`fb-mark ${m.tone}`} />
+        <circle key={`m${i}-${m.position.string}-${m.position.fret}-${m.tone}`} cx={noteX(m.position.fret)} cy={stringY(m.position.string)} r={11} className={`fb-mark ${m.tone}`} />
       ))}
 
       {/* Tap targets: one cell per string and fret, the open-string zone left of the nut */}

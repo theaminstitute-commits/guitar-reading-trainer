@@ -918,8 +918,43 @@ button.link.subtle {
   }
 }
 
+/* A wrong note lands, then shakes its head. */
+.drop-in.wrong-note {
+  animation:
+    note-drop 0.6s cubic-bezier(0.45, 0, 0.55, 1) both,
+    note-shake 0.42s ease-in-out;
+}
+
+@keyframes note-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+/* A wrong tap on the fretboard: the red ring shakes its head. */
+.fb-mark.bad {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: note-shake 0.42s ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .drop-in {
+  .drop-in,
+  .drop-in.wrong-note,
+  .fb-mark.bad {
     animation: none;
   }
 }
