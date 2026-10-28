@@ -57,6 +57,8 @@ export interface FretToStaffQuestion {
   frets: readonly [number, number];
   /** Beginner aid: the lit fret carries its note's letter. */
   showName?: boolean;
+  /** Each tapped note drops onto the staff. */
+  dropIn?: boolean;
 }
 
 /** Hear one bar of rhythm on a single note, pick the bar that was played. */

@@ -237,7 +237,7 @@ export const PART_0: readonly Lesson[] = [
         play: { notes: ['D4', 'E4', 'F4', 'G4', 'A4'].map((x) => sounding(x)) },
       },
       { kind: 'drill', title: 'Staff to fretboard', intro: 'A note is on the staff. Tap where you play it.', make: (rng) => staffToFret(C_MAJOR, FIRST_FOUR, [0, 3], 5, rng).map((q) => ({ ...q, fretNames: true, dropIn: true })) },
-      { kind: 'drill', title: 'Fretboard to staff', intro: 'A fret lights up. Tap where its note is written.', make: (rng) => fretToStaff(C_MAJOR, FIRST_FOUR, [0, 3], 4, rng).map((q) => ({ ...q, showName: true })) },
+      { kind: 'drill', title: 'Fretboard to staff', intro: 'A fret lights up. Tap where its note is written.', make: (rng) => fretToStaff(C_MAJOR, FIRST_FOUR, [0, 3], 4, rng).map((q) => ({ ...q, showName: true, dropIn: true })) },
     ],
   },
   {

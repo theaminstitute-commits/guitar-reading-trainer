@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { sharedPlayer } from '../audio/player';
 import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
-import { midiFromSpelled, parseSpelled, spelledName, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
+import { midiFromSpelled, parseSpelled, spelledName, soundingFromWritten, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { PAPER } from '../notation/paper';
-import { isRightFret, isRightStep, nameWithOctave, type Question } from '../tutorial/questions';
+import { isRightFret, isRightStep, keyAccidental, nameWithOctave, type Question } from '../tutorial/questions';
 import { gradeTaps, tapPassed, tapVerdict, type TapResult } from '../tutorial/tap';
 import Fretboard, { visibleFrets } from './Fretboard';
 import { PlayIcon, StopIcon } from './icons';
@@ -47,6 +47,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
   const [retryText, setRetryText] = useState<string | null>(null);
   /** A tapped string that is sounding: it vibrates on the fretboard for a moment. */
   const [ring, setRing] = useState<{ at: FretPosition; n: number } | null>(null);
+  /** Staff taps so far on this question: each new one drops its note in again. */
+  const [staffTaps, setStaffTaps] = useState(0);
   useEffect(() => {
     if (!ring) return;
     const t = setTimeout(() => setRing(null), 1800);
@@ -62,8 +64,9 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     setMisses(0);
     setRetryText(null);
     setRing(null);
+    setStaffTaps(0);
     // Fretboard taps sound at once: have the guitar ready before the first one.
-    if (q.kind === 'staff-to-fret') void sharedPlayer().load();
+    if (q.kind === 'staff-to-fret' || q.kind === 'fret-to-staff') void sharedPlayer().load();
   }, [q]);
 
   /** A wrong try in retry mode: say what was picked, count it, keep the question open. */
@@ -138,17 +141,27 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       }
       body = (
         <>
-          {q.kind === 'fret-to-staff' && <Fretboard frets={q.frets} active={[q.position]} mirrored={leftHanded} labels={q.showName ? [spelledName(q.target)] : undefined} />}
+          {q.kind === 'fret-to-staff' && (
+            <Fretboard frets={q.frets} active={[q.position]} mirrored={leftHanded} labels={q.showName ? [spelledName(q.target)] : undefined} ringing={ring ? [ring.at] : []} ringKey={ring?.n} />
+          )}
           <MiniStaff
             bars={[shown]}
             musicKey={q.key}
             barsPerRow={1}
+            dropKey={q.kind === 'fret-to-staff' && q.dropIn && staffTaps > 0 ? staffTaps : undefined}
             onTapStep={
               outcome
                 ? undefined
                 : (step) => {
                     setTappedStep(step);
                     const right = isRightStep(q, step);
+                    if (q.kind === 'fret-to-staff') {
+                      // The tapped note sounds (as the key spells that line or space) and, on this lesson, drops in;
+                      // a right answer also sets the lit string vibrating.
+                      setStaffTaps((n) => n + 1);
+                      void sharedPlayer().play([{ midi: soundingFromWritten(midiFromSpelled(keyAccidental(spelledFromStaffStep(step), q.key))), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
+                      if (right) setRing((r) => ({ at: q.position, n: (r?.n ?? 0) + 1 }));
+                    }
                     const tapped = nameWithOctave(spelledFromStaffStep(step));
                     if (right) solved(`${nameWithOctave(target)} is correct!`);
                     else if (retry) tryAgain(tapped);
