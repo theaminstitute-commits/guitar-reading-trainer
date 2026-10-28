@@ -21,6 +21,7 @@ import {
   shuffle,
   staffToFret,
   tapAlong,
+  withMemoryAid,
   type NameQuestion,
   type Question,
 } from './questions';
@@ -115,8 +116,8 @@ export const PART_0: readonly Lesson[] = [
         staff: { notes: STAFF_ONLY.map((s) => n(`${s.letter}${s.octave}`)), legend: true },
         play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)) },
       },
-      { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => nameNotes(STAFF_ONLY, 6, rng) },
-      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs.', make: (rng) => placeNotes(STAFF_ONLY, 4, rng) },
+      { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => withMemoryAid(nameNotes(STAFF_ONLY, 6, rng)) },
+      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
       {
         kind: 'explain',
         title: 'Just above and below',
@@ -126,7 +127,7 @@ export const PART_0: readonly Lesson[] = [
         ],
         staff: { notes: [n('D4', 'D', 'w'), n('G5', 'G', 'w')] },
       },
-      { kind: 'drill', title: 'The whole stage 1 range', intro: 'Name these, including the D below and the G above the staff.', make: (rng) => nameNotes(STAGE1, 5, rng) },
+      { kind: 'drill', title: 'The whole stage 1 range', intro: 'Name these, including the D below and the G above the staff.', make: (rng) => withMemoryAid(nameNotes(STAGE1, 5, rng)) },
     ],
   },
   {

@@ -153,6 +153,12 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
   return (
     <div className="panel question">
       <p className="question-prompt">{q.prompt}</p>
+      {q.memoryAid && (
+        <p className="memory-aid">
+          <span className="aid-lines">Lines E G B D F: Every Good Boy Deserves Fruit</span>
+          <span className="aid-spaces">Spaces: F A C E</span>
+        </p>
+      )}
       {body}
       {outcome && (
         <div className={`verdict-line ${outcome.correct ? 'good' : 'bad'}`} aria-live="polite">

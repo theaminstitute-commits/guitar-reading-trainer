@@ -1676,17 +1676,56 @@ html.theme-fade *::after {
   margin: 0 0 4px;
 }
 
+/* Answer choices: compact buttons in one centred row, wrapping only when the names are long. */
 .choice-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .choice {
-  min-height: 52px;
+  flex: 0 1 auto;
+  min-width: 56px;
+  min-height: 48px;
+  padding: 0 14px;
   font-size: 1.1rem;
   font-weight: 700;
+}
+
+.memory-aid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.aid-lines {
+  color: #8a6cf0;
+}
+
+.aid-spaces {
+  color: #e0598b;
+}
+
+:root[data-theme='light'] .aid-lines {
+  color: #6741d9;
+}
+
+:root[data-theme='light'] .aid-spaces {
+  color: #c2255c;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .aid-lines {
+    color: #6741d9;
+  }
+  :root:not([data-theme='dark']) .aid-spaces {
+    color: #c2255c;
+  }
 }
 
 .choice.right,

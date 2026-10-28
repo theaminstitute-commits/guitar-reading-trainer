@@ -64,7 +64,15 @@ export interface TapQuestion {
   beats: number;
 }
 
-export type Question = NameQuestion | PlaceQuestion | StaffToFretQuestion | FretToStaffQuestion | RhythmQuestion | TapQuestion;
+export type Question = (NameQuestion | PlaceQuestion | StaffToFretQuestion | FretToStaffQuestion | RhythmQuestion | TapQuestion) & {
+  /** Show the line and space memory aid (Every Good Boy Deserves Fruit, F A C E) with the question. */
+  memoryAid?: boolean;
+};
+
+/** The same questions, each showing the line and space memory aid. */
+export function withMemoryAid<Q extends Question>(questions: Q[]): Q[] {
+  return questions.map((q) => ({ ...q, memoryAid: true }));
+}
 
 export const nameOf = (n: SpelledNote) => spelledName(n);
 export const nameWithOctave = (n: SpelledNote) => `${spelledName(n)}${n.octave}`;
