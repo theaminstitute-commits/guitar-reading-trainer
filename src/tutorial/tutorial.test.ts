@@ -162,7 +162,8 @@ describe('lesson examples', () => {
         const lastNote = written.map((n) => !n.rest).lastIndexOf(true);
         expect(written.slice(0, lastNote).every((n) => !n.rest), `${lesson.id}: ${step.title}`).toBe(true);
         const played = playedAsWritten(step);
-        expect(played.map((p) => p.duration), `${lesson.id}: ${step.title}`).toEqual(written.filter((n) => !n.rest).sort((a, b) => a.index - b.index).map((n) => n.duration));
+        const lengthOf = new Map(written.filter((n) => !n.rest).map((n) => [n.index, n.duration] as const));
+        expect(played.map((p) => p.duration), `${lesson.id}: ${step.title}`).toEqual(played.map((_, i) => lengthOf.get(step.play!.staffIndex?.[i] ?? i)));
       }
     }
     // The alphabet: nine notes, the last written and played as a whole note.
@@ -175,7 +176,8 @@ describe('lesson examples', () => {
       for (const step of lesson.steps) {
         if (step.kind !== 'explain' || !step.staff || !step.play) continue;
         const shown = step.staff.notes.map((n) => midiFromSpelled(parseSpelled(n.name)) - 12);
-        expect(step.play.notes.map((p) => p.midi), `${lesson.id}: ${step.title}`).toEqual(shown);
+        const expected = step.play.staffIndex ? step.play.staffIndex.map((i) => shown[i]) : shown;
+        expect(step.play.notes.map((p) => p.midi), `${lesson.id}: ${step.title}`).toEqual(expected);
       }
     }
   });

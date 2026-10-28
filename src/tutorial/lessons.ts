@@ -47,7 +47,12 @@ export interface ExplainStep {
   staff?: { notes: ExampleNote[]; key?: Key; timeSignature?: boolean; legend?: boolean };
   fretboard?: { frets: readonly [number, number]; dots: FretPosition[]; labels?: string[] };
   /** "Hear it": notes played in order (sounding pitch), with an optional tempo. */
-  play?: { notes: PlayableNote[]; tempo?: number };
+  /**
+   * "Hear it": notes played in order (sounding pitch), with an optional tempo. By default
+   * they are the staff's notes one for one; `staffIndex` picks which staff note each
+   * played note is, when only some of the shown notes play.
+   */
+  play?: { notes: PlayableNote[]; tempo?: number; staffIndex?: number[] };
 }
 
 export interface DrillStep {
@@ -128,21 +133,29 @@ export const PART_0: readonly Lesson[] = [
           'Because the letters start again after G, the same letter appears more than once on the staff. The F in the bottom space and the F on the top line are both F: the higher one sounds the same note, only higher. The distance from one F to the next is called an octave.',
           'To tell them apart, every note carries a number after its letter: F4 is the lower F, F5 the higher one. The number goes up by one each time the letters pass C, so B4 is followed by C5.',
           'When the app names a note, such as F4 or D5, the letter tells you which line or space, and the number tells you which one of the repeats.',
+          'Played together, the two Fs blend almost into one sound. The last bar stacks F4 and F5 as a two-note chord: an octave played at once.',
         ],
         staff: {
           notes: [
-            { ...n('E4', 'E4'), mark: false },
-            { ...n('F4', 'F4'), mark: true },
+            n('E4', 'E4'),
+            n('F4', 'F4'),
             n('G4', 'G4'),
             n('A4', 'A4'),
             n('B4', 'B4'),
             n('C5', 'C5'),
             n('D5', 'D5'),
             n('E5', 'E5'),
-            { ...n('F5', 'F5'), mark: true },
+            n('F5', 'F5', 'w'),
+            { name: 'F4', label: 'F4 + F5', duration: 'w', chord: 1 },
+            { name: 'F5', duration: 'w', chord: 1 },
           ],
         },
-        play: { notes: ['E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5'].map((x) => sounding(x)), tempo: 70 },
+        // Only the octave plays: F4, then F5, then both at once (the user: play and light just the two notes, then the octave chord).
+        play: {
+          notes: [sounding('F4'), sounding('F5', 'w'), { ...sounding('F4', 'w'), chord: 1 }, { ...sounding('F5', 'w'), chord: 1 }],
+          tempo: 70,
+          staffIndex: [1, 8, 9, 10],
+        },
       },
       { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs. Mind the number: it says which of the repeated letters is meant.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
       {
@@ -472,12 +485,17 @@ export function writtenBars(step: ExplainStep): { duration: DurationId; chord?: 
  * written on the staff, so the ear and the page agree (a lone last note that the
  * staff shows as a whole note rings for four counts).
  */
+/** Which staff note the `i`-th played note is. */
+export function staffIndexOf(step: ExplainStep, i: number): number {
+  return step.play?.staffIndex?.[i] ?? i;
+}
+
 export function playedAsWritten(step: ExplainStep): PlayableNote[] {
   if (!step.play) return [];
   if (!step.staff) return step.play.notes;
   const lengths = new Map<number, DurationId>();
   for (const bar of writtenBars(step)) for (const n of bar) if (!n.rest) lengths.set(n.index, n.duration);
-  return step.play.notes.map((p, i) => ({ ...p, duration: lengths.get(i) ?? p.duration }));
+  return step.play.notes.map((p, i) => ({ ...p, duration: lengths.get(staffIndexOf(step, i)) ?? p.duration }));
 }
 
 export function lessonById(id: string): Lesson | undefined {

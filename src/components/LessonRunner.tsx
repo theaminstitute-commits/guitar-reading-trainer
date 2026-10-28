@@ -18,7 +18,7 @@ import type { YoursStaff } from './FeedbackStaff';
 import Fretboard from './Fretboard';
 import { CheckIcon, ChevronLeftIcon, PlayIcon, StopIcon } from './icons';
 import { PAPER } from '../notation/paper';
-import { LESSON_TEMPO, playedAsWritten } from '../tutorial/lessons';
+import { LESSON_TEMPO, playedAsWritten, staffIndexOf } from '../tutorial/lessons';
 import MiniStaff, { miniNotes, miniRest } from './MiniStaff';
 import { measure } from '../notation/measure';
 import QuestionCard from './QuestionCard';
@@ -117,13 +117,15 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
 function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep; leftHanded: boolean; onNext: () => void; onBack?: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [lit, setLit] = useState<number | null>(null);
+  /** The staff note sounding now (a step may play only some of the notes it shows). */
+  const litStaff = lit === null ? null : staffIndexOf(step, lit);
   const key = step.staff?.key ?? C_MAJOR;
   const bars = useMemo(() => {
     if (!step.staff) return [];
     // The note sounding now is drawn in blue, with its name: the eye follows the ear. A chord lights as a whole.
-    const litNote = lit === null ? undefined : step.staff.notes[lit];
+    const litNote = litStaff === null ? undefined : step.staff.notes[litStaff];
     const isLit = (n: (typeof step.staff.notes)[number], i: number) =>
-      litNote !== undefined && (i === lit || (litNote.chord !== undefined && n.chord === litNote.chord));
+      litNote !== undefined && (i === litStaff || (litNote.chord !== undefined && n.chord === litNote.chord));
     // With the line and space letters shown, the sounding note takes its letter's colour: violet on a line, pink in a space.
     const legend = step.staff.legend;
     const litColor = (name: string) =>
@@ -141,7 +143,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
     );
     // Every bar holds exactly four beats, time signature shown or not: a short last bar is completed (notation/measure).
     return measure(notes, miniRest);
-  }, [step, key, lit]);
+  }, [step, key, litStaff]);
 
   const play = async () => {
     if (!step.play) return;
@@ -163,7 +165,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
           timeSignature={step.staff.timeSignature}
           barsPerRow={step.staff.timeSignature ? 1 : undefined}
           legend={step.staff.legend}
-          legendHighlight={lit !== null && step.staff.notes[lit] ? staffStep(parseSpelled(step.staff.notes[lit]!.name)) : null}
+          legendHighlight={litStaff !== null && step.staff.notes[litStaff] ? staffStep(parseSpelled(step.staff.notes[litStaff]!.name)) : null}
         />
       )}
       {step.fretboard && (
