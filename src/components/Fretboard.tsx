@@ -59,8 +59,12 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
   /** X of the wire at the far side of a fret. */
   const fretX = (fret: number) => nutX + fretWidth * (fret - first + 1);
   const stringY = (string: number) => top + stringGap * (string - 1);
-  /** Circle centre for a position: between the fret wires, or just left of the nut for open. */
-  const noteX = (fret: number) => (fret === 0 ? nutX - 14 : fretX(fret) - fretWidth / 2);
+  /**
+   * Circle centre for a position: just left of the nut for open, otherwise a quarter of the fret
+   * from its wire, halfway between the middle of the fret and the wire, where a finger should
+   * press (the user: show good technique, everywhere a fretted note is drawn).
+   */
+  const noteX = (fret: number) => (fret === 0 ? nutX - 14 : fretX(fret) - fretWidth / 4);
   const inWindow = (p: FretPosition) => (p.fret === 0 ? hasNut : p.fret >= first && p.fret <= last);
   const drawn = Array.from({ length: fretCount }, (_, i) => first + i);
   const boardEnd = nutX + fretWidth * fretCount;
