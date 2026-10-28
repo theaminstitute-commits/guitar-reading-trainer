@@ -25,6 +25,8 @@ export interface RenderNote {
   duration: DurationId;
   /** Notes with the same id are one chord (listed low to high). */
   chord?: number;
+  /** A rest of this duration instead of a note (`step` is ignored). */
+  rest?: boolean;
   style?: RenderNoteStyle;
   /** Text drawn under the note (explainer cards). */
   label?: string;
@@ -141,6 +143,12 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       const events = groupEvents(bar.notes).map((group) => [...group].sort((a, b) => a.step - b.step));
       const staveNotes = events.map((group) => {
         const first = group[0]!;
+        if (first.rest) {
+          // A whole rest hangs from the fourth line, the others sit in the middle of the staff.
+          const rest = new StaveNote({ keys: [first.duration === 'w' ? 'd/5' : 'b/4'], duration: `${DURATIONS[first.duration].vexflow}r`, clef: 'treble' });
+          if (DURATIONS[first.duration].dots > 0) Dot.buildAndAttach([rest], { all: true });
+          return rest;
+        }
         const note = new StaveNote({
           keys: group.map((n) => vexKey(n.step)),
           duration: DURATIONS[first.duration].vexflow,
@@ -175,6 +183,8 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
         let noteIndex = 0;
         staveNotes.forEach((note, e) => {
           const ys = note.getYs();
+          // Rests are drawn but are not notes: nothing to tap, label or colour.
+          if (events[e]![0]!.rest) return;
           events[e]!.forEach((n, k) => {
             layout.notes.push({
               barIndex,

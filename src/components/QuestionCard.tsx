@@ -84,8 +84,10 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       const shown: MiniNote[] = [];
       if (tappedStep !== null) {
         const right = isRightStep(q, tappedStep);
-        shown.push({ step: tappedStep, sign: 'none', duration: 'w', color: right ? PAPER.good : PAPER.bad });
-        if (!right) shown.push({ step: staffStep(target), sign: 'none', duration: 'w', color: PAPER.good });
+        // A wrong tap shows both notes stacked as one whole-note chord, so the bar still holds four beats.
+        shown.push({ step: tappedStep, sign: 'none', duration: 'w', color: right ? PAPER.good : PAPER.bad, chord: right ? undefined : 1 });
+        if (!right) shown.push({ step: staffStep(target), sign: 'none', duration: 'w', color: PAPER.good, chord: 1 });
+        shown.sort((a, b) => a.step - b.step);
       }
       body = (
         <>

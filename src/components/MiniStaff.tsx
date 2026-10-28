@@ -16,7 +16,11 @@ export interface MiniNote {
   color?: string;
   /** Text under the note, on one baseline below the staff. */
   label?: string;
+  rest?: boolean;
 }
+
+/** A rest for `measure` to complete a bar with. */
+export const miniRest = (duration: DurationId): MiniNote => ({ step: 34, sign: 'none', duration, rest: true });
 
 interface MiniStaffProps {
   bars: MiniNote[][];
@@ -89,6 +93,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         sign: n.sign,
         duration: n.duration,
         chord: n.chord,
+        rest: n.rest,
         style: n.color ? { fill: n.color, stroke: n.color } : undefined,
       })),
     }));

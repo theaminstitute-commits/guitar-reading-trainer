@@ -8,6 +8,7 @@ import { writtenFromSounding } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
+import { measure } from '../notation/measure';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 import Fretboard from './Fretboard';
 
@@ -93,6 +94,9 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
           style: p.isNew || sounding === p.midi ? { fill: NEW, stroke: NEW } : undefined,
         })),
       }));
+      // The last bar of the list is usually short: complete it so every bar holds four beats (notation/measure).
+      let restId = -1;
+      bars = bars.map((bar) => ({ notes: measure(bar.notes, (duration) => ({ id: restId--, step: 34, sign: 'none' as const, duration, rest: true }))[0]! }));
     }
     setLayout(
       renderStaff(el, bars, {

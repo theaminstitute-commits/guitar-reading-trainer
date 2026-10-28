@@ -19,7 +19,8 @@ import Fretboard from './Fretboard';
 import { CheckIcon, ChevronLeftIcon, PlayIcon, StopIcon } from './icons';
 import { PAPER } from '../notation/paper';
 import { LESSON_TEMPO } from '../tutorial/lessons';
-import MiniStaff, { miniNotes } from './MiniStaff';
+import MiniStaff, { miniNotes, miniRest } from './MiniStaff';
+import { measure } from '../notation/measure';
 import QuestionCard from './QuestionCard';
 
 interface LessonRunnerProps {
@@ -134,14 +135,8 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
       })),
       key,
     );
-    if (step.staff.timeSignature) return [notes];
-    // Without a time signature the examples are just a row of notes. Four to a bar keeps them readable;
-    // longer names underneath need more room, so fewer notes share a bar.
-    const longest = Math.max(0, ...step.staff.notes.map((x) => x.label?.length ?? 0));
-    const perBar = longest >= 5 ? 2 : longest > 2 ? 3 : 4;
-    const out: typeof notes[] = [];
-    for (let i = 0; i < notes.length; i += perBar) out.push(notes.slice(i, i + perBar));
-    return out;
+    // Every bar holds exactly four beats, time signature shown or not: a short last bar is completed (notation/measure).
+    return measure(notes, miniRest);
   }, [step, key, lit]);
 
   const play = async () => {

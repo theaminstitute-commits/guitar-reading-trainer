@@ -4,6 +4,7 @@ import type { ExplainerId } from '../grading/explain';
 import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
 import { keySignatureCount, keySignatureSpec } from '../music/key';
+import { measure } from '../notation/measure';
 import { renderStaff } from '../notation/renderStaff';
 
 interface ExplainerCardProps {
@@ -49,10 +50,13 @@ export default function ExplainerCard({ id, onClose }: ExplainerCardProps) {
   useLayoutEffect(() => {
     const el = exampleRef.current;
     if (!el || !fontsReady || width === 0 || !explainer.example) return;
-    renderStaff(el, [{ notes: explainer.example.notes }], {
+    // Complete 4/4 bars (notation/measure): a long example no longer crams every note into one bar.
+    let restId = -1;
+    const bars = measure(explainer.example.notes, (duration) => ({ id: restId--, step: 34, sign: 'none' as const, duration, rest: true })).map((notes) => ({ notes }));
+    renderStaff(el, bars, {
       timeSignature: [4, 4],
       width,
-      barsPerRow: 1,
+      barsPerRow: 2,
       scale: width < 480 ? 1.2 : 1.4,
       ink: PAPER.ink,
       showTimeSignature: false,
