@@ -92,6 +92,20 @@ const STAFF_ONLY = naturalsBetween('E4', 'F5');
 const FIRST_FOUR = [1, 2, 3, 4];
 const K = (id: string) => keyFromId(id)!;
 
+/**
+ * The whole stage 1 range drill: the D below and the G above the staff are the new notes,
+ * so both are always asked, mixed in among four notes on the staff.
+ */
+export function stage1Range(rng: Rng): NameQuestion[] {
+  const outside = [...nameNotes([parseSpelled('D4')], 1, rng), ...nameNotes([parseSpelled('G5')], 1, rng)];
+  const inside = nameNotes(STAFF_ONLY, 4, rng);
+  // Shuffle until no note is asked twice in a row.
+  for (;;) {
+    const order = shuffle([...outside, ...inside], rng);
+    if (order.every((q, i) => i === 0 || q.answer !== order[i - 1]!.answer || q.notes[0]!.octave !== order[i - 1]!.notes[0]!.octave)) return order;
+  }
+}
+
 /** A random-ish C-major note on the staff, used where a step only needs one. */
 export function exampleNote(text: string): SpelledNote {
   return parseSpelled(text);
@@ -160,7 +174,7 @@ export const PART_0: readonly Lesson[] = [
         ],
         staff: { notes: [n('D4', 'D', 'w'), n('G5', 'G', 'w')] },
       },
-      { kind: 'drill', title: 'The whole stage 1 range', intro: 'Name these, including the D below and the G above the staff.', make: (rng) => withMemoryAid(nameNotes(STAGE1, 5, rng)) },
+      { kind: 'drill', title: 'The whole stage 1 range', intro: 'Name these, including the D below and the G above the staff.', make: (rng) => withMemoryAid(stage1Range(rng)) },
     ],
   },
   {
