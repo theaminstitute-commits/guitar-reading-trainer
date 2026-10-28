@@ -218,7 +218,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
 
       {showFretboard ? (
         <div className="panel board">
-          <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} labels={dotLabels} />
+          <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} labels={dotLabels} ringing={active} ringKey={activeIndex ?? undefined} />
         </div>
       ) : (
         <div className="listen-only">

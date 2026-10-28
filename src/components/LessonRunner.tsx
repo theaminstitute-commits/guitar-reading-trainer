@@ -173,6 +173,8 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
           frets={step.fretboard.frets}
           active={lit !== null && dots[lit] ? [dots[lit]!] : dots}
           labels={lit !== null && dots[lit] ? [step.fretboard.labels?.[lit] ?? ''] : step.fretboard.labels}
+          ringing={lit !== null && dots[lit] ? [dots[lit]!] : []}
+          ringKey={lit ?? undefined}
           mirrored={leftHanded}
         />
       )}

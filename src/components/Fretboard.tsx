@@ -15,6 +15,13 @@ interface FretboardProps {
   onPick?: (position: FretPosition) => void;
   /** Answer marks for drills: a green or red ring at a position. */
   marks?: readonly { position: FretPosition; tone: 'good' | 'bad' }[];
+  /**
+   * Notes sounding now: each string vibrates, but only the part that really moves, from the
+   * fret (or the nut, for an open string) to the bridge end of the drawing.
+   */
+  ringing?: readonly FretPosition[];
+  /** Changes with every new note, so a repeated note starts its vibration again. */
+  ringKey?: string | number;
 }
 
 const STRING_NAMES = ['E', 'B', 'G', 'D', 'A', 'E'];
@@ -36,7 +43,7 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [] }: FretboardProps) {
+export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey }: FretboardProps) {
   const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
   const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
@@ -56,6 +63,10 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
   const noteX = (fret: number) => (fret === 0 ? nutX - 14 : fretX(fret) - fretWidth / 2);
   const inWindow = (p: FretPosition) => (p.fret === 0 ? hasNut : p.fret >= first && p.fret <= last);
   const drawn = Array.from({ length: fretCount }, (_, i) => first + i);
+  const boardEnd = nutX + fretWidth * fretCount;
+  /** Where a sounding note's string starts to move: the fret wire under the finger, or the nut; null when that part is off the drawing. */
+  const vibrationStart = (p: FretPosition): number | null => (p.fret === 0 || p.fret < first ? nutX : p.fret > last ? null : fretX(p.fret));
+  const ringId = ringKey ?? ringing.map((r) => `${r.string}-${r.fret}`).join(',');
 
   const same = (a: FretPosition, b: FretPosition) => a.string === b.string && a.fret === b.fret;
   // Mirror the drawing as a whole; flip each label back so it still reads left to right.
@@ -103,16 +114,32 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
       {/* Strings, thicker as they get lower */}
       {STRING_NAMES.map((name, i) => {
         const string = i + 1;
+        const ring = ringing.find((r) => r.string === string);
+        const start = ring ? vibrationStart(ring) : null;
+        const moving = start !== null && start < boardEnd;
+        // Slight: a few px at most, more on a long open string than on a short fretted one.
+        const amp = moving ? Math.min(3, 0.9 + (boardEnd - start) / 150) : 0;
+        const mid = moving ? (start + boardEnd) / 2 : 0;
         return (
           <g key={string}>
             <line
               x1={nutX - (hasNut ? 4 : 0)}
-              x2={nutX + fretWidth * fretCount}
+              x2={moving ? start : boardEnd}
               y1={stringY(string)}
               y2={stringY(string)}
               className="fb-string"
               strokeWidth={1 + i * 0.35}
             />
+            {moving && (
+              // The moving part: a blurred lens (the swing seen at speed) and the string itself flicking
+              // up and down, both dying away like a plucked string. Drawn about y = 0, then moved onto the string.
+              <g key={`v${ringId}`} transform={`translate(0 ${stringY(string)})`}>
+                <g className="fb-ring">
+                  <path d={`M ${start} 0 Q ${mid} ${-2 * amp} ${boardEnd} 0 Q ${mid} ${2 * amp} ${start} 0 Z`} className="fb-ring-blur" />
+                  <path d={`M ${start} 0 Q ${mid} ${-2 * amp} ${boardEnd} 0`} className="fb-string fb-vibrate" fill="none" strokeWidth={1 + i * 0.35} />
+                </g>
+              </g>
+            )}
             {/* A dot on the open string covers its name; the dot itself says the note. */}
             {!(hasNut && [...actives, ...marks.map((m) => m.position)].some((a) => a.string === string && a.fret === 0)) && (
               <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle" transform={label(nutX - 24)}>

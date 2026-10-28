@@ -204,7 +204,7 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
 
       <h3 className="section-title">{chords ? 'The first chord on the fretboard' : 'Where they are on the fretboard'}</h3>
       {chords && <p className="muted small-note">While the chords play, the fretboard follows the one sounding.</p>}
-      <Fretboard frets={stage.fretRange} active={active} played={positions} mirrored={leftHanded} />
+      <Fretboard frets={stage.fretRange} active={active} played={positions} mirrored={leftHanded} ringing={sounding === null || active === null ? [] : Array.isArray(active) ? active : [active]} />
 
       <div className="controls">
         <button className="primary big" onClick={onStart}>

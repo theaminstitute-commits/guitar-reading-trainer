@@ -45,6 +45,13 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
   const [wrong, setWrong] = useState<(string | number)[]>([]);
   const [misses, setMisses] = useState(0);
   const [retryText, setRetryText] = useState<string | null>(null);
+  /** A tapped string that is sounding: it vibrates on the fretboard for a moment. */
+  const [ring, setRing] = useState<{ at: FretPosition; n: number } | null>(null);
+  useEffect(() => {
+    if (!ring) return;
+    const t = setTimeout(() => setRing(null), 1800);
+    return () => clearTimeout(t);
+  }, [ring]);
 
   useEffect(() => {
     setOutcome(null);
@@ -54,6 +61,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     setWrong([]);
     setMisses(0);
     setRetryText(null);
+    setRing(null);
     // Open-string questions sound on the first tap: have the guitar ready.
     if (q.kind === 'staff-to-fret' && q.openOnly) void sharedPlayer().load();
   }, [q]);
@@ -167,13 +175,18 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
             active={null}
             mirrored={leftHanded}
             marks={marks}
+            ringing={ring ? [ring.at] : []}
+            ringKey={ring?.n}
             onPick={
               outcome
                 ? undefined
                 : (tap) => {
                     // An open-string question reads a tap anywhere on a string as that open string, and sounds it at once.
                     const p = q.openOnly ? { string: tap.string, fret: 0 } : tap;
-                    if (q.openOnly) void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
+                    if (q.openOnly) {
+                      void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
+                      setRing((r) => ({ at: p, n: (r?.n ?? 0) + 1 }));
+                    }
                     setTappedFret(p);
                     const right = isRightFret(q, p);
                     if (q.openOnly) {

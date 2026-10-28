@@ -910,6 +910,48 @@ button.link.subtle {
   stroke: var(--string);
 }
 
+/* A sounding string: only the part from the fret to the bridge vibrates, and it dies away. */
+.fb-ring {
+  transform-origin: 0 0;
+  animation: fb-ring-decay 1.8s ease-out forwards;
+}
+
+.fb-vibrate {
+  transform-origin: 0 0;
+  animation: fb-vibrate 70ms linear infinite;
+}
+
+.fb-ring-blur {
+  fill: var(--string);
+  opacity: 0.22;
+}
+
+@keyframes fb-vibrate {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(-1);
+  }
+}
+
+@keyframes fb-ring-decay {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-ring,
+  .fb-vibrate {
+    animation: none;
+  }
+}
+
 .fb-marker {
   fill: var(--marker);
 }
