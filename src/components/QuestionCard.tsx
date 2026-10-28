@@ -138,7 +138,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       }
       body = (
         <>
-          {q.kind === 'fret-to-staff' && <Fretboard frets={q.frets} active={[q.position]} mirrored={leftHanded} />}
+          {q.kind === 'fret-to-staff' && <Fretboard frets={q.frets} active={[q.position]} mirrored={leftHanded} labels={q.showName ? [spelledName(q.target)] : undefined} />}
           <MiniStaff
             bars={[shown]}
             musicKey={q.key}

@@ -203,9 +203,10 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
           <g key={`a${i}`} className="fb-active">
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
-            {labels?.[i] && (
+            {/* The dot's letter: the label given, or on an open string its name, which the dot would otherwise hide. */}
+            {(labels?.[i] || (hasNut && a.fret === 0)) && (
               <text x={noteX(a.fret)} y={stringY(a.string) + 3.6} textAnchor="middle" className="fb-dot-label" transform={label(noteX(a.fret))}>
-                {labels[i]}
+                {labels?.[i] || STRING_NAMES[a.string - 1]}
               </text>
             )}
           </g>
