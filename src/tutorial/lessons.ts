@@ -73,8 +73,8 @@ export interface Lesson {
   stage?: number;
 }
 
-/** Lesson examples play slowly, so each note can be found on the staff as it lights up. */
-export const LESSON_TEMPO = 54;
+/** Lesson examples play unhurried, so each note can be found on the staff as it lights up (54 and 81 bpm were too slow; the user chose 100). */
+export const LESSON_TEMPO = 100;
 
 const n = (name: string, label?: string, duration: DurationId = 'q'): ExampleNote => ({ name, label, duration });
 const sounding = (name: string, duration: DurationId = 'q'): PlayableNote => ({ midi: soundingFromWritten(midiFromSpelled(parseSpelled(name))), duration });
