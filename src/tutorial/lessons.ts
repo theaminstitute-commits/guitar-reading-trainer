@@ -35,6 +35,8 @@ export interface ExampleNote {
   chord?: number;
   /** Draw the sign even where the key would not need it. */
   sign?: 'sharp' | 'flat' | 'natural';
+  /** Draw the note (and its name) in the accent colour to point it out. */
+  mark?: boolean;
 }
 
 export interface ExplainStep {
@@ -119,7 +121,30 @@ export const PART_0: readonly Lesson[] = [
         play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)), tempo: 70 },
       },
       { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => withMemoryAid(nameNotes(STAFF_ONLY, 6, rng)) },
-      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
+      {
+        kind: 'explain',
+        title: 'Same letter, different octave',
+        body: [
+          'Because the letters start again after G, the same letter appears more than once on the staff. The F in the bottom space and the F on the top line are both F: the higher one sounds the same note, only higher. The distance from one F to the next is called an octave.',
+          'To tell them apart, every note carries a number after its letter: F4 is the lower F, F5 the higher one. The number goes up by one each time the letters pass C, so B4 is followed by C5.',
+          'When the app names a note, such as F4 or D5, the letter tells you which line or space, and the number tells you which one of the repeats.',
+        ],
+        staff: {
+          notes: [
+            { ...n('E4', 'E4'), mark: false },
+            { ...n('F4', 'F4'), mark: true },
+            n('G4', 'G4'),
+            n('A4', 'A4'),
+            n('B4', 'B4'),
+            n('C5', 'C5'),
+            n('D5', 'D5'),
+            n('E5', 'E5'),
+            { ...n('F5', 'F5'), mark: true },
+          ],
+        },
+        play: { notes: ['E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5'].map((x) => sounding(x)), tempo: 70 },
+      },
+      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs. Mind the number: it says which of the repeated letters is meant.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
       {
         kind: 'explain',
         title: 'Just above and below',
