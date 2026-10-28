@@ -108,6 +108,20 @@ export default function StartScreen({
         </div>
       )}
 
+      {/* A tutorial under way stays at the top until all of Part 0 is done (the welcome above only greets a learner who has not started). */}
+      {!isNew && nextPart0 && part0Done > 0 && (
+        <div className="panel welcome">
+          <span className="eyebrow">Tutorial</span>
+          <h2 className="hero-title">{part0Done} of {PART_0.length} lessons done</h2>
+          <p className="hero-summary">Next: {nextPart0.title}. {nextPart0.summary}</p>
+          <div className="cta">
+            <button className="btn primary big" onClick={() => onLesson(nextPart0)}>
+              <BookIcon size={20} /> Continue the tutorial
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Current stage */}
       <div className="panel hero">
         <div className="hero-main">
@@ -195,40 +209,7 @@ export default function StartScreen({
         </div>
       </div>
 
-      {/* Path */}
-      <h2 className="section-title">Your path</h2>
-      <p className="muted small-note">Tap any stage you have reached to practise it again.</p>
-      <div className="path">
-        {PARTS.map((part) => {
-          const items = stages.map((s, i) => ({ s, i })).filter(({ s }) => s.number >= part.from && s.number <= part.to);
-          if (items.length === 0) return null;
-          return (
-            <div key={part.title} className="path-part">
-              <div className="path-part-title">{part.title}</div>
-              <ol className="path-list">
-                {items.map(({ s, i }) => {
-                  const state = stateOf(i);
-                  return (
-                    <li key={s.id} className={`path-item ${state}`}>
-                      <button className="path-node" onClick={() => onStage(i)} disabled={state === 'locked'} aria-current={state === 'current' ? 'step' : undefined} aria-label={`Stage ${s.number}: ${s.name}`}>
-                        <span className="node">{state === 'locked' ? <LockIcon size={14} /> : state === 'reached' ? <CheckIcon size={16} /> : s.number}</span>
-                        <span className="node-text">
-                          <span className="node-name">
-                            {s.number}. {s.name}
-                          </span>
-                          <span className="node-sub">{state === 'current' ? (onTop ? `${track.tally} of ${s.unlockAfter} flawless` : 'practising') : state === 'reached' ? 'reached' : 'locked'}</span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Tutorial and lessons */}
+      {/* Tutorial and lessons, above the long stage list so they are easy to find */}
       <h2 className="section-title">Learn</h2>
       <p className="muted small-note">
         {nextPart0 ? `Tutorial: ${part0Done} of ${PART_0.length} lessons done.` : 'Tutorial finished. Replay any lesson whenever you like.'}
@@ -269,6 +250,39 @@ export default function StartScreen({
           </div>
         </>
       )}
+
+      {/* Path */}
+      <h2 className="section-title">Your path</h2>
+      <p className="muted small-note">Tap any stage you have reached to practise it again.</p>
+      <div className="path">
+        {PARTS.map((part) => {
+          const items = stages.map((s, i) => ({ s, i })).filter(({ s }) => s.number >= part.from && s.number <= part.to);
+          if (items.length === 0) return null;
+          return (
+            <div key={part.title} className="path-part">
+              <div className="path-part-title">{part.title}</div>
+              <ol className="path-list">
+                {items.map(({ s, i }) => {
+                  const state = stateOf(i);
+                  return (
+                    <li key={s.id} className={`path-item ${state}`}>
+                      <button className="path-node" onClick={() => onStage(i)} disabled={state === 'locked'} aria-current={state === 'current' ? 'step' : undefined} aria-label={`Stage ${s.number}: ${s.name}`}>
+                        <span className="node">{state === 'locked' ? <LockIcon size={14} /> : state === 'reached' ? <CheckIcon size={16} /> : s.number}</span>
+                        <span className="node-text">
+                          <span className="node-name">
+                            {s.number}. {s.name}
+                          </span>
+                          <span className="node-sub">{state === 'current' ? (onTop ? `${track.tally} of ${s.unlockAfter} flawless` : 'practising') : state === 'reached' ? 'reached' : 'locked'}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Explainers */}
       <h2 className="section-title">Quick explainers</h2>
