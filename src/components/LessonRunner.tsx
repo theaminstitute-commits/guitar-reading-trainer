@@ -6,7 +6,7 @@ import { generateMelody } from '../melody/generator';
 import { STAGES } from '../melody/stages';
 import type { Melody } from '../melody/types';
 import { C_MAJOR } from '../music/key';
-import { parseSpelled } from '../music/pitch';
+import { parseSpelled, staffStep } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { hearWrittenAnswer, yoursFromAnswer, type HearMine } from '../session/yours';
 import { createRng } from '../melody/random';
@@ -152,7 +152,16 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
       {step.body.map((p, i) => (
         <p key={i}>{p}</p>
       ))}
-      {step.staff && <MiniStaff bars={bars} musicKey={key} timeSignature={step.staff.timeSignature} barsPerRow={step.staff.timeSignature ? 1 : undefined} />}
+      {step.staff && (
+        <MiniStaff
+          bars={bars}
+          musicKey={key}
+          timeSignature={step.staff.timeSignature}
+          barsPerRow={step.staff.timeSignature ? 1 : undefined}
+          legend={step.staff.legend}
+          legendHighlight={lit !== null && step.staff.notes[lit] ? staffStep(parseSpelled(step.staff.notes[lit]!.name)) : null}
+        />
+      )}
       {step.fretboard && (
         <Fretboard
           frets={step.fretboard.frets}

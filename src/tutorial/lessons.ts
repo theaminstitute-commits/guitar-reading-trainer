@@ -40,7 +40,8 @@ export interface ExplainStep {
   kind: 'explain';
   title: string;
   body: string[];
-  staff?: { notes: ExampleNote[]; key?: Key; timeSignature?: boolean };
+  /** `legend`: name every line and space in a column of letters before the clef (lines and spaces in two colours). */
+  staff?: { notes: ExampleNote[]; key?: Key; timeSignature?: boolean; legend?: boolean };
   fretboard?: { frets: readonly [number, number]; dots: FretPosition[]; labels?: string[] };
   /** "Hear it": notes played in order (sounding pitch), with an optional tempo. */
   play?: { notes: PlayableNote[]; tempo?: number };
@@ -109,9 +110,9 @@ export const PART_0: readonly Lesson[] = [
         title: 'The letters run up the alphabet',
         body: [
           'Each line and space is a letter. Going up one line or space goes up one letter: E F G A B C D E F. After G the letters start again at A.',
-          'The lines from the bottom are E G B D F: "Every Good Boy Deserves Fruit". The spaces spell F A C E.',
+          'The lines from the bottom are E G B D F: "Every Good Boy Deserves Fruit". The spaces spell F A C E. Before the clef the line letters are in violet and the space letters in pink.',
         ],
-        staff: { notes: STAFF_ONLY.map((s) => n(`${s.letter}${s.octave}`, s.letter)) },
+        staff: { notes: STAFF_ONLY.map((s) => n(`${s.letter}${s.octave}`)), legend: true },
         play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)) },
       },
       { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => nameNotes(STAFF_ONLY, 6, rng) },

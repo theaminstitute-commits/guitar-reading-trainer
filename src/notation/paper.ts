@@ -13,6 +13,9 @@ export const PAPER = {
   good: '#1e8a4e',
   bad: '#c9402b',
   missing: '#8c8478',
+  /** The letter column before the clef in the staff lesson: lines and spaces each in their own colour, used nowhere else. */
+  lineLetter: '#6741d9',
+  spaceLetter: '#c2255c',
   /** Bar highlights on the input staff. */
   fullBar: 'rgba(30, 138, 78, 0.12)',
   rejectedBar: 'rgba(201, 64, 43, 0.22)',
