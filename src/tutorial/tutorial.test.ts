@@ -10,13 +10,22 @@ import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
 import { ALL_LESSONS, lessonForStage, openStringQuestions, PART_0, playedAsWritten, stage1Range, STAGE_LESSONS, writtenBars } from './lessons';
 import { placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions, TOP_STAGE } from './placement';
-import { keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
+import { isRightFret, keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
 import { gradeTaps, tapPassed } from './tap';
 import { beatsOf } from '../music/duration';
 
 const SEEDS = [1, 2, 3, 7, 11, 42, 99, 123];
 
 describe('lesson content', () => {
+  it('a fretboard tap counts wherever it sounds the written note', () => {
+    const q = staffToFret(C_MAJOR, [1, 2, 3, 4], [0, 3], 1, createRng(1))[0]!;
+    const b4 = { ...q, note: parseSpelled('B4'), answers: [{ string: 2, fret: 0 }] };
+    expect(isRightFret(b4, { string: 2, fret: 0 })).toBe(true);
+    expect(isRightFret(b4, { string: 3, fret: 4 })).toBe(true);
+    expect(isRightFret(b4, { string: 3, fret: 3 })).toBe(false);
+    expect(isRightFret(b4, { string: 5, fret: 2 })).toBe(false);
+  });
+
   it('open-string questions: the written note is the open string to tap', () => {
     for (const seed of SEEDS) {
       for (const q of openStringQuestions(createRng(seed), 5)) {

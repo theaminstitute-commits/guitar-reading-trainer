@@ -6,7 +6,7 @@
 import { cellBeats, DURATIONS, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR, isDiatonic, keyName, spellInKey, type Key } from '../music/key';
-import { letterStep, parseSpelled, spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
+import { letterStep, midiFromSpelled, parseSpelled, spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import type { Rng } from '../melody/random';
 
 /** Name the note (or notes) drawn on the staff: pick one of the choices. */
@@ -276,6 +276,10 @@ export function isRightStep(q: PlaceQuestion | FretToStaffQuestion, step: number
   return step === staffStep(q.target);
 }
 
+/**
+ * Grade a fretboard tap by pitch: any place that sounds the written note counts, inside the
+ * drill's fret window or not (B4 is the open B string and fret 4 of the G string alike).
+ */
 export function isRightFret(q: StaffToFretQuestion, p: FretPosition): boolean {
-  return q.answers.some((a) => a.string === p.string && a.fret === p.fret);
+  return writtenFromSounding(midiAt(p)) === midiFromSpelled(q.note);
 }
