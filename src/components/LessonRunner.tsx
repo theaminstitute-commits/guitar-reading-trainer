@@ -124,6 +124,10 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
     const litNote = lit === null ? undefined : step.staff.notes[lit];
     const isLit = (n: (typeof step.staff.notes)[number], i: number) =>
       litNote !== undefined && (i === lit || (litNote.chord !== undefined && n.chord === litNote.chord));
+    // With the line and space letters shown, the sounding note takes its letter's colour: violet on a line, pink in a space.
+    const legend = step.staff.legend;
+    const litColor = (name: string) =>
+      !legend ? PAPER.active : (staffStep(parseSpelled(name)) - staffStep(parseSpelled('E4'))) % 2 === 0 ? PAPER.lineLetter : PAPER.spaceLetter;
     const notes = miniNotes(
       step.staff.notes.map((n, i) => ({
         note: parseSpelled(n.name),
@@ -131,7 +135,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
         chord: n.chord,
         label: n.label,
         sign: n.sign,
-        color: isLit(n, i) ? PAPER.active : undefined,
+        color: isLit(n, i) ? litColor(n.name) : undefined,
       })),
       key,
     );
