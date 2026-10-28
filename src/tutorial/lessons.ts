@@ -102,8 +102,8 @@ export const PART_0: readonly Lesson[] = [
           'Music is written on a staff: five lines with four spaces between them. A note sits either on a line (the line runs through it) or in a space (between two lines).',
           'The higher a note sits, the higher it sounds. The curly sign at the start is the treble clef. Guitar music always uses it.',
         ],
-        staff: { notes: [n('E4', 'line', 'w'), n('F4', 'space', 'w'), n('G4', 'line', 'w'), n('A4', 'space', 'w')] },
-        play: { notes: [sounding('E4'), sounding('F4'), sounding('G4'), sounding('A4')] },
+        staff: { notes: [n('E4', 'line', 'w'), n('F4', 'space', 'w'), n('G4', 'line', 'w'), n('A4', 'space', 'w'), n('B4', 'line', 'w'), n('C5', 'space', 'w')] },
+        play: { notes: [sounding('E4'), sounding('F4'), sounding('G4'), sounding('A4'), sounding('B4'), sounding('C5')] },
       },
       {
         kind: 'explain',

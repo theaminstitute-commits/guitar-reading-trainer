@@ -35,6 +35,20 @@ interface MiniStaffProps {
   legendHighlight?: number | null;
 }
 
+/**
+ * Bars per row so every row is full (no bar left alone on the last row): as many
+ * as fit, then evened out. Sparse bars (one or two notes) fit six to a row on a
+ * wide screen and three on a phone; busier bars three and two.
+ */
+export function balancedPerRow(bars: readonly MiniNote[][], width: number, legend = false): number {
+  const count = Math.max(1, bars.length);
+  const busiest = Math.max(0, ...bars.map((b) => new Set(b.map((n, i) => (n.chord === undefined ? `n${i}` : `c${n.chord}`))).size));
+  const sparse = busiest <= 2;
+  const most = legend ? 2 : width < 480 ? (sparse ? 3 : 2) : sparse ? 6 : 3;
+  const rows = Math.ceil(count / most);
+  return Math.ceil(count / rows);
+}
+
 /** Staff steps of the five lines and four spaces, E4 to F5. */
 const STAFF_STEPS = Array.from({ length: 9 }, (_, i) => staffStep(parseSpelled('E4')) + i);
 const LETTERS = 'CDEFGAB';
@@ -113,7 +127,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
       renderStaff(el, renderBars.length > 0 ? renderBars : [{ notes: [] }], {
         timeSignature: [4, 4],
         width: staffWidth,
-        barsPerRow: barsPerRow ?? (width < 480 || legend ? 2 : 3),
+        barsPerRow: barsPerRow ?? balancedPerRow(bars, width, legend),
         scale,
         ink: PAPER.ink,
         showTimeSignature: timeSignature,
@@ -133,7 +147,9 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         const first = flat.findIndex((m) => m.chord !== undefined && m.chord === note.chord);
         if (note.chord !== undefined && first !== g.id) return [];
         const stave = layout.staves[g.barIndex] ?? layout.staves[layout.staves.length - 1]!;
-        return [{ x: g.x + gutter, y: stave.topLineY + stave.lineSpacing * 8.4, text: note.label, color: note.color ?? PAPER.ink }];
+        // Centre the name under the notehead: the layout gives its left edge, and a whole note is wider than the others.
+        const half = (note.duration === 'w' ? 8 : 5.5) * scale;
+        return [{ x: g.x + half + gutter, y: stave.topLineY + stave.lineSpacing * 8.4, text: note.label, color: note.color ?? PAPER.ink }];
       })
     : [];
 
