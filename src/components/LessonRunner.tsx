@@ -212,6 +212,7 @@ function DrillScreen({ title, intro, make, leftHanded, onDone }: { title: string
         <QuestionCard
           question={questions[at]!}
           leftHanded={leftHanded}
+          retry
           onNext={(correct) => {
             if (correct) setRight((r) => r + 1);
             setAt((a) => a + 1);

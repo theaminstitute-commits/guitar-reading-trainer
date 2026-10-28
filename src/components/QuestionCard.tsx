@@ -17,34 +17,59 @@ interface QuestionCardProps {
   onNext: (correct: boolean) => void;
   /** Label of the button that moves on. */
   nextLabel?: string;
+  /**
+   * Lessons: a wrong answer says "G is incorrect, please try again." and the learner
+   * tries again until right; the answer is not revealed, and only a first-time
+   * right answer counts as correct. The placement test leaves this off: one try.
+   */
+  retry?: boolean;
 }
 
 /** Sounding pitch of the rhythm questions: written B4, the middle line. */
 const RHYTHM_MIDI = 59;
 const RHYTHM_STEP = staffStep(parseSpelled('B4'));
 
-type Outcome = { correct: boolean; text: string } | null;
+/** `correct` counts for the score (right first time); `solved` colours the message (finally right). */
+type Outcome = { correct: boolean; solved: boolean; text: string } | null;
 
 /**
  * One tutorial or placement question: what to show, how the learner answers,
  * and an immediate verdict with the right answer before moving on.
  */
-export default function QuestionCard({ question: q, leftHanded, onNext, nextLabel = 'Next' }: QuestionCardProps) {
+export default function QuestionCard({ question: q, leftHanded, onNext, nextLabel = 'Next', retry = false }: QuestionCardProps) {
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [picked, setPicked] = useState<string | number | null>(null);
   const [tappedStep, setTappedStep] = useState<number | null>(null);
   const [tappedFret, setTappedFret] = useState<FretPosition | null>(null);
+  /** Wrong tries so far (choices or rhythm options), shown red and locked. */
+  const [wrong, setWrong] = useState<(string | number)[]>([]);
+  const [misses, setMisses] = useState(0);
+  const [retryText, setRetryText] = useState<string | null>(null);
 
   useEffect(() => {
     setOutcome(null);
     setPicked(null);
     setTappedStep(null);
     setTappedFret(null);
+    setWrong([]);
+    setMisses(0);
+    setRetryText(null);
   }, [q]);
+
+  /** A wrong try in retry mode: say what was picked, count it, keep the question open. */
+  const tryAgain = (what: string) => {
+    setMisses((m) => m + 1);
+    setRetryText(`${what} is incorrect, please try again.`);
+  };
+  /** The right answer: counts as correct only when it was the first try. */
+  const solved = (text: string) => {
+    setRetryText(null);
+    setOutcome({ correct: misses === 0, solved: true, text });
+  };
 
   useEffect(() => () => sharedPlayer().stop(), []);
 
-  const answer = (correct: boolean, text: string) => setOutcome({ correct, text });
+  const answer = (correct: boolean, text: string) => setOutcome({ correct, solved: correct, text });
 
   let body: ReactNode;
   switch (q.kind) {
@@ -58,15 +83,23 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
           <MiniStaff bars={[notes]} musicKey={q.key} barsPerRow={1} />
           <div className="choice-grid">
             {q.choices.map((c) => {
-              const state = picked === null ? '' : c === q.answer ? ' right' : c === picked ? ' wrong' : '';
+              const state = wrong.includes(c) ? ' wrong' : picked === null ? '' : c === q.answer ? ' right' : c === picked ? ' wrong' : '';
               return (
                 <button
                   key={c}
                   className={`choice${state}`}
-                  disabled={picked !== null}
+                  disabled={picked !== null || wrong.includes(c)}
                   onClick={() => {
-                    setPicked(c);
-                    answer(c === q.answer, c === q.answer ? `${q.answer} is correct!` : `It is ${q.answer}.`);
+                    if (c === q.answer) {
+                      setPicked(c);
+                      solved(`${q.answer} is correct!`);
+                    } else if (retry) {
+                      setWrong((w) => [...w, c]);
+                      tryAgain(c);
+                    } else {
+                      setPicked(c);
+                      answer(false, `It is ${q.answer}.`);
+                    }
                   }}
                 >
                   {c}
@@ -85,8 +118,10 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       if (tappedStep !== null) {
         const right = isRightStep(q, tappedStep);
         // A wrong tap shows both notes stacked as one whole-note chord, so the bar still holds four beats.
-        shown.push({ step: tappedStep, sign: 'none', duration: 'w', color: right ? PAPER.good : PAPER.bad, chord: right ? undefined : 1 });
-        if (!right) shown.push({ step: staffStep(target), sign: 'none', duration: 'w', color: PAPER.good, chord: 1 });
+        // In retry mode only the wrong note shows: the answer is not given away.
+        const reveal = !right && !retry;
+        shown.push({ step: tappedStep, sign: 'none', duration: 'w', color: right ? PAPER.good : PAPER.bad, chord: reveal ? 1 : undefined });
+        if (reveal) shown.push({ step: staffStep(target), sign: 'none', duration: 'w', color: PAPER.good, chord: 1 });
         shown.sort((a, b) => a.step - b.step);
       }
       body = (
@@ -103,7 +138,9 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                     setTappedStep(step);
                     const right = isRightStep(q, step);
                     const tapped = nameWithOctave(spelledFromStaffStep(step));
-                    answer(right, right ? `${nameWithOctave(target)} is correct!` : `That line or space is ${tapped}. ${nameWithOctave(target)} is the green note.`);
+                    if (right) solved(`${nameWithOctave(target)} is correct!`);
+                    else if (retry) tryAgain(tapped);
+                    else answer(false, `That line or space is ${tapped}. ${nameWithOctave(target)} is the green note.`);
                   }
             }
           />
@@ -117,7 +154,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       if (tappedFret) {
         const right = isRightFret(q, tappedFret);
         marks.push({ position: tappedFret, tone: right ? 'good' : 'bad' });
-        if (!right) q.answers.forEach((p) => marks.push({ position: p, tone: 'good' }));
+        if (!right && !retry) q.answers.forEach((p) => marks.push({ position: p, tone: 'good' }));
       }
       body = (
         <>
@@ -133,8 +170,11 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                 : (p) => {
                     setTappedFret(p);
                     const right = isRightFret(q, p);
-                    const where = q.answers.map((a) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`)).join(' or ');
-                    answer(right, right ? `${spelledName(q.note)} on ${where} is correct!` : `${spelledName(q.note)} is ${where}, marked in green.`);
+                    const place = (a: FretPosition) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`);
+                    const where = q.answers.map(place).join(' or ');
+                    if (right) solved(`${spelledName(q.note)} on ${place(p)} is correct!`);
+                    else if (retry) tryAgain(place(p).replace(/^./, (ch) => ch.toUpperCase()));
+                    else answer(false, `${spelledName(q.note)} is ${where}, marked in green.`);
                   }
             }
           />
@@ -143,7 +183,25 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       break;
     }
     case 'rhythm':
-      body = <RhythmBody q={q} picked={picked} onPick={(i) => { setPicked(i); answer(i === q.answer, i === q.answer ? 'That rhythm is correct!' : 'Not that one: the right bar is marked in green.'); }} />;
+      body = (
+        <RhythmBody
+          q={q}
+          picked={picked}
+          wrong={wrong}
+          onPick={(i) => {
+            if (i === q.answer) {
+              setPicked(i);
+              solved('That rhythm is correct!');
+            } else if (retry) {
+              setWrong((w) => [...w, i]);
+              tryAgain('That rhythm');
+            } else {
+              setPicked(i);
+              answer(false, 'Not that one: the right bar is marked in green.');
+            }
+          }}
+        />
+      );
       break;
     case 'tap':
       body = <TapBody tempo={q.tempo} beats={q.beats} onResult={(r) => answer(tapPassed(r), tapVerdict(r))} done={outcome !== null} />;
@@ -161,8 +219,13 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       )}
       {body}
       {outcome && (
-        <div className={`verdict-line ${outcome.correct ? 'good' : 'bad'}`} aria-live="polite">
+        <div className={`verdict-line ${outcome.solved ? 'good' : 'bad'}`} aria-live="polite">
           {outcome.text}
+        </div>
+      )}
+      {!outcome && retryText && (
+        <div className="verdict-line bad" aria-live="polite">
+          {retryText}
         </div>
       )}
       {outcome && (
@@ -183,7 +246,7 @@ function ordinal(n: number): string {
   return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
 }
 
-function RhythmBody({ q, picked, onPick }: { q: Extract<Question, { kind: 'rhythm' }>; picked: string | number | null; onPick: (i: number) => void }) {
+function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind: 'rhythm' }>; picked: string | number | null; wrong: readonly (string | number)[]; onPick: (i: number) => void }) {
   const [playing, setPlaying] = useState(false);
   const play = async () => {
     setPlaying(true);
@@ -208,9 +271,9 @@ function RhythmBody({ q, picked, onPick }: { q: Extract<Question, { kind: 'rhyth
       </div>
       <div className="rhythm-options">
         {q.options.map((bar, i) => {
-          const state = picked === null ? '' : i === q.answer ? ' right' : i === picked ? ' wrong' : '';
+          const state = wrong.includes(i) ? ' wrong' : picked === null ? '' : i === q.answer ? ' right' : i === picked ? ' wrong' : '';
           return (
-            <button key={i} className={`rhythm-option${state}`} disabled={picked !== null} onClick={() => onPick(i)} aria-label={`Rhythm ${i + 1}`}>
+            <button key={i} className={`rhythm-option${state}`} disabled={picked !== null || wrong.includes(i)} onClick={() => onPick(i)} aria-label={`Rhythm ${i + 1}`}>
               <MiniStaff bars={[bar.map((d) => ({ step: RHYTHM_STEP, sign: 'none', duration: d }))]} musicKey={C_MAJOR} timeSignature barsPerRow={1} />
             </button>
           );
