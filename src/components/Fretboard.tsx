@@ -53,7 +53,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
   const { first, last } = visibleFrets(frets);
   const hasNut = frets[0] === 0;
   const fretCount = last - first + 1;
-  const left = 34;
+  const left = 42;
   const top = 26;
   const fretWidth = 62;
   const stringGap = 20;
@@ -68,10 +68,13 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
    * from its wire, halfway between the middle of the fret and the wire, where a finger should
    * press (the user: show good technique, everywhere a fretted note is drawn).
    */
-  const noteX = (fret: number) => (fret === 0 ? nutX - 14 : fretX(fret) - fretWidth / 4);
+  const noteX = (fret: number) => (fret === 0 ? openX : fretX(fret) - fretWidth / 4);
   const inWindow = (p: FretPosition) => (p.fret === 0 ? hasNut : p.fret >= first && p.fret <= last);
   const drawn = Array.from({ length: fretCount }, (_, i) => first + i);
   const boardEnd = nutX + fretWidth * fretCount;
+  /** The open notes: circled on the strings, which run on past the nut to reach them (the user: make them look playable). */
+  const openX = nutX - 22;
+  const stringStart = hasNut ? openX - 14 : nutX;
   /** Where a sounding note's string starts to move: the fret wire under the finger, or the nut; null when that part is off the drawing. */
   const vibrationStart = (p: FretPosition): number | null => (p.fret === 0 || p.fret < first ? nutX : p.fret > last ? null : fretX(p.fret));
   const ringId = ringKey ?? ringing.map((r) => `${r.string}-${r.fret}`).join(',');
@@ -111,7 +114,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
 
       {/* Nut, or the wire where the window starts, then the fret wires */}
       {hasNut ? (
-        <rect x={nutX - 4} y={top - 8} width={5} height={stringGap * 5 + 16} className="fb-nut" />
+        <rect x={nutX - 6} y={top - 8} width={7} height={stringGap * 5 + 16} className="fb-nut" />
       ) : (
         <line x1={nutX} x2={nutX} y1={top - 8} y2={top + stringGap * 5 + 8} className="fb-wire" />
       )}
@@ -131,7 +134,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
         return (
           <g key={string}>
             <line
-              x1={nutX - (hasNut ? 4 : 0)}
+              x1={stringStart}
               x2={moving ? start : boardEnd}
               y1={stringY(string)}
               y2={stringY(string)}
@@ -148,8 +151,18 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
                 </g>
               </g>
             )}
-            {/* A dot on the open string covers its name; the dot itself says the note. */}
-            {!(hasNut && [...actives, ...marks.map((m) => m.position)].some((a) => a.string === string && a.fret === 0)) && (
+            {hasNut ? (
+              <>
+                {/* The open note, circled on its string; a lit dot there covers it and says the note itself. */}
+                <circle cx={openX} cy={stringY(string)} r={8.5} className="fb-open" />
+                {!actives.some((a) => a.string === string && a.fret === 0) && (
+                  <text x={openX} y={stringY(string) + 3.6} className="fb-open-name" textAnchor="middle" transform={label(openX)}>
+                    {name}
+                  </text>
+                )}
+              </>
+            ) : (
+              // Up the neck the open strings are not in reach: their names only say which string is which.
               <text x={nutX - 24} y={stringY(string) + 4} className="fb-string-name" textAnchor="middle" transform={label(nutX - 24)}>
                 {name}
               </text>
@@ -209,8 +222,8 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
           const string = i + 1;
           const cells = [...(hasNut ? [0] : []), ...drawn];
           return cells.map((fret) => {
-            const x = fret === 0 ? nutX - 26 : fretX(fret) - fretWidth;
-            const w = fret === 0 ? 24 : fretWidth;
+            const x = fret === 0 ? stringStart : fretX(fret) - fretWidth;
+            const w = fret === 0 ? nutX - 6 - stringStart : fretWidth;
             return (
               <rect
                 key={`t${string}-${fret}`}

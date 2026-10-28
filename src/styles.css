@@ -947,6 +947,21 @@ button.link.subtle {
   stroke: var(--wood-edge);
 }
 
+/* Open notes: a circle on each string beyond the nut, as playable as any fret. */
+.fb-open {
+  fill: var(--surface);
+  stroke: var(--string);
+  stroke-width: 1.4;
+}
+
+.fb-open-name {
+  fill: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  font-family: inherit;
+  pointer-events: none;
+}
+
 .fb-nut {
   fill: var(--nut);
   stroke: var(--wood-edge);
