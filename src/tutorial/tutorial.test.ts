@@ -8,7 +8,7 @@ import { C_MAJOR, keyFromId } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
-import { ALL_LESSONS, lessonForStage, PART_0, playedAsWritten, stage1Range, STAGE_LESSONS, writtenBars } from './lessons';
+import { ALL_LESSONS, lessonForStage, openStringQuestions, PART_0, playedAsWritten, stage1Range, STAGE_LESSONS, writtenBars } from './lessons';
 import { placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions, TOP_STAGE } from './placement';
 import { keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
 import { gradeTaps, tapPassed } from './tap';
@@ -17,6 +17,17 @@ import { beatsOf } from '../music/duration';
 const SEEDS = [1, 2, 3, 7, 11, 42, 99, 123];
 
 describe('lesson content', () => {
+  it('open-string questions: the written note is the open string to tap', () => {
+    for (const seed of SEEDS) {
+      for (const q of openStringQuestions(createRng(seed), 5)) {
+        expect(q.openOnly).toBe(true);
+        expect(q.answers).toHaveLength(1);
+        expect(q.answers[0]!.fret).toBe(0);
+        expect(midiFromSpelled(q.note)).toBe(writtenFromSounding(midiAt(q.answers[0]!)));
+      }
+    }
+  });
+
   it('always asks the D below and the G above the staff in the stage 1 range drill', () => {
     for (const seed of SEEDS) {
       const asked = stage1Range(createRng(seed)).map((q) => `${q.notes[0]!.letter}${q.notes[0]!.octave}`);

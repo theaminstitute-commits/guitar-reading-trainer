@@ -23,6 +23,7 @@ import {
   tapAlong,
   withMemoryAid,
   type NameQuestion,
+  type StaffToFretQuestion,
   type Question,
 } from './questions';
 
@@ -206,7 +207,7 @@ export const PART_0: readonly Lesson[] = [
       {
         kind: 'drill',
         title: 'Which open string?',
-        intro: 'An open string is written on the staff. Which one is it?',
+        intro: 'An open string is written on the staff. Tap that string on the fretboard: you hear each string as you tap it.',
         make: (rng) => openStringQuestions(rng, 5),
       },
     ],
@@ -287,24 +288,24 @@ export const PART_0: readonly Lesson[] = [
   },
 ];
 
-/** "Which open string is this?" */
-function openStringQuestions(rng: Rng, count: number): NameQuestion[] {
-  const strings: [string, string][] = [
-    ['E3', '6th (low E)'],
-    ['A3', '5th (A)'],
-    ['D4', '4th (D)'],
-    ['G4', '3rd (G)'],
-    ['B4', '2nd (B)'],
-    ['E5', '1st (high E)'],
-  ];
-  const out: NameQuestion[] = [];
+/** Written pitch of each open string, 1st to 6th. */
+const OPEN_WRITTEN = ['', 'E5', 'B4', 'G4', 'D4', 'A3', 'E3'];
+
+/** "Which open string is this?": tap the string on the fretboard; it sounds as it is tapped. */
+export function openStringQuestions(rng: Rng, count: number): StaffToFretQuestion[] {
+  const out: StaffToFretQuestion[] = [];
   for (let i = 0; i < count; i++) {
-    const [note, answer] = rng.pick(strings);
-    const others = shuffle(
-      strings.map((s) => s[1]).filter((s) => s !== answer),
-      rng,
-    ).slice(0, 3);
-    out.push({ kind: 'name', prompt: 'Which open string is this?', key: C_MAJOR, notes: [parseSpelled(note)], choices: shuffle([answer, ...others], rng), answer });
+    let string = 1 + rng.int(6);
+    while (out.length > 0 && out[out.length - 1]!.answers[0]!.string === string) string = 1 + rng.int(6);
+    out.push({
+      kind: 'staff-to-fret',
+      prompt: 'Which open string is this? Tap it on the fretboard.',
+      key: C_MAJOR,
+      note: parseSpelled(OPEN_WRITTEN[string]!),
+      answers: [{ string, fret: 0 }],
+      frets: [0, 4],
+      openOnly: true,
+    });
   }
   return out;
 }

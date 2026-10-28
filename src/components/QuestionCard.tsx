@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { sharedPlayer } from '../audio/player';
-import type { FretPosition } from '../music/fretboard';
+import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
 import { parseSpelled, spelledName, spelledFromStaffStep, staffStep } from '../music/pitch';
 import { PAPER } from '../notation/paper';
@@ -54,6 +54,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     setWrong([]);
     setMisses(0);
     setRetryText(null);
+    // Open-string questions sound on the first tap: have the guitar ready.
+    if (q.kind === 'staff-to-fret' && q.openOnly) void sharedPlayer().load();
   }, [q]);
 
   /** A wrong try in retry mode: say what was picked, count it, keep the question open. */
@@ -168,9 +170,18 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
             onPick={
               outcome
                 ? undefined
-                : (p) => {
+                : (tap) => {
+                    // An open-string question reads a tap anywhere on a string as that open string, and sounds it at once.
+                    const p = q.openOnly ? { string: tap.string, fret: 0 } : tap;
+                    if (q.openOnly) void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                     setTappedFret(p);
                     const right = isRightFret(q, p);
+                    if (q.openOnly) {
+                      if (right) solved(`${OPEN_LABEL[p.string]} is correct!`);
+                      else if (retry) tryAgain(OPEN_LABEL[p.string]!);
+                      else answer(false, `It is the ${OPEN_LABEL[q.answers[0]!.string]} string, marked in green.`);
+                      return;
+                    }
                     const place = (a: FretPosition) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`);
                     const where = q.answers.map(place).join(' or ');
                     if (right) solved(`${spelledName(q.note)} on ${place(p)} is correct!`);
@@ -242,6 +253,9 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     </div>
   );
 }
+
+/** Open strings by number, as the lessons name them. */
+const OPEN_LABEL = ['', '1st (high E)', '2nd (B)', '3rd (G)', '4th (D)', '5th (A)', '6th (low E)'];
 
 function ordinal(n: number): string {
   return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';

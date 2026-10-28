@@ -36,6 +36,11 @@ export interface StaffToFretQuestion {
   note: SpelledNote;
   answers: FretPosition[];
   frets: readonly [number, number];
+  /**
+   * Open-string questions: a tap anywhere on a string means that open string, and the
+   * string sounds the moment it is tapped (the user: tap the fretboard, hear the choice).
+   */
+  openOnly?: boolean;
 }
 
 /** A lit fret: tap where its note is written on the staff. */
