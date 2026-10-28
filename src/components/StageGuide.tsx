@@ -142,7 +142,8 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       return;
     }
     await player.play(
-      guide.pitches.map((p) => ({ midi: p.midi, duration: 'q' as const })),
+      // As written: four quarters to a bar, and a pitch alone in the last bar is drawn, so played, as a whole note.
+      guide.pitches.map((p, i, all) => ({ midi: p.midi, duration: i === all.length - 1 && all.length % 4 === 1 ? ('w' as const) : ('q' as const) })),
       { tempo: 96, timeSignature: [4, 4], countIn: false },
       { onNote: (i) => setSounding(guide.pitches[i]!.midi), onEnd: () => setSounding(null) },
     );

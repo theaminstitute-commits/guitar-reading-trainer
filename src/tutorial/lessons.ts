@@ -10,6 +10,7 @@ import type { FretPosition } from '../music/fretboard';
 import { C_MAJOR, keyFromId, type Key } from '../music/key';
 import { midiFromSpelled, parseSpelled, soundingFromWritten, type SpelledNote } from '../music/pitch';
 import type { Rng } from '../melody/random';
+import { measure } from '../notation/measure';
 import {
   fretToStaff,
   nameNotes,
@@ -425,6 +426,30 @@ function chordCountQuestions(rng: Rng, count: number): NameQuestion[] {
 }
 
 export const ALL_LESSONS: readonly Lesson[] = [...PART_0, ...STAGE_LESSONS];
+
+/** An example's notes laid out as written: complete 4/4 bars, a lone last note lengthened to a whole note, rests where a bar is short. */
+export function writtenBars(step: ExplainStep): { duration: DurationId; chord?: number; rest?: boolean; index: number }[][] {
+  if (!step.staff) return [];
+  type Written = { duration: DurationId; chord?: number; rest?: boolean; index: number };
+  const rest = (duration: DurationId): Written => ({ duration, rest: true, index: -1 });
+  return measure<Written>(
+    step.staff.notes.map((n, index) => ({ duration: n.duration ?? 'q', chord: n.chord, index })),
+    rest,
+  );
+}
+
+/**
+ * What "Hear it" plays: the example's notes, each for exactly the length it is
+ * written on the staff, so the ear and the page agree (a lone last note that the
+ * staff shows as a whole note rings for four counts).
+ */
+export function playedAsWritten(step: ExplainStep): PlayableNote[] {
+  if (!step.play) return [];
+  if (!step.staff) return step.play.notes;
+  const lengths = new Map<number, DurationId>();
+  for (const bar of writtenBars(step)) for (const n of bar) if (!n.rest) lengths.set(n.index, n.duration);
+  return step.play.notes.map((p, i) => ({ ...p, duration: lengths.get(i) ?? p.duration }));
+}
 
 export function lessonById(id: string): Lesson | undefined {
   return ALL_LESSONS.find((l) => l.id === id);

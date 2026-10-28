@@ -8,7 +8,7 @@ import { C_MAJOR, keyFromId } from '../music/key';
 import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
-import { ALL_LESSONS, lessonForStage, PART_0, STAGE_LESSONS } from './lessons';
+import { ALL_LESSONS, lessonForStage, PART_0, playedAsWritten, STAGE_LESSONS, writtenBars } from './lessons';
 import { placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions, TOP_STAGE } from './placement';
 import { keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
 import { gradeTaps, tapPassed } from './tap';
@@ -154,6 +154,22 @@ describe('the coach', () => {
 });
 
 describe('lesson examples', () => {
+  it('sound each note for exactly the length the staff shows, rests only after the last note', () => {
+    for (const lesson of ALL_LESSONS) {
+      for (const step of lesson.steps) {
+        if (step.kind !== 'explain' || !step.staff || !step.play) continue;
+        const written = writtenBars(step).flat();
+        const lastNote = written.map((n) => !n.rest).lastIndexOf(true);
+        expect(written.slice(0, lastNote).every((n) => !n.rest), `${lesson.id}: ${step.title}`).toBe(true);
+        const played = playedAsWritten(step);
+        expect(played.map((p) => p.duration), `${lesson.id}: ${step.title}`).toEqual(written.filter((n) => !n.rest).sort((a, b) => a.index - b.index).map((n) => n.duration));
+      }
+    }
+    // The alphabet: nine notes, the last written and played as a whole note.
+    const alphabet = PART_0[0]!.steps.find((s) => s.kind === 'explain' && s.title === 'The letters run up the alphabet')!;
+    expect(alphabet.kind === 'explain' && playedAsWritten(alphabet).map((p) => p.duration).join(' ')).toBe('q q q q q q q q w');
+  });
+
   it('play exactly the notes they show, in order, so each one can light up as it sounds', () => {
     for (const lesson of ALL_LESSONS) {
       for (const step of lesson.steps) {

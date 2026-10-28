@@ -18,7 +18,7 @@ import type { YoursStaff } from './FeedbackStaff';
 import Fretboard from './Fretboard';
 import { CheckIcon, ChevronLeftIcon, PlayIcon, StopIcon } from './icons';
 import { PAPER } from '../notation/paper';
-import { LESSON_TEMPO } from '../tutorial/lessons';
+import { LESSON_TEMPO, playedAsWritten } from '../tutorial/lessons';
 import MiniStaff, { miniNotes, miniRest } from './MiniStaff';
 import { measure } from '../notation/measure';
 import QuestionCard from './QuestionCard';
@@ -142,7 +142,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
   const play = async () => {
     if (!step.play) return;
     setPlaying(true);
-    await sharedPlayer().play(step.play.notes, { tempo: step.play.tempo ?? LESSON_TEMPO, timeSignature: [4, 4], countIn: false }, { onNote: (i) => setLit(i), onEnd: () => { setPlaying(false); setLit(null); } });
+    await sharedPlayer().play(playedAsWritten(step), { tempo: step.play.tempo ?? LESSON_TEMPO, timeSignature: [4, 4], countIn: false }, { onNote: (i) => setLit(i), onEnd: () => { setPlaying(false); setLit(null); } });
   };
 
   const dots = step.fretboard?.dots ?? [];
