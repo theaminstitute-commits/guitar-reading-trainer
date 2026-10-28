@@ -14,7 +14,8 @@ interface FretboardProps {
   /** Makes every string and fret tappable (lesson drills). */
   onPick?: (position: FretPosition) => void;
   /** Answer marks for drills: a green or red ring at a position. */
-  marks?: readonly { position: FretPosition; tone: 'good' | 'bad' }[];
+  /** `also`: another place that is right too, in a lighter green. */
+  marks?: readonly { position: FretPosition; tone: 'good' | 'bad' | 'also' }[];
   /**
    * Notes sounding now: each string vibrates, but only the part that really moves, from the
    * fret (or the nut, for an open string) to the bridge end of the drawing.

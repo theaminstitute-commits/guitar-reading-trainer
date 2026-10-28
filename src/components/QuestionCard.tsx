@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { sharedPlayer } from '../audio/player';
 import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
-import { parseSpelled, spelledName, spelledFromStaffStep, staffStep } from '../music/pitch';
+import { midiFromSpelled, parseSpelled, spelledName, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { PAPER } from '../notation/paper';
 import { isRightFret, isRightStep, nameWithOctave, type Question } from '../tutorial/questions';
 import { gradeTaps, tapPassed, tapVerdict, type TapResult } from '../tutorial/tap';
-import Fretboard from './Fretboard';
+import Fretboard, { visibleFrets } from './Fretboard';
 import { PlayIcon, StopIcon } from './icons';
 import MiniStaff, { miniNotes, type MiniNote } from './MiniStaff';
 
@@ -82,6 +82,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
   const answer = (correct: boolean, text: string) => setOutcome({ correct, solved: correct, text });
 
   let body: ReactNode;
+  /** After a right fretboard tap: where else the same note is, said in words under the verdict. */
+  let alsoNote: string | null = null;
   switch (q.kind) {
     case 'name': {
       const notes = miniNotes(
@@ -161,11 +163,21 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       break;
     }
     case 'staff-to-fret': {
-      const marks: { position: FretPosition; tone: 'good' | 'bad' }[] = [];
+      const marks: { position: FretPosition; tone: 'good' | 'bad' | 'also' }[] = [];
+      const place = (a: FretPosition) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`);
+      const everywhere = samePitchPlaces(q.note, q.frets);
       if (tappedFret) {
         const right = isRightFret(q, tappedFret);
         marks.push({ position: tappedFret, tone: right ? 'good' : 'bad' });
-        if (!right && !retry) q.answers.forEach((p) => marks.push({ position: p, tone: 'good' }));
+        if (!right && !retry) everywhere.forEach((p) => marks.push({ position: p, tone: 'good' }));
+        if (right && !q.openOnly) {
+          // The same note elsewhere on the board is right too: ringed in a lighter green, and said in words.
+          const others = everywhere.filter((p) => p.string !== tappedFret.string || p.fret !== tappedFret.fret);
+          others.forEach((p) => marks.push({ position: p, tone: 'also' }));
+          if (others.length > 0) {
+            alsoNote = `The same ${nameWithOctave(q.note)} is also on ${others.map(place).join(' and ')}, ringed in light green. A guitar often has one note in more than one place; each of them is right.`;
+          }
+        }
       }
       body = (
         <>
@@ -195,8 +207,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                       else answer(false, `It is the ${OPEN_LABEL[q.answers[0]!.string]} string, marked in green.`);
                       return;
                     }
-                    const place = (a: FretPosition) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`);
-                    const where = q.answers.map(place).join(' or ');
+                    const where = everywhere.map(place).join(' or ');
                     if (right) solved(`${spelledName(q.note)} on ${place(p)} is correct!`);
                     else if (retry) tryAgain(place(p).replace(/^./, (ch) => ch.toUpperCase()));
                     else answer(false, `${spelledName(q.note)} is ${where}, marked in green.`);
@@ -248,6 +259,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
           {outcome.text}
         </div>
       )}
+      {outcome?.solved && alsoNote && <p className="also-note">{alsoNote}</p>}
       {!outcome && retryText && (
         <div className="verdict-line bad" aria-live="polite">
           {retryText}
@@ -269,6 +281,16 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
 
 /** Open strings by number, as the lessons name them. */
 const OPEN_LABEL = ['', '1st (high E)', '2nd (B)', '3rd (G)', '4th (D)', '5th (A)', '6th (low E)'];
+
+/** Every place on the drawn fretboard (open strings when the nut shows) that sounds a written note. */
+function samePitchPlaces(note: SpelledNote, frets: readonly [number, number]): FretPosition[] {
+  const { first, last } = visibleFrets(frets);
+  const cells = [...(frets[0] === 0 ? [0] : []), ...Array.from({ length: last - first + 1 }, (_, i) => first + i)];
+  const target = midiFromSpelled(note);
+  const out: FretPosition[] = [];
+  for (let string = 1; string <= 6; string++) for (const fret of cells) if (writtenFromSounding(midiAt({ string, fret })) === target) out.push({ string, fret });
+  return out;
+}
 
 function ordinal(n: number): string {
   return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';

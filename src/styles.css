@@ -2007,3 +2007,20 @@ html.theme-fade *::after {
 .fb-mark.bad {
   stroke: var(--bad);
 }
+
+/* Another place that sounds the same note: right too, in a lighter green. */
+.fb-mark.also {
+  stroke: var(--good);
+  stroke-opacity: 0.5;
+  stroke-dasharray: 4 3;
+}
+
+.also-note {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--good);
+  border-radius: var(--radius-sm);
+  background: var(--good-soft);
+  color: var(--text);
+  font-size: 0.92rem;
+}
