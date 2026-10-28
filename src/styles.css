@@ -1913,16 +1913,35 @@ html.theme-fade *::after {
   margin-top: 8px;
 }
 
+/* The paper bleeds 10px past the staff (.guide-staff); 6px more of padding leaves an even gap between paper and ring. */
 .rhythm-option {
-  padding: 4px 10px;
-  border-radius: 14px;
+  position: relative;
+  padding: 16px;
+  border-radius: 26px;
   background: var(--surface-2);
   border: 2px solid var(--border);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .rhythm-option .mini-staff {
   pointer-events: none;
-  margin: 10px 0 2px;
+  margin: 0;
+}
+
+/* The bar picked: a little larger, above its neighbours. */
+.rhythm-option.chosen,
+.rhythm-option.chosen:disabled {
+  z-index: 1;
+  transform: scale(1.04);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythm-option {
+    transition: none;
+  }
 }
 
 .mini-staff.tappable,

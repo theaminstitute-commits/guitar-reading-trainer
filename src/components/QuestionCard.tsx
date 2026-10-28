@@ -348,8 +348,10 @@ function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind:
       <div className="rhythm-options">
         {q.options.map((bar, i) => {
           const state = wrong.includes(i) ? ' wrong' : picked === null ? '' : i === q.answer ? ' right' : i === picked ? ' wrong' : '';
+          // The bar picked last stands out: a little larger, inside its ring.
+          const chosen = picked !== null ? i === picked : wrong[wrong.length - 1] === i;
           return (
-            <button key={i} className={`rhythm-option${state}`} disabled={picked !== null || wrong.includes(i)} onClick={() => onPick(i)} aria-label={`Rhythm ${i + 1}`}>
+            <button key={i} className={`rhythm-option${state}${chosen ? ' chosen' : ''}`} disabled={picked !== null || wrong.includes(i)} onClick={() => onPick(i)} aria-label={`Rhythm ${i + 1}`}>
               <MiniStaff bars={[bar.map((d) => ({ step: RHYTHM_STEP, sign: 'none', duration: d }))]} musicKey={C_MAJOR} timeSignature barsPerRow={1} />
             </button>
           );
