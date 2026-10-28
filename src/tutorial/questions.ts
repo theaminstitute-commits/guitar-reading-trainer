@@ -41,6 +41,8 @@ export interface StaffToFretQuestion {
    * string sounds the moment it is tapped (the user: tap the fretboard, hear the choice).
    */
   openOnly?: boolean;
+  /** Beginner aid: every natural note on the fretboard carries its letter; sharps and flats stay blank. */
+  fretNames?: boolean;
 }
 
 /** A lit fret: tap where its note is written on the staff. */

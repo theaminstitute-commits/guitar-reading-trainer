@@ -176,6 +176,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
             mirrored={leftHanded}
             marks={marks}
             ringing={ring ? [ring.at] : []}
+            naturalNames={q.fretNames}
             ringKey={ring?.n}
             onPick={
               outcome

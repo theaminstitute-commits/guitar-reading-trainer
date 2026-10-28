@@ -1,4 +1,4 @@
-import type { FretPosition } from '../music/fretboard';
+import { STANDARD_TUNING, type FretPosition } from '../music/fretboard';
 
 interface FretboardProps {
   /** Inclusive fret window of the stage; only this part of the neck is drawn (at least five frets). */
@@ -22,12 +22,16 @@ interface FretboardProps {
   ringing?: readonly FretPosition[];
   /** Changes with every new note, so a repeated note starts its vibration again. */
   ringKey?: string | number;
+  /** Beginner aid: the letter of every natural note on the drawn frets; sharps and flats stay blank. */
+  naturalNames?: boolean;
 }
 
 const STRING_NAMES = ['E', 'B', 'G', 'D', 'A', 'E'];
 const MARKER_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_MARKER_FRETS = [12, 24];
 const MIN_FRETS = 5;
+/** Letter of each natural pitch class; the others (sharps and flats) have none. */
+const NATURAL_LETTER: Record<number, string> = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' };
 
 /** The frets drawn for a window: the window itself, widened to at least five frets, pushed down the neck rather than past fret 12. */
 export function visibleFrets([low, high]: readonly [number, number]): { first: number; last: number } {
@@ -43,7 +47,7 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey }: FretboardProps) {
+export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey, naturalNames = false }: FretboardProps) {
   const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
   const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
@@ -153,6 +157,24 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
           </g>
         );
       })}
+
+      {/* Note names on every natural fret (open strings are named beside the nut) */}
+      {naturalNames &&
+        STRING_NAMES.flatMap((_, i) => {
+          const string = i + 1;
+          return drawn.map((fret) => {
+            const letter = NATURAL_LETTER[(STANDARD_TUNING[string]! + fret) % 12];
+            if (!letter) return null;
+            return (
+              <g key={`n${string}-${fret}`} className="fb-name">
+                <circle cx={noteX(fret)} cy={stringY(string)} r={7.5} className="fb-name-dot" />
+                <text x={noteX(fret)} y={stringY(string) + 3.4} textAnchor="middle" className="fb-name-text" transform={label(noteX(fret))}>
+                  {letter}
+                </text>
+              </g>
+            );
+          });
+        })}
 
       {/* Faint trail of notes already played */}
       {played

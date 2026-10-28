@@ -890,6 +890,24 @@ button.link.subtle {
   display: block;
 }
 
+/* Beginner note names on the frets: quiet, readable on the wood, under the answer marks. */
+.fb-name {
+  pointer-events: none;
+}
+
+.fb-name-dot {
+  fill: rgba(246, 238, 224, 0.9);
+  stroke: rgba(42, 31, 20, 0.4);
+  stroke-width: 0.8;
+}
+
+.fb-name-text {
+  fill: #2a1f14;
+  font-size: 9.5px;
+  font-weight: 800;
+  font-family: inherit;
+}
+
 .fb-wood {
   fill: var(--wood);
   stroke: var(--wood-edge);
