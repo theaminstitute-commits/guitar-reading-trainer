@@ -1671,6 +1671,25 @@ html.theme-fade *::after {
   gap: 12px;
 }
 
+/* Staff-tap questions: the instruction is a callout under the staff. */
+.tap-instruction {
+  margin: 10px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--accent-line);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.tap-target {
+  color: var(--accent);
+  font-size: 1.3em;
+}
+
 .question-prompt {
   font-weight: 600;
   margin: 0 0 4px;

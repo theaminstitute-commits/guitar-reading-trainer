@@ -144,7 +144,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                   }
             }
           />
-          {!outcome && <p className="muted small-note">Tap the staff.</p>}
+          {/* The instruction sits right under the staff it refers to, as a callout (the user: make it stand out). */}
+          <p className="tap-instruction">{emphasise(q.prompt, nameWithOctave(target))}</p>
         </>
       );
       break;
@@ -210,7 +211,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
 
   return (
     <div className="panel question">
-      <p className="question-prompt">{q.prompt}</p>
+      {q.kind !== 'place' && q.kind !== 'fret-to-staff' && <p className="question-prompt">{q.prompt}</p>}
       {q.memoryAid && (
         <p className="memory-aid">
           <span className="aid-lines">Lines E G B D F: Every Good Boy Deserves Fruit</span>
@@ -244,6 +245,19 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
 
 function ordinal(n: number): string {
   return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
+}
+
+/** The prompt with the note name in it set in bold accent colour, so it is the first thing read. */
+function emphasise(text: string, name: string): ReactNode {
+  const at = text.indexOf(name);
+  if (at < 0) return text;
+  return (
+    <>
+      {text.slice(0, at)}
+      <strong className="tap-target">{name}</strong>
+      {text.slice(at + name.length)}
+    </>
+  );
 }
 
 function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind: 'rhythm' }>; picked: string | number | null; wrong: readonly (string | number)[]; onPick: (i: number) => void }) {
