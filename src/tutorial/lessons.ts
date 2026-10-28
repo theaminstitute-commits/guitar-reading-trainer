@@ -114,7 +114,8 @@ export const PART_0: readonly Lesson[] = [
           'The lines from the bottom are E G B D F: "Every Good Boy Deserves Fruit". The spaces spell F A C E. Before the clef the line letters are in violet and the space letters in pink.',
         ],
         staff: { notes: STAFF_ONLY.map((s) => n(`${s.letter}${s.octave}`)), legend: true },
-        play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)) },
+        // Quarter notes need a gentler tempo than the whole notes of the screen before (user: 70 bpm here).
+        play: { notes: STAFF_ONLY.map((s) => sounding(`${s.letter}${s.octave}`)), tempo: 70 },
       },
       { kind: 'drill', title: 'Name the note', intro: 'A note appears on the staff. Pick its letter.', make: (rng) => withMemoryAid(nameNotes(STAFF_ONLY, 6, rng)) },
       { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
