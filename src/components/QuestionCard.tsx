@@ -66,7 +66,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                   disabled={picked !== null}
                   onClick={() => {
                     setPicked(c);
-                    answer(c === q.answer, c === q.answer ? `Right: ${q.answer}.` : `It is ${q.answer}.`);
+                    answer(c === q.answer, c === q.answer ? `${q.answer} is correct!` : `It is ${q.answer}.`);
                   }}
                 >
                   {c}
@@ -103,7 +103,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                     setTappedStep(step);
                     const right = isRightStep(q, step);
                     const tapped = nameWithOctave(spelledFromStaffStep(step));
-                    answer(right, right ? `Right: ${nameWithOctave(target)}.` : `That line or space is ${tapped}. ${nameWithOctave(target)} is the green note.`);
+                    answer(right, right ? `${nameWithOctave(target)} is correct!` : `That line or space is ${tapped}. ${nameWithOctave(target)} is the green note.`);
                   }
             }
           />
@@ -134,7 +134,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                     setTappedFret(p);
                     const right = isRightFret(q, p);
                     const where = q.answers.map((a) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`)).join(' or ');
-                    answer(right, right ? `Right: ${spelledName(q.note)} is ${where}.` : `${spelledName(q.note)} is ${where}, marked in green.`);
+                    answer(right, right ? `${spelledName(q.note)} on ${where} is correct!` : `${spelledName(q.note)} is ${where}, marked in green.`);
                   }
             }
           />
@@ -143,7 +143,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       break;
     }
     case 'rhythm':
-      body = <RhythmBody q={q} picked={picked} onPick={(i) => { setPicked(i); answer(i === q.answer, i === q.answer ? 'Right.' : 'Not that one: the right bar is marked in green.'); }} />;
+      body = <RhythmBody q={q} picked={picked} onPick={(i) => { setPicked(i); answer(i === q.answer, i === q.answer ? 'That rhythm is correct!' : 'Not that one: the right bar is marked in green.'); }} />;
       break;
     case 'tap':
       body = <TapBody tempo={q.tempo} beats={q.beats} onResult={(r) => answer(tapPassed(r), tapVerdict(r))} done={outcome !== null} />;

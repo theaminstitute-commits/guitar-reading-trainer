@@ -38,7 +38,7 @@ export function coachVerdict(melody: Melody, bars: readonly (readonly AnswerNote
   const note = bars.flat()[index]!;
   const pitchOk = spelledEquals(written, target.written);
   const lengthOk = note.duration === target.duration;
-  if (pitchOk && lengthOk) return { tone: 'good', text: `Right: ${name(written)}.` };
+  if (pitchOk && lengthOk) return { tone: 'good', text: `${name(written)} is correct!` };
   if (pitchOk) {
     return {
       tone: 'try',
