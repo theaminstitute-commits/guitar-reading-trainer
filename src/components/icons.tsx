@@ -59,10 +59,11 @@ export const ChevronLeftIcon = (p: IconProps) => (
   </svg>
 );
 
+/** An open book: two pages curving away from the spine. */
 export const BookIcon = (p: IconProps) => (
   <svg {...base(p)}>
-    <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
-    <path d="M4 19a2 2 0 0 1 2-2h13" />
+    <path d="M12 6.5C10 5 7 4.5 3 4.5v13c4 0 7 .5 9 2 2-1.5 5-2 9-2v-13c-4 0-7 .5-9 2z" />
+    <path d="M12 6.5v13" />
   </svg>
 );
 
