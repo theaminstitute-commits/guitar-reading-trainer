@@ -82,6 +82,8 @@ export interface TapQuestion {
 export type Question = (NameQuestion | PlaceQuestion | StaffToFretQuestion | FretToStaffQuestion | RhythmQuestion | TapQuestion) & {
   /** Show the line and space memory aid (Every Good Boy Deserves Fruit, F A C E) with the question. */
   memoryAid?: boolean;
+  /** Shade the staff where the octave number is 5 and where it is 4, split at C (R38). */
+  octaveSplit?: boolean;
 };
 
 /** The same questions, each showing the line and space memory aid. */

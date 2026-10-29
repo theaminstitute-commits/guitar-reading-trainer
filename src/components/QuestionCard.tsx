@@ -152,6 +152,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
             bars={[shown]}
             musicKey={q.key}
             barsPerRow={1}
+            octaveSplit={q.octaveSplit}
             dropKey={q.kind === 'fret-to-staff' && q.dropIn && staffTaps > 0 ? staffTaps : undefined}
             onTapStep={
               outcome
@@ -268,6 +269,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
         <p className="memory-aid">
           <span className="aid-lines">Lines E G B D F: Every Good Boy Deserves Fruit</span>
           <span className="aid-spaces">Spaces: F A C E</span>
+          {q.octaveSplit && <span className="aid-octave">The number goes up at C: B4, then C5</span>}
         </p>
       )}
       {body}

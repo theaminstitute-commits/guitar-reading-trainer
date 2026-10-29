@@ -170,7 +170,7 @@ export const PART_0: readonly Lesson[] = [
           tempo: 70,
         },
       },
-      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs. Mind the number: it says which of the repeated letters is meant.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)) },
+      { kind: 'drill', title: 'Find the line or space', intro: 'Now the other way: tap where the note belongs. Mind the number: it says which of the repeated letters is meant.', make: (rng) => withMemoryAid(placeNotes(STAFF_ONLY, 4, rng)).map((q) => ({ ...q, octaveSplit: true })) },
       {
         kind: 'explain',
         title: 'Just above and below',

@@ -8,6 +8,11 @@ import { staveAt, stepFromY, yFromStep } from '../notation/hitTest';
 import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
+/** Staff steps of the notes the octave bands are measured from. */
+/** The lower octave band: a cool slate, never a warm tint on the cream paper. */
+const OCTAVE_4 = '#5b6b80';
+const OCTAVE_STEP = { D4: 4 * 7 + 1, B4: 4 * 7 + 6, G5: 5 * 7 + 4 } as const;
+
 export interface MiniNote {
   step: number;
   sign: Sign;
@@ -38,6 +43,12 @@ interface MiniStaffProps {
    * with the same value (a tap, a resize) leave them still.
    */
   dropKey?: unknown;
+  /**
+   * The octave number shown on the staff (R38): everything from the C5 space up is tinted blue
+   * and marked "C5 and up", everything from the middle line (B4) down is tinted grey and marked
+   * "B4 and down", so the learner sees the number change at C.
+   */
+  octaveSplit?: boolean;
 }
 
 /**
@@ -87,7 +98,7 @@ const DROP_MS = 600;
 /** Length of the head-shake a wrong note gives after it lands (`.wrong-note`). */
 const SHAKE_MS = 420;
 
-export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null, dropKey }: MiniStaffProps) {
+export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null, dropKey, octaveSplit = false }: MiniStaffProps) {
   const dropped = useRef<{ key: unknown; at: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -190,6 +201,19 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
       )
     : [];
 
+  // The two octave bands meet just above the middle line: the B4 line is in the 4s, the whole C5 space in the 5s.
+  // Their names sit just outside the staff, above and below, clear of the lines.
+  const bands = octaveSplit
+    ? rows.map((stave) => {
+        const half = stave.lineSpacing / 2;
+        const split = yFromStep(OCTAVE_STEP.B4, stave) - 1.5;
+        const left = gutter + stave.x;
+        const right = left + stave.width;
+        return { left, right, top: yFromStep(OCTAVE_STEP.G5, stave) - half, split, bottom: yFromStep(OCTAVE_STEP.D4, stave) + half };
+      })
+    : [];
+  const bandSize = 8.6 * scale;
+
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!onTapStep || !layout || !wrapRef.current) return;
     const rect = wrapRef.current.getBoundingClientRect();
@@ -203,8 +227,20 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
   return (
     <div ref={wrapRef} className={`mini-staff guide-staff${onTapStep ? ' tappable' : ''}`} onPointerDown={onPointerDown}>
       <div ref={canvasRef} className="staff-canvas static" style={gutter ? { marginLeft: gutter, width: staffWidth } : undefined} />
-      {layout && (labels.length > 0 || legendItems.length > 0) && (
+      {layout && (labels.length > 0 || legendItems.length > 0 || bands.length > 0) && (
         <svg className="feedback-overlay" width={width} height={layout.height + labelSize} aria-hidden="true">
+          {bands.map((b, i) => (
+            <g key={`o${i}`}>
+              <rect x={b.left} y={b.top} width={b.right - b.left} height={b.split - b.top} fill={PAPER.active} opacity={0.17} />
+              <rect x={b.left} y={b.split} width={b.right - b.left} height={b.bottom - b.split} fill={OCTAVE_4} opacity={0.14} />
+              <text x={b.right - 4} y={b.top - bandSize * 0.85} textAnchor="end" dominantBaseline="central" className="octave-band" fill={PAPER.active} fontSize={bandSize}>
+                C5 and up: 5
+              </text>
+              <text x={b.right - 4} y={b.bottom + bandSize * 0.85} textAnchor="end" dominantBaseline="central" className="octave-band" fill={OCTAVE_4} fontSize={bandSize}>
+                B4 and down: 4
+              </text>
+            </g>
+          ))}
           {labels.map((l, i) => (
             <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" className="pitch-label" fill={l.color} fontSize={labelSize}>
               {l.text}

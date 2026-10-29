@@ -2080,6 +2080,29 @@ html.theme-fade *::after {
   font-weight: 700;
 }
 
+.octave-band {
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #f8f1e3;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.aid-octave {
+  color: #6aaee8;
+}
+
+:root[data-theme='light'] .aid-octave,
+:root[data-theme='frost'] .aid-octave {
+  color: #1f6fb2;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .aid-octave {
+    color: #1f6fb2;
+  }
+}
+
 .memory-aid {
   display: flex;
   flex-wrap: wrap;
