@@ -89,6 +89,24 @@ export function withMemoryAid<Q extends Question>(questions: Q[]): Q[] {
 
 export const nameOf = (n: SpelledNote) => spelledName(n);
 export const nameWithOctave = (n: SpelledNote) => `${spelledName(n)}${n.octave}`;
+
+/**
+ * The written note a letter choice ("D", "F♯", "B♭", "B♮") stands for, placed on the line or space
+ * of that letter nearest the note on the staff: picking a choice sounds it there (R33). Null for a
+ * choice that is not a single note name.
+ */
+export function choiceNote(choice: string, near: SpelledNote): SpelledNote | null {
+  const m = /^([A-G])([♯♭♮#b]?)$/.exec(choice.trim());
+  if (!m) return null;
+  const letter = m[1] as SpelledNote['letter'];
+  const accidental = m[2] === '♯' || m[2] === '#' ? 1 : m[2] === '♭' || m[2] === 'b' ? -1 : 0;
+  const from = staffStep(near);
+  const target = 'CDEFGAB'.indexOf(letter);
+  // The step with that letter within three steps of the shown note (a fourth either way).
+  let step = from;
+  for (let d = -3; d <= 3; d++) if ((((from + d) % 7) + 7) % 7 === target) step = from + d;
+  return { letter, accidental, octave: Math.floor(step / 7) };
+}
 export const written = (text: string) => parseSpelled(text);
 
 /** Four distinct choices: the answer and three others, shuffled. */

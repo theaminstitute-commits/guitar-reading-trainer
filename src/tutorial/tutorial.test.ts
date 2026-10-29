@@ -10,7 +10,7 @@ import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
 import { ALL_LESSONS, lessonForStage, openStringQuestions, PART_0, playedAsWritten, stage1Range, STAGE_LESSONS, writtenBars } from './lessons';
 import { placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions, TOP_STAGE } from './placement';
-import { isRightFret, keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
+import { choiceNote, isRightFret, keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
 import { gradeTaps, tapPassed } from './tap';
 import { beatsOf } from '../music/duration';
 
@@ -222,5 +222,29 @@ describe('lesson examples', () => {
         expect(signs.every((s) => s === 'none'), `${lesson.id}: ${step.title}`).toBe(true);
       }
     }
+  });
+});
+
+describe('a picked letter sounds where it would sit (R33)', () => {
+  const near = (choice: string, shown: string) => {
+    const n = choiceNote(choice, parseSpelled(shown));
+    return n ? `${n.letter}${['b', '', '#'][n.accidental + 1]}${n.octave}` : null;
+  };
+  it('puts the letter on the line or space nearest the shown note', () => {
+    expect(near('G', 'G5')).toBe('G5');
+    expect(near('D', 'G5')).toBe('D5');
+    expect(near('E', 'G5')).toBe('E5');
+    expect(near('C', 'G5')).toBe('C6');
+    expect(near('B', 'C5')).toBe('B4');
+    expect(near('D', 'C5')).toBe('D5');
+  });
+  it('keeps the sign the choice names, and a natural sign means natural', () => {
+    expect(near('F♯', 'F#4')).toBe('F#4');
+    expect(near('F', 'F#4')).toBe('F4');
+    expect(near('B♭', 'B4')).toBe('Bb4');
+    expect(near('B♮', 'Bb4')).toBe('B4');
+  });
+  it('stays silent for a choice that is not a note name', () => {
+    expect(near('C major', 'C4')).toBeNull();
   });
 });

@@ -4,7 +4,7 @@ import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
 import { midiFromSpelled, parseSpelled, spelledName, soundingFromWritten, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { PAPER } from '../notation/paper';
-import { isRightFret, isRightStep, keyAccidental, nameWithOctave, type Question } from '../tutorial/questions';
+import { choiceNote, isRightFret, isRightStep, keyAccidental, nameWithOctave, type Question } from '../tutorial/questions';
 import { gradeTaps, tapPassed, tapVerdict, type TapResult } from '../tutorial/tap';
 import Fretboard, { visibleFrets } from './Fretboard';
 import { PlayIcon, StopIcon } from './icons';
@@ -65,8 +65,8 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     setRetryText(null);
     setRing(null);
     setStaffTaps(0);
-    // Fretboard taps sound at once: have the guitar ready before the first one.
-    if (q.kind === 'staff-to-fret' || q.kind === 'fret-to-staff') void sharedPlayer().load();
+    // Picks and taps sound at once: have the guitar ready before the first one.
+    if (q.kind === 'name' || q.kind === 'place' || q.kind === 'staff-to-fret' || q.kind === 'fret-to-staff') void sharedPlayer().load();
   }, [q]);
 
   /** A wrong try in retry mode: say what was picked, count it, keep the question open. */
@@ -105,6 +105,9 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                   className={`choice${state}`}
                   disabled={picked !== null || wrong.includes(c)}
                   onClick={() => {
+                    // The picked letter sounds at once, on the line or space of that letter nearest the shown note (R33).
+                    const heard = choiceNote(c, q.notes[0]!);
+                    if (heard) void sharedPlayer().play([{ midi: soundingFromWritten(midiFromSpelled(heard)), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                     if (c === q.answer) {
                       setPicked(c);
                       solved(`${q.answer} is correct!`);
@@ -155,11 +158,11 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                 : (step) => {
                     setTappedStep(step);
                     const right = isRightStep(q, step);
+                    // The tapped line or space sounds, as the key spells it (R33).
+                    void sharedPlayer().play([{ midi: soundingFromWritten(midiFromSpelled(keyAccidental(spelledFromStaffStep(step), q.key))), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                     if (q.kind === 'fret-to-staff') {
-                      // The tapped note sounds (as the key spells that line or space) and, on this lesson, drops in;
-                      // a right answer also sets the lit string vibrating.
+                      // On this lesson the note drops in; a right answer also sets the lit string vibrating.
                       setStaffTaps((n) => n + 1);
-                      void sharedPlayer().play([{ midi: soundingFromWritten(midiFromSpelled(keyAccidental(spelledFromStaffStep(step), q.key))), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                       if (right) setRing((r) => ({ at: q.position, n: (r?.n ?? 0) + 1 }));
                     }
                     const tapped = nameWithOctave(spelledFromStaffStep(step));
