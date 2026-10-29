@@ -217,25 +217,8 @@ export const PART_0: readonly Lesson[] = [
     title: '3. Notes on the neck',
     summary: 'Strings 1 to 4, frets 0 to 3: the notes of stage 1.',
     steps: [
-      {
-        kind: 'explain',
-        title: 'Each fret is one step up',
-        body: [
-          'Pressing a string behind a fret raises it. Fret 0 is the open string. In first position your first finger plays fret 1, the second finger fret 2 and the third finger fret 3.',
-          'On the 2nd string: open is B, fret 1 is C, fret 3 is D. On the 1st string: open is E, fret 1 is F, fret 3 is G.',
-        ],
-        staff: { notes: [n('B4', 'B open', 'h'), n('C5', 'C fr 1', 'h'), n('D5', 'D fr 3', 'h'), n('E5', 'E open', 'h'), n('F5', 'F fr 1', 'h'), n('G5', 'G fr 3', 'h')] },
-        fretboard: { frets: [0, 3], dots: [at(2, 0), at(2, 1), at(2, 3), at(1, 0), at(1, 1), at(1, 3)], labels: ['B', 'C', 'D', 'E', 'F', 'G'] },
-        play: { notes: ['B4', 'C5', 'D5', 'E5', 'F5', 'G5'].map((x) => sounding(x)) },
-      },
-      {
-        kind: 'explain',
-        title: 'The 3rd and 4th strings',
-        body: ['On the 3rd string: open is G, fret 2 is A. On the 4th string: open is D, fret 2 is E, fret 3 is F. Together that is every note from D below the staff to G above it.'],
-        staff: { notes: [n('D4', 'D open', 'h'), n('E4', 'E fr 2', 'h'), n('F4', 'F fr 3', 'h'), n('G4', 'G open', 'h'), n('A4', 'A fr 2', 'h')] },
-        fretboard: { frets: [0, 3], dots: [at(4, 0), at(4, 2), at(4, 3), at(3, 0), at(3, 2)], labels: ['D', 'E', 'F', 'G', 'A'] },
-        play: { notes: ['D4', 'E4', 'F4', 'G4', 'A4'].map((x) => sounding(x)) },
-      },
+      // The two explanation screens (each fret one step up; the 3rd and 4th strings) were taken out on 2026-10-29:
+      // the user found them confusing. The drills teach the same notes, with every letter shown on the fretboard.
       { kind: 'drill', title: 'Staff to fretboard', intro: 'A note is on the staff. Tap where you play it.', make: (rng) => staffToFret(C_MAJOR, FIRST_FOUR, [0, 3], 5, rng).map((q) => ({ ...q, fretNames: true, dropIn: true })) },
       { kind: 'drill', title: 'Fretboard to staff', intro: 'A fret lights up. Tap where its note is written.', make: (rng) => fretToStaff(C_MAJOR, FIRST_FOUR, [0, 3], 4, rng).map((q) => ({ ...q, showName: true, dropIn: true })) },
     ],
