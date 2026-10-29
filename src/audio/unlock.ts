@@ -67,6 +67,8 @@ export function unlockAudio(): void {
     );
   }
   const ctx = audioContext();
+  // A browser without Web Audio has a stand-in context with no resume: nothing to start there.
+  if (typeof ctx.resume !== 'function') return;
   if (ctx.state !== 'running') {
     ctx.resume().catch(() => {});
     try {
@@ -85,7 +87,7 @@ export function installAudioUnlock(): () => void {
   const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
   const onTap = () => {
     unlockAudio();
-    if (audioContext().state === 'running') remove();
+    if (audioContext().state === 'running' || typeof audioContext().resume !== 'function') remove();
   };
   const remove = () => events.forEach((e) => document.removeEventListener(e, onTap, true));
   events.forEach((e) => document.addEventListener(e, onTap, true));
