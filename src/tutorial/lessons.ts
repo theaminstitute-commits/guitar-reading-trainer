@@ -63,7 +63,7 @@ export interface DrillStep {
   make: (rng: Rng) => Question[];
 }
 
-/** Lesson 5: a stage 1 melody with the coach on and unlimited listens. */
+/** Lesson 4: a stage 1 melody with the coach on and unlimited listens. */
 export interface CoachedStep {
   kind: 'coached';
   title: string;
@@ -180,8 +180,8 @@ export const PART_0: readonly Lesson[] = [
   },
   {
     id: 'octave',
-    title: '2. The guitar octave',
-    summary: 'Guitar music is written an octave higher than it sounds.',
+    title: '2. Notes on the guitar',
+    summary: 'Written an octave up, the open strings, and the notes of stage 1 on the neck.',
     steps: [
       {
         kind: 'explain',
@@ -210,22 +210,15 @@ export const PART_0: readonly Lesson[] = [
         intro: 'An open string is written on the staff. Tap that string on the fretboard: you hear each string as you tap it.',
         make: (rng) => openStringQuestions(rng, 5),
       },
-    ],
-  },
-  {
-    id: 'neck',
-    title: '3. Notes on the neck',
-    summary: 'Strings 1 to 4, frets 0 to 3: the notes of stage 1.',
-    steps: [
-      // The two explanation screens (each fret one step up; the 3rd and 4th strings) were taken out on 2026-10-29:
-      // the user found them confusing. The drills teach the same notes, with every letter shown on the fretboard.
+      // Formerly lesson 3, "Notes on the neck", merged in here by the user on 2026-10-29 (its two explanation
+      // screens were taken out as confusing). The drills teach the stage 1 notes, every letter shown on the fretboard.
       { kind: 'drill', title: 'Staff to fretboard', intro: 'A note is on the staff. Tap where you play it.', make: (rng) => staffToFret(C_MAJOR, FIRST_FOUR, [0, 3], 5, rng).map((q) => ({ ...q, fretNames: true, dropIn: true })) },
       { kind: 'drill', title: 'Fretboard to staff', intro: 'A fret lights up. Tap where its note is written.', make: (rng) => fretToStaff(C_MAJOR, FIRST_FOUR, [0, 3], 4, rng).map((q) => ({ ...q, showName: true, dropIn: true })) },
     ],
   },
   {
     id: 'rhythm',
-    title: '4. Beat and rhythm',
+    title: '3. Beat and rhythm',
     summary: 'Counting, bars, 4/4, quarter and half notes.',
     steps: [
       {
@@ -254,7 +247,7 @@ export const PART_0: readonly Lesson[] = [
   },
   {
     id: 'first-melody',
-    title: '5. Your first melody',
+    title: '4. Your first melody',
     summary: 'A stage 1 melody, with a coach checking every note.',
     steps: [
       {

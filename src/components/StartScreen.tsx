@@ -94,7 +94,7 @@ export default function StartScreen({
           <span className="eyebrow">New here?</span>
           <h2 className="hero-title">Learn to read music from scratch</h2>
           <p className="hero-summary">
-            Five short lessons teach the staff, where the notes are on the guitar, and rhythm, then a first melody with a coach. About twenty minutes in all, and you can stop at any point.
+            Four short lessons teach the staff, where the notes are on the guitar, and rhythm, then a first melody with a coach. About twenty minutes in all, and you can stop at any point.
           </p>
           <div className="cta">
             <button className="btn primary big" onClick={() => onLesson(PART_0[0]!)}>

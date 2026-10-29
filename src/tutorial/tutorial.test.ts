@@ -46,8 +46,9 @@ describe('lesson content', () => {
     }
   });
 
-  it('has the five Part 0 lessons and a lesson before stages 3, 5, 6, 7, 12, 14 and 18', () => {
-    expect(PART_0.map((l) => l.id)).toEqual(['staff', 'octave', 'neck', 'rhythm', 'first-melody']);
+  it('has the four Part 0 lessons and a lesson before stages 3, 5, 6, 7, 12, 14 and 18', () => {
+    expect(PART_0.map((l) => l.id)).toEqual(['staff', 'octave', 'rhythm', 'first-melody']);
+    expect(PART_0.map((l) => l.title)).toEqual(['1. The staff', '2. Notes on the guitar', '3. Beat and rhythm', '4. Your first melody']);
     expect(STAGE_LESSONS.map((l) => l.stage)).toEqual([3, 5, 6, 7, 12, 14, 18]);
     expect(lessonForStage(6)!.id).toBe('stage-6');
     expect(lessonForStage(4)).toBeUndefined();
