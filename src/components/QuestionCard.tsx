@@ -103,6 +103,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                 <button
                   key={c}
                   className={`choice${state}`}
+                  data-sound="none"
                   disabled={picked !== null || wrong.includes(c)}
                   onClick={() => {
                     // The picked letter sounds at once, on the line or space of that letter nearest the shown note (R33).
@@ -343,7 +344,7 @@ function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind:
             <StopIcon size={18} /> Stop
           </button>
         ) : (
-          <button className="primary" onClick={() => void play()}>
+          <button className="primary" data-sound="none" onClick={() => void play()}>
             <PlayIcon size={18} /> Play the bar
           </button>
         )}
@@ -399,7 +400,7 @@ function TapBody({ tempo, beats, onResult, done }: { tempo: number; beats: numbe
           <div className="muted tap-count" aria-live="polite">
             {label}
           </div>
-          <button className="tap-pad" onPointerDown={() => taps.current.push(sharedPlayer().now())}>
+          <button className="tap-pad" data-sound="none" onPointerDown={() => taps.current.push(sharedPlayer().now())}>
             Tap
           </button>
         </>

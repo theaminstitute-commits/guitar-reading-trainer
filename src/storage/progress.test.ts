@@ -87,4 +87,11 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
     localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'ocean', metronome: false, seenGuides: [], write: track(0, 0) }));
     expect(localProgressStore.load(STAGES).theme).toBe('system');
   });
+
+  it('keeps button sounds on unless switched off (R34)', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: track(0, 0) }));
+    expect(localProgressStore.load(STAGES).buttonSounds).toBe(true);
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: track(0, 0), buttonSounds: false }));
+    expect(localProgressStore.load(STAGES).buttonSounds).toBe(false);
+  });
 });

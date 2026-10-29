@@ -33,6 +33,7 @@ interface StartScreenProps {
   onLesson: (lesson: Lesson) => void;
   onPlacement: () => void;
   onHints: (on: boolean) => void;
+  onButtonSounds: (on: boolean) => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
@@ -70,6 +71,7 @@ export default function StartScreen({
   onLesson,
   onPlacement,
   onHints,
+  onButtonSounds,
 }: StartScreenProps) {
   const [confirmReset, setConfirmReset] = useState(false);
   /** A brand-new learner: no melodies, no lessons, and they have not said they can read. */
@@ -167,6 +169,9 @@ export default function StartScreen({
         <p className="muted small-note">{mode.note}</p>
         <label className="toggle muted">
           <input type="checkbox" checked={progress.hints} onChange={(e) => onHints(e.target.checked)} /> Beginner hints on stage 1: note names on the fretboard, a slower first play
+        </label>
+        <label className="toggle muted">
+          <input type="checkbox" checked={progress.buttonSounds} onChange={(e) => onButtonSounds(e.target.checked)} /> Button sounds: a soft tap when you press a button
         </label>
         {/* Listen only shows no fretboard, so handedness has nothing to mirror there. */}
         {progress.mode === 'watch' && (

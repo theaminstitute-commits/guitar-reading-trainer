@@ -171,10 +171,10 @@ describe('reset progress (R32)', () => {
   });
 
   it('clears the ladder, guides and lessons but keeps the settings', () => {
-    const used = { ...fresh, mode: 'listen' as const, handedness: 'left' as const, theme: 'frost' as const, metronome: true, hints: false, seenGuides: [1, 2], tutorial: ['staff', 'neck'], tutorialSkipped: true, write: { ...fresh.write, stage: 5, unlocked: 6, tally: 3, exercises: 40, melodies: { '1': ['x'] } } };
+    const used = { ...fresh, mode: 'listen' as const, handedness: 'left' as const, theme: 'frost' as const, metronome: true, hints: false, buttonSounds: false, seenGuides: [1, 2], tutorial: ['staff', 'neck'], tutorialSkipped: true, write: { ...fresh.write, stage: 5, unlocked: 6, tally: 3, exercises: 40, melodies: { '1': ['x'] } } };
     const reset = resetProgress(used, STAGES);
     expect(hasProgress(reset)).toBe(false);
     expect(reset.write).toEqual(fresh.write);
-    expect([reset.mode, reset.handedness, reset.theme, reset.metronome, reset.hints]).toEqual(['listen', 'left', 'frost', true, false]);
+    expect([reset.mode, reset.handedness, reset.theme, reset.metronome, reset.hints, reset.buttonSounds]).toEqual(['listen', 'left', 'frost', true, false, false]);
   });
 });

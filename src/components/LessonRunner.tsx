@@ -186,7 +186,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
               <StopIcon size={18} /> Stop
             </button>
           ) : (
-            <button onClick={() => void play()}>
+            <button data-sound="none" onClick={() => void play()}>
               <PlayIcon size={18} /> Hear it
             </button>
           ))}

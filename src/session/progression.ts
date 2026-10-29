@@ -71,6 +71,8 @@ export interface Progress {
   tutorialSkipped: boolean;
   /** Beginner hints on stage 1: note names on the fretboard, a slower first play (R26). */
   hints: boolean;
+  /** A soft felt-key sound on button presses (R34). */
+  buttonSounds: boolean;
 }
 
 export const CLEAN_THRESHOLD = 0.9;
@@ -90,7 +92,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true };
+  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true, buttonSounds: true };
 }
 
 /** Anything a reset would clear: melodies, a stage reached or chosen, guides seen, lessons, or the tutorial skipped (R32). */
@@ -102,7 +104,7 @@ export function hasProgress(progress: Progress): boolean {
 /** Reset progress (R32): the ladder, guides and tutorial start again; the settings (mode, hand, theme, click, hints) stay. */
 export function resetProgress(progress: Progress, stages: readonly Stage[]): Progress {
   const fresh = initialProgress(stages);
-  return { ...fresh, mode: progress.mode, handedness: progress.handedness, theme: progress.theme, metronome: progress.metronome, hints: progress.hints };
+  return { ...fresh, mode: progress.mode, handedness: progress.handedness, theme: progress.theme, metronome: progress.metronome, hints: progress.hints, buttonSounds: progress.buttonSounds };
 }
 
 export function trackOf(progress: Progress): Track {

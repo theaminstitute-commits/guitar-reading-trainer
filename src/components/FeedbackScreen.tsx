@@ -149,10 +149,10 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
           </button>
         ) : (
           <>
-            <button onClick={() => void playCorrect()}>
+            <button data-sound="none" onClick={() => void playCorrect()}>
               <PlayIcon size={18} /> Hear correct
             </button>
-            <button onClick={() => void playMine()} disabled={!hearMine || result.answerCount === 0}>
+            <button data-sound="none" onClick={() => void playMine()} disabled={!hearMine || result.answerCount === 0}>
               <EarIcon size={18} /> Hear mine
             </button>
           </>

@@ -196,7 +196,7 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       </div>
       <div className="controls">
         {sounding === null ? (
-          <button onClick={() => void playAll()}>Hear them in order</button>
+          <button data-sound="none" onClick={() => void playAll()}>Hear them in order</button>
         ) : (
           <button onClick={() => sharedPlayer().stop()}>Stop</button>
         )}

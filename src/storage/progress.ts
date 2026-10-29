@@ -106,6 +106,7 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
     tutorial: Array.isArray(value.tutorial) ? [...new Set(value.tutorial.filter((id): id is string => typeof id === 'string'))] : [],
     tutorialSkipped: value.tutorialSkipped === true,
     hints: value.hints !== false,
+    buttonSounds: value.buttonSounds !== false,
   };
 }
 

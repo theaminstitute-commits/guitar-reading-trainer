@@ -237,10 +237,10 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       <div className="controls">
         {!busy ? (
           <>
-            <button className="primary" onClick={() => play(1)} disabled={listensLeft === 0}>
+            <button className="primary" data-sound="none" onClick={() => play(1)} disabled={listensLeft === 0}>
               <PlayIcon size={18} /> {plays === 0 ? 'Play' : 'Replay'}
             </button>
-            <button onClick={() => play(SLOW_RATE)} disabled={listensLeft === 0}>
+            <button data-sound="none" onClick={() => play(SLOW_RATE)} disabled={listensLeft === 0}>
               <SlowIcon size={18} /> Slow
             </button>
           </>

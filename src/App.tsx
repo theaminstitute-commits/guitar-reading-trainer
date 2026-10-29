@@ -18,6 +18,7 @@ import { generateMelody } from './melody/generator';
 import { describeMeter } from './melody/meter';
 import { STAGES, type Stage } from './melody/stages';
 import { THEMES } from './session/themes';
+import { installButtonSounds, setButtonSounds } from './audio/uiSound';
 import type { Melody } from './melody/types';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
@@ -245,6 +246,9 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [progress.theme]);
 
+  useEffect(() => installButtonSounds(), []);
+  useEffect(() => setButtonSounds(progress.buttonSounds), [progress.buttonSounds]);
+
   const onReset = () => {
     updateProgress(resetProgress(progress, STAGES));
     setSession({ exercises: 0, accuracySum: 0 });
@@ -303,6 +307,7 @@ export default function App() {
           onLesson={(l) => openLesson(l, l.stage ? 'start' : 'next-part-0')}
           onPlacement={() => setScreen('placement')}
           onHints={(hints) => updateProgress({ ...progress, hints })}
+          onButtonSounds={(buttonSounds) => updateProgress({ ...progress, buttonSounds })}
         />
       )}
 
