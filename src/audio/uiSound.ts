@@ -15,7 +15,9 @@ export function setButtonSounds(on: boolean): void {
 function context(): AudioContext | null {
   unlockAudio();
   try {
-    return audioContext();
+    const c = audioContext();
+    // A browser without Web Audio has a stand-in context that cannot make sound.
+    return typeof c.createOscillator === 'function' ? c : null;
   } catch {
     return null;
   }
