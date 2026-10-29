@@ -102,11 +102,11 @@ export default function StartScreen({
             </button>
             <div className="cta-row">
               <button className="btn" onClick={onPlacement}>
-                Skip, I can read: placement test
+                I can already read music
               </button>
             </div>
             <button className="link subtle" onClick={onDismissWelcome}>
-              Hide this and start at stage 1
+              Skip to stage 1
             </button>
           </div>
         </div>
