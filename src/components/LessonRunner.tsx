@@ -5,6 +5,7 @@ import type { ExplainerId } from '../grading/explain';
 import { generateMelody } from '../melody/generator';
 import { STAGES } from '../melody/stages';
 import type { Melody } from '../melody/types';
+import type { FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
 import { parseSpelled, staffStep } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
@@ -152,6 +153,19 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
   };
 
   const dots = step.fretboard?.dots ?? [];
+  // At rest, notes on the same fret (F♯ and G♭) share one dot carrying both names; while playing each lights on its own.
+  const still = dots.reduce<{ dots: FretPosition[]; labels: string[] }>(
+    (acc, d, i) => {
+      const name = step.fretboard?.labels?.[i] ?? '';
+      const at = acc.dots.findIndex((o) => o.string === d.string && o.fret === d.fret);
+      if (at < 0) {
+        acc.dots.push(d);
+        acc.labels.push(name);
+      } else if (name && !acc.labels[at]!.split('/').includes(name)) acc.labels[at] = acc.labels[at] ? `${acc.labels[at]}/${name}` : name;
+      return acc;
+    },
+    { dots: [], labels: [] },
+  );
   return (
     <div className="panel lesson-step">
       <h2>{step.title}</h2>
@@ -171,8 +185,8 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
       {step.fretboard && (
         <Fretboard
           frets={step.fretboard.frets}
-          active={lit !== null && dots[lit] ? [dots[lit]!] : dots}
-          labels={lit !== null && dots[lit] ? [step.fretboard.labels?.[lit] ?? ''] : step.fretboard.labels}
+          active={lit !== null && dots[lit] ? [dots[lit]!] : still.dots}
+          labels={lit !== null && dots[lit] ? [step.fretboard.labels?.[lit] ?? ''] : step.fretboard.labels ? still.labels : undefined}
           ringing={lit !== null && dots[lit] ? [dots[lit]!] : []}
           ringKey={lit ?? undefined}
           mirrored={leftHanded}

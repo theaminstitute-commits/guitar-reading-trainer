@@ -2233,6 +2233,10 @@ html.theme-fade *::after {
   pointer-events: none;
 }
 
+.fb-dot-label.two {
+  font-size: 7px;
+}
+
 .fb-tap {
   fill: transparent;
   cursor: pointer;

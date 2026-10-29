@@ -111,7 +111,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                     if (heard) void sharedPlayer().play([{ midi: soundingFromWritten(midiFromSpelled(heard)), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                     if (c === q.answer) {
                       setPicked(c);
-                      solved(`${q.answer} is correct!`);
+                      solved(q.why ? `${q.answer} is correct! ${q.why}` : `${q.answer} is correct!`);
                     } else if (retry) {
                       setWrong((w) => [...w, c]);
                       tryAgain(c);

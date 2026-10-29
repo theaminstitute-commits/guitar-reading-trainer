@@ -6,7 +6,7 @@ clean rounds and melody length is only a side effect. Clean rounds are the only 
 
 ## Before stage 1: the tutorial (R24 to R27)
 
-A new learner is offered Part 0, four short lessons (the staff, notes on the guitar, beat and rhythm, a coached first melody), or a placement test that starts readers at the stage they need. Stages 3, 5, 6, 7, 12, 14 and 18 open with a short lesson before their guide page. Beginner hints (letter names on the fretboard, a slower first play) run on stage 1 unless switched off. No stage corrects notes while they are written; the note-by-note coach is only in the tutorial's first melody. None of this counts towards the ladder.
+A new learner is offered Part 0, four short lessons (the staff, notes on the guitar with sharps and flats, beat and rhythm, a coached first melody), or a placement test that starts readers at the stage they need. Stages 3, 5, 6, 7, 12, 14 and 18 open with a short lesson before their guide page. Beginner hints (letter names on the fretboard, a slower first play) run on stage 1 unless switched off. No stage corrects notes while they are written; the note-by-note coach is only in the tutorial's first melody. None of this counts towards the ladder.
 
 ## Rules that apply to every stage
 

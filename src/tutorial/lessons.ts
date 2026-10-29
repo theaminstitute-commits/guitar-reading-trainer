@@ -18,6 +18,7 @@ import {
   placeNotes,
   rhythms,
   signatureNotes,
+  sharpsAndFlats,
   shuffle,
   staffToFret,
   tapAlong,
@@ -181,7 +182,7 @@ export const PART_0: readonly Lesson[] = [
   {
     id: 'octave',
     title: '2. Notes on the guitar',
-    summary: 'Written an octave up, the open strings, and the notes of stage 1 on the neck.',
+    summary: 'Written an octave up, the open strings, sharps and flats, and the notes of stage 1 on the neck.',
     steps: [
       {
         kind: 'explain',
@@ -209,6 +210,49 @@ export const PART_0: readonly Lesson[] = [
         title: 'Which open string?',
         intro: 'An open string is written on the staff. Tap that string on the fretboard: you hear each string as you tap it.',
         make: (rng) => openStringQuestions(rng, 5),
+      },
+      // Sharps and flats (R36, the user, 2026-10-29): before the neck drills, so the blank frets and the
+      // two-fret gaps between letters make sense; E–F and B–C, with nothing between them, are the point.
+      {
+        kind: 'explain',
+        title: 'Sharps and flats',
+        body: [
+          'Each fret raises a note by the smallest step in music, a half step. Most letters are two frets apart, and the fret between them is a note too. It has no letter of its own, so it borrows a neighbour\'s letter with a sign.',
+          'A sharp (♯) means one fret higher, a flat (♭) one fret lower. The fret between F and G is F♯ (F sharp) or G♭ (G flat): two names for one note, which sound exactly the same. Notes like these are called enharmonic.',
+          'You do not need them yet: stages 1 and 2 use only the plain letters. Sharps and flats are written from stage 3, and the app explains them again there.',
+        ],
+        staff: { notes: [n('F5', 'F'), { ...n('F#5', 'F♯'), sign: 'sharp' }, { ...n('Gb5', 'G♭'), sign: 'flat' }, n('G5', 'G')] },
+        fretboard: { frets: [0, 4], dots: [at(1, 1), at(1, 2), at(1, 2), at(1, 3)], labels: ['F', 'F♯', 'G♭', 'G'] },
+        play: { notes: ['F5', 'F#5', 'Gb5', 'G5'].map((x) => sounding(x)) },
+      },
+      {
+        kind: 'explain',
+        title: 'Nothing between E and F, or B and C',
+        body: [
+          'Two pairs of letters are only one fret apart, with no sharp or flat between them: E and F, and B and C.',
+          'So going up a string, one letter is not always one fret. On the B string: B is open, C is on fret 1, and D is on fret 3, because C♯ sits on fret 2. On the high E string: E is open, F is on fret 1, and G is on fret 3, with F♯ on fret 2.',
+          'Remember the two close pairs, E\u2060–\u2060F and B\u2060–\u2060C, and the frets always add up.',
+        ],
+        staff: {
+          notes: [
+            { ...n('B4', 'B'), mark: true },
+            { ...n('C5', 'C'), mark: true },
+            { ...n('C#5', 'C♯'), sign: 'sharp' },
+            n('D5', 'D'),
+            { ...n('E5', 'E'), mark: true },
+            { ...n('F5', 'F'), mark: true },
+            { ...n('F#5', 'F♯'), sign: 'sharp' },
+            n('G5', 'G'),
+          ],
+        },
+        fretboard: { frets: [0, 4], dots: [at(2, 0), at(2, 1), at(2, 2), at(2, 3), at(1, 0), at(1, 1), at(1, 2), at(1, 3)], labels: ['B', 'C', 'C♯', 'D', 'E', 'F', 'F♯', 'G'] },
+        play: { notes: ['B4', 'C5', 'C#5', 'D5', 'E5', 'F5', 'F#5', 'G5'].map((x) => sounding(x)) },
+      },
+      {
+        kind: 'drill',
+        title: 'Frets, sharps and flats',
+        intro: 'Find the note one fret higher, or the other name of a sharp or flat. Watch for E\u2060–\u2060F and B\u2060–\u2060C.',
+        make: (rng) => sharpsAndFlats(rng),
       },
       // Formerly lesson 3, "Notes on the neck", merged in here by the user on 2026-10-29 (its two explanation
       // screens were taken out as confusing). The drills teach the stage 1 notes, every letter shown on the fretboard.

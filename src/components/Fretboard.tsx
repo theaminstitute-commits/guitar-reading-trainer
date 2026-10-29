@@ -204,11 +204,22 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
             {/* The dot's letter: the label given, or on an open string its name, which the dot would otherwise hide. */}
-            {(labels?.[i] || (hasNut && a.fret === 0)) && (
-              <text x={noteX(a.fret)} y={stringY(a.string) + 3.6} textAnchor="middle" className="fb-dot-label" transform={label(noteX(a.fret))}>
-                {labels?.[i] || STRING_NAMES[a.string - 1]}
-              </text>
-            )}
+            {(labels?.[i] || (hasNut && a.fret === 0)) &&
+              (labels?.[i]?.includes('/') ? (
+                // Two names for one fret ("F♯/G♭"): stacked, smaller, inside the dot.
+                <text textAnchor="middle" className="fb-dot-label two" transform={label(noteX(a.fret))}>
+                  <tspan x={noteX(a.fret)} y={stringY(a.string) - 0.8}>
+                    {labels[i]!.split('/')[0]}
+                  </tspan>
+                  <tspan x={noteX(a.fret)} y={stringY(a.string) + 6.2}>
+                    {labels[i]!.split('/')[1]}
+                  </tspan>
+                </text>
+              ) : (
+                <text x={noteX(a.fret)} y={stringY(a.string) + 3.6} textAnchor="middle" className="fb-dot-label" transform={label(noteX(a.fret))}>
+                  {labels?.[i] || STRING_NAMES[a.string - 1]}
+                </text>
+              ))}
           </g>
         ) : null,
       )}

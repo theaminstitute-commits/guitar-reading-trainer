@@ -5,12 +5,12 @@ import { STAGES } from '../melody/stages';
 import { gradedTargets } from '../grading/grade';
 import { midiAt } from '../music/fretboard';
 import { C_MAJOR, keyFromId } from '../music/key';
-import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding } from '../music/pitch';
+import { midiFromSpelled, parseSpelled, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import type { AnswerNote } from '../notation/answer';
 import { coachVerdict, isRightPitch } from './coach';
 import { ALL_LESSONS, lessonForStage, openStringQuestions, PART_0, playedAsWritten, stage1Range, STAGE_LESSONS, writtenBars } from './lessons';
 import { placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions, TOP_STAGE } from './placement';
-import { choiceNote, isRightFret, keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, signatureNotes, staffToFret } from './questions';
+import { choiceNote, enharmonicQuestions, isRightFret, keyAccidental, nameNotes, naturalsBetween, positionsOf, randomBar, rhythms, sharpsAndFlats, signatureNotes, staffToFret } from './questions';
 import { gradeTaps, tapPassed } from './tap';
 import { beatsOf } from '../music/duration';
 
@@ -247,5 +247,42 @@ describe('a picked letter sounds where it would sit (R33)', () => {
   });
   it('stays silent for a choice that is not a note name', () => {
     expect(near('C major', 'C4')).toBeNull();
+  });
+});
+
+describe('sharps, flats and the close pairs (R36)', () => {
+  const midi = (name: string, near: SpelledNote) => midiFromSpelled(choiceNote(name, near)!);
+  it('lesson 2 explains them before the neck drills', () => {
+    const titles = PART_0[1]!.steps.map((s) => s.title);
+    expect(titles.indexOf('Sharps and flats')).toBeGreaterThan(titles.indexOf('Which open string?'));
+    expect(titles.indexOf('Nothing between E and F, or B and C')).toBeLessThan(titles.indexOf('Staff to fretboard'));
+  });
+  it('always asks one fret up from E and from B, where the answer is the next letter', () => {
+    for (const seed of SEEDS) {
+      const qs = sharpsAndFlats(createRng(seed));
+      expect(qs).toHaveLength(6);
+      const shown = qs.map((q) => q.notes[0]!.letter);
+      const e = qs.find((q) => q.prompt.includes('one fret') && q.notes[0]!.letter === 'E')!;
+      const b = qs.find((q) => q.prompt.includes('one fret') && q.notes[0]!.letter === 'B')!;
+      expect(e.answer).toBe('F');
+      expect(b.answer).toBe('C');
+      expect(shown.length).toBe(6);
+      for (const q of qs) {
+        expect(q.choices).toContain(q.answer);
+        expect(new Set(q.choices).size).toBe(4);
+        // Exactly one choice sounds the right note: no enharmonic twin of the answer among the others.
+        const target = q.prompt.includes('one fret') ? midiFromSpelled(q.notes[0]!) + 1 : midiFromSpelled(q.notes[0]!);
+        const right = q.choices.filter((c) => midi(c, q.notes[0]!) % 12 === target % 12);
+        expect(right).toEqual([q.answer]);
+      }
+    }
+  });
+  it('the other name sounds the same as the note shown', () => {
+    for (const seed of SEEDS)
+      for (const q of enharmonicQuestions(3, createRng(seed))) {
+        expect(q.answer[0]).not.toBe(q.notes[0]!.letter);
+        expect(q.notes[0]!.accidental).not.toBe(0);
+        expect(midiFromSpelled(choiceNote(q.answer, q.notes[0]!)!)).toBe(midiFromSpelled(q.notes[0]!));
+      }
   });
 });

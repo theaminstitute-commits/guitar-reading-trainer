@@ -18,6 +18,8 @@ export interface NameQuestion {
   notes: SpelledNote[];
   choices: string[];
   answer: string;
+  /** Said after the right answer, after "X is correct!": why it is right. */
+  why?: string;
 }
 
 /** Tap the line or space where a named note belongs. */
@@ -165,6 +167,73 @@ function spellNear(n: SpelledNote, steps: number, key: Key): SpelledNote {
   const octave = Math.floor(step / 7);
   const natural: SpelledNote = { letter, accidental: 0, octave };
   return keyAccidental(natural, key);
+}
+
+/** The notes between the letters, each with its two names (sharp first), within the stage 1 range. */
+const BETWEEN: readonly [string, string][] = [
+  ['C#5', 'Db5'],
+  ['D#4', 'Eb4'],
+  ['D#5', 'Eb5'],
+  ['F#4', 'Gb4'],
+  ['F#5', 'Gb5'],
+  ['G#4', 'Ab4'],
+  ['A#4', 'Bb4'],
+];
+
+/**
+ * "Two names, one note" (R36): a sharp or a flat on the staff, its other name to pick. The wrong
+ * choices carry the same sign as the answer, on other letters, so only the fret between counts.
+ */
+export function enharmonicQuestions(count: number, rng: Rng): NameQuestion[] {
+  return pickSeries(BETWEEN, count, rng).map(([sharp, flat]) => {
+    const flipped = rng.int(2) === 1;
+    const shown = parseSpelled(flipped ? flat : sharp);
+    const answer = nameOf(parseSpelled(flipped ? sharp : flat));
+    const sameSign = BETWEEN.map(([s, f]) => nameOf(parseSpelled(flipped ? s : f)));
+    return {
+      kind: 'name',
+      prompt: 'Two names, one note. What is its other name?',
+      key: C_MAJOR,
+      notes: [shown],
+      choices: choicesWith(answer, sameSign, rng),
+      answer,
+      why: `${nameOf(shown)} and ${answer} are the same fret and sound the same.`,
+    };
+  });
+}
+
+/**
+ * "Which note is one fret higher?" (R36): E and B always come up, where one fret is the next letter
+ * (E to F, B to C, nothing between them), and one other letter, where one fret is its sharp.
+ */
+export function oneFretUpQuestions(rng: Rng): NameQuestion[] {
+  const e = rng.pick(['E4', 'E5']);
+  const other = rng.pick(['C5', 'D4', 'F4', 'G4', 'A4']);
+  return shuffle([e, 'B4', other], rng).map((text) => {
+    const shown = parseSpelled(text);
+    const next = letterStep(shown.letter, 1);
+    const close = shown.letter === 'E' || shown.letter === 'B';
+    const answer = close ? next : `${shown.letter}♯`;
+    const distractors = close ? [`${next}♯`, letterStep(shown.letter, 2), `${letterStep(shown.letter, -1)}♯`] : [next, `${next}♯`, `${letterStep(shown.letter, -1)}`];
+    return {
+      kind: 'name',
+      prompt: 'Which note is one fret higher?',
+      key: C_MAJOR,
+      notes: [shown],
+      choices: choicesWith(answer, distractors, rng),
+      answer,
+      why: close
+        ? `${shown.letter} and ${next} are one fret apart: there is no note between them.`
+        : `${shown.letter} and ${next} are two frets apart, with ${answer} between them.`,
+    };
+  });
+}
+
+/** The sharps and flats drill: one-fret-up and other-name questions taking turns. */
+export function sharpsAndFlats(rng: Rng): NameQuestion[] {
+  const up = oneFretUpQuestions(rng);
+  const names = enharmonicQuestions(3, rng);
+  return up.flatMap((q, i) => [q, names[i]!]);
 }
 
 /** A natural note given the accidental the key signature puts on its letter. */
