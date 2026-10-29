@@ -190,11 +190,7 @@ export default function StartScreen({
           <div className="theme-grid" role="group" aria-label="Theme">
             {THEMES.map((t) => (
               <button key={t.id} className={`theme-swatch${progress.theme === t.id ? ' on' : ''}`} aria-pressed={progress.theme === t.id} onClick={() => onTheme(t.id)}>
-                <span
-                  className="theme-dot"
-                  aria-hidden="true"
-                  style={{ background: t.id === 'system' ? 'linear-gradient(135deg, #efeae2 0 50%, #14181f 50% 100%)' : `linear-gradient(135deg, ${t.bg} 0 58%, ${t.accent} 58% 100%)` }}
-                />
+                <ThemeDot id={t.id} bg={t.id === 'system' ? '#efeae2' : t.bg} accent={t.id === 'system' ? '#14181f' : t.accent} split={t.id === 'system' ? 0.5 : 0.58} />
                 {t.label}
               </button>
             ))}
@@ -313,5 +309,23 @@ export default function StartScreen({
         )}
       </p>
     </section>
+  );
+}
+
+/** A theme swatch: the page colour with a diagonal corner of the accent, drawn in SVG so the circle and the split stay smooth. */
+function ThemeDot({ id, bg, accent, split }: { id: string; bg: string; accent: string; split: number }) {
+  const c = split * 60 - 30; // the accent corner covers x + y >= split * 60 of the 30 x 30 box
+  const clip = `theme-dot-${id}`;
+  return (
+    <svg className="theme-dot" viewBox="0 0 30 30" width="30" height="30" aria-hidden="true">
+      <clipPath id={clip}>
+        <circle cx="15" cy="15" r="14" />
+      </clipPath>
+      <g clipPath={`url(#${clip})`}>
+        <rect width="30" height="30" fill={bg} />
+        <polygon points={`${c},30 30,${c} 30,30`} fill={accent} />
+      </g>
+      <circle cx="15" cy="15" r="14.5" fill="none" stroke="rgba(128, 128, 128, 0.55)" strokeWidth="1" />
+    </svg>
   );
 }
