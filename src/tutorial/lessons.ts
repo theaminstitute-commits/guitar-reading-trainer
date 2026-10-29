@@ -48,6 +48,8 @@ export interface ExplainStep {
   /** `legend`: name every line and space in a column of letters before the clef (lines and spaces in two colours). */
   staff?: { notes: ExampleNote[]; key?: Key; timeSignature?: boolean; legend?: boolean };
   fretboard?: { frets: readonly [number, number]; dots: FretPosition[]; labels?: string[] };
+  /** A piano keyboard (sounding pitches, as MIDI): the key of each played note lights as it sounds. */
+  piano?: { low: number; high: number; marks: { midi: number; label: string }[] };
   /** "Hear it": notes played in order (sounding pitch), with an optional tempo. */
   /**
    * "Hear it": notes played in order (sounding pitch), with an optional tempo. By default
@@ -88,6 +90,8 @@ export const LESSON_TEMPO = 100;
 const n = (name: string, label?: string, duration: DurationId = 'q'): ExampleNote => ({ name, label, duration });
 const sounding = (name: string, duration: DurationId = 'q'): PlayableNote => ({ midi: soundingFromWritten(midiFromSpelled(parseSpelled(name))), duration });
 const at = (string: number, fret: number): FretPosition => ({ string, fret });
+/** A piano note: written where it sounds. */
+const piano = (name: string, duration: DurationId = 'q'): PlayableNote => ({ midi: midiFromSpelled(parseSpelled(name)), duration, instrument: 'piano' });
 
 const STAGE1 = naturalsBetween('D4', 'G5');
 const STAFF_ONLY = naturalsBetween('E4', 'F5');
@@ -189,10 +193,14 @@ export const PART_0: readonly Lesson[] = [
         title: 'Written higher than it sounds',
         body: [
           'Guitar is written one octave (eight letters) higher than it sounds, so its notes fit on the treble staff instead of far below it. Every guitarist reads this way, and the app always does.',
-          'You never have to work this out: the written note is simply the one you read and play. It only matters when you compare with a piano, which is written where it sounds.',
+          'Tap Hear it. The guitar plays its written E5, the open high E string. Then the piano plays its E4: the very same sound, on the same piano key. Last the piano plays its E5, one octave higher. The piano is written where it sounds.',
+          'You never have to work this out: the written note is simply the one you read and play. It only matters when you compare with a piano or another instrument.',
         ],
-        staff: { notes: [n('E5', 'written E5', 'w')] },
-        play: { notes: [sounding('E5', 'h')] },
+        // The user, 2026-10-29: hear the guitar against a piano, with the fretboard and a piano keyboard (R37).
+        staff: { notes: [n('E5', 'guitar E5', 'w'), n('E4', 'piano E4', 'w'), n('E5', 'piano E5', 'w')] },
+        fretboard: { frets: [0, 4], dots: [at(1, 0)], labels: ['E'] },
+        piano: { low: 60, high: 83, marks: [{ midi: 64, label: 'E4' }, { midi: 76, label: 'E5' }] },
+        play: { notes: [sounding('E5', 'w'), piano('E4', 'w'), piano('E5', 'w')], tempo: 150 },
       },
       {
         kind: 'explain',

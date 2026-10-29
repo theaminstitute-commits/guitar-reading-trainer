@@ -2,7 +2,7 @@
  * Writes src/about/licences.json: every third-party part that ships inside the
  * app, with its copyright lines and full licence text, for the About and
  * licences screen. Production npm packages are read from package-lock.json and
- * their own LICENSE files; the fonts and guitar samples are listed by hand.
+ * their own LICENSE files; the fonts and guitar and piano samples are listed by hand.
  *
  * Run after changing dependencies:  node tools/licences.mjs
  * src/about/licences.test.ts fails if the lock file and this list drift apart.
@@ -70,9 +70,9 @@ const assets = [
   },
   {
     id: 'samples-fluidr3',
-    name: 'FluidR3_GM acoustic steel guitar samples',
+    name: 'FluidR3_GM acoustic steel guitar and acoustic grand piano samples',
     version: 'midi-js-soundfonts',
-    role: 'Guitar sound',
+    role: 'Guitar and piano sound',
     licence: 'CC-BY-3.0',
     copyright: ['FluidR3_GM soundfont by Frank Wen.', 'MP3 rendering by Benjamin Gleitzman (midi-js-soundfonts, https://github.com/gleitz/midi-js-soundfonts).'],
     text:

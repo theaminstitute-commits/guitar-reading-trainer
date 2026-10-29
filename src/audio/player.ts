@@ -14,13 +14,15 @@ import { groupEvents, totalBeats as countBeats } from '../melody/bars';
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import type { Midi } from '../music/pitch';
 import { loadSampleBuffers } from './loadSamples';
-import { GUITAR_SAMPLES } from './sampleMap';
+import { GUITAR_SAMPLES, PIANO_SAMPLES } from './sampleMap';
 
 export interface PlayableNote {
   midi: Midi;
   duration: DurationId;
   /** Notes with the same id sound together, strummed from the lowest up. */
   chord?: number;
+  /** Played on the piano instead of the guitar (the guitar-and-piano lesson, R37). */
+  instrument?: 'piano';
 }
 
 /** Seconds between the notes of a strummed chord. */
@@ -67,6 +69,8 @@ const GATE = 0.92;
 export class GuitarPlayer {
   /** The guitar sampler once loaded. */
   sampler: Tone.Sampler | null = null;
+  /** The piano, for the one lesson that compares the two. */
+  private piano: Tone.Sampler | null = null;
   private click: Tone.ToneAudioBuffer | null = null;
   private clickGain: Tone.Gain | null = null;
   private loading: Promise<void> | null = null;
@@ -89,6 +93,7 @@ export class GuitarPlayer {
           release: 0.6,
           volume: 2,
         }).toDestination();
+        this.piano = new Tone.Sampler({ urls: await loadSampleBuffers(PIANO_SAMPLES), release: 0.8, volume: 0 }).toDestination();
         // The Seiko-style beep from the user's Tempus metronome, rendered once into a buffer.
         const rate = Tone.getContext().sampleRate;
         const samples = seikoClick(rate);
@@ -185,9 +190,10 @@ export class GuitarPlayer {
       group.forEach((note, k) => {
         const name = Tone.Frequency(note.midi, 'midi').toNote();
         const offset = k * STRUM;
+        const voice = note.instrument === 'piano' && this.piano ? this.piano : sampler;
         this.scheduledIds.push(
           transport.schedule((time) => {
-            sampler.triggerAttackRelease(name, Math.max(0.05, length * GATE - offset), time);
+            voice.triggerAttackRelease(name, Math.max(0.05, length * GATE - offset), time);
             if (k === 0) uiAt(() => events.onNote?.(firstIndex), time);
           }, at + offset),
         );
@@ -249,6 +255,7 @@ export class GuitarPlayer {
     transport.stop();
     transport.cancel(0);
     this.sampler?.releaseAll();
+    this.piano?.releaseAll();
     const events = this.currentEvents;
     this.currentEvents = null;
     this._isPlaying = false;
@@ -258,6 +265,8 @@ export class GuitarPlayer {
   dispose(): void {
     this.stop();
     this.sampler?.dispose();
+    this.piano?.dispose();
+    this.piano = null;
     this.click?.dispose();
     this.clickGain?.dispose();
     this.clickGain = null;

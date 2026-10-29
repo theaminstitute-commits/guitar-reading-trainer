@@ -11,5 +11,9 @@ https://creativecommons.org/licenses/by/3.0/us/
 Attribution: FluidR3_GM soundfont by Frank Wen; MP3 rendering by Benjamin Gleitzman
 (midi-js-soundfonts). The app credits this in its footer and on its About and licences screen.
 
+The two files in `piano/` (E4 and E5) are the "Acoustic Grand Piano" from the same
+soundfont and rendering (`FluidR3_GM/acoustic_grand_piano-mp3/`), same licence and
+attribution. They are used only in the tutorial screen that compares guitar and piano.
+
 Only the notes the app needs are included. Tone.js pitch-shifts from the nearest
 sample for anything in between.

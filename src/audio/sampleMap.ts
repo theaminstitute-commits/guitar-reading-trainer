@@ -20,6 +20,8 @@ import E5 from './samples/E5.mp3';
 import G5 from './samples/G5.mp3';
 import Bb5 from './samples/Bb5.mp3';
 import C6 from './samples/C6.mp3';
+import PianoE4 from './samples/piano/E4.mp3';
+import PianoE5 from './samples/piano/E5.mp3';
 
 /** Keys are Tone.js note names of the SOUNDING pitch. */
 export const GUITAR_SAMPLES: Record<string, string> = {
@@ -41,5 +43,8 @@ export const GUITAR_SAMPLES: Record<string, string> = {
   C6,
 };
 
+/** The piano, only for the lesson that compares guitar and piano (R37): two notes, the rest pitch-shifted. */
+export const PIANO_SAMPLES: Record<string, string> = { E4: PianoE4, E5: PianoE5 };
+
 export const SAMPLE_CREDIT =
-  'Guitar sound: FluidR3_GM acoustic steel guitar (Frank Wen), MP3 rendering by midi-js-soundfonts, CC BY 3.0.';
+  'Guitar and piano sound: FluidR3_GM acoustic steel guitar and acoustic grand piano (Frank Wen), MP3 rendering by midi-js-soundfonts, CC BY 3.0.';

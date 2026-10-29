@@ -17,6 +17,7 @@ import ExerciseScreen from './ExerciseScreen';
 import FeedbackScreen from './FeedbackScreen';
 import type { YoursStaff } from './FeedbackStaff';
 import Fretboard from './Fretboard';
+import PianoKeys from './PianoKeys';
 import { CheckIcon, ChevronLeftIcon, PlayIcon, StopIcon } from './icons';
 import { PAPER } from '../notation/paper';
 import { LESSON_TEMPO, playedAsWritten, staffIndexOf } from '../tutorial/lessons';
@@ -185,13 +186,14 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
       {step.fretboard && (
         <Fretboard
           frets={step.fretboard.frets}
-          active={lit !== null && dots[lit] ? [dots[lit]!] : still.dots}
+          active={lit !== null ? (dots[lit] ? [dots[lit]!] : []) : still.dots}
           labels={lit !== null && dots[lit] ? [step.fretboard.labels?.[lit] ?? ''] : step.fretboard.labels ? still.labels : undefined}
           ringing={lit !== null && dots[lit] ? [dots[lit]!] : []}
           ringKey={lit ?? undefined}
           mirrored={leftHanded}
         />
       )}
+      {step.piano && <PianoKeys low={step.piano.low} high={step.piano.high} marks={step.piano.marks} lit={lit !== null ? (step.play?.notes[lit]?.midi ?? null) : null} />}
       <div className="controls">
         {onBack && <button onClick={onBack}>Back</button>}
         {step.play &&

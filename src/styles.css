@@ -1060,6 +1060,42 @@ button.link.subtle {
   display: block;
 }
 
+.piano {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+  margin: 10px auto 4px;
+}
+.piano-white {
+  fill: #fbfaf7;
+  stroke: #3a3530;
+  stroke-width: 1;
+}
+.piano-white.marked {
+  fill: #dbe8f5;
+}
+.piano-white.lit,
+.piano-black.lit {
+  fill: var(--accent);
+}
+.piano-black {
+  fill: #1f1a13;
+}
+.piano-c {
+  fill: #7d7468;
+  font-size: 8px;
+  font-weight: 700;
+}
+.piano-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.piano-label.lit {
+  fill: var(--accent);
+}
+
 /* A question's note falls onto the staff and settles with a small bounce. */
 .drop-in {
   animation: note-drop 0.6s cubic-bezier(0.45, 0, 0.55, 1) both;

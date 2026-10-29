@@ -205,9 +205,13 @@ describe('lesson examples', () => {
     for (const lesson of ALL_LESSONS) {
       for (const step of lesson.steps) {
         if (step.kind !== 'explain' || !step.staff || !step.play) continue;
-        const shown = step.staff.notes.map((n) => midiFromSpelled(parseSpelled(n.name)) - 12);
-        const expected = step.play.staffIndex ? step.play.staffIndex.map((i) => shown[i]) : shown;
-        expect(step.play.notes.map((p) => p.midi), `${lesson.id}: ${step.title}`).toEqual(expected);
+        // Guitar sounds an octave below the written note; the piano (R37) sounds where it is written.
+        const shown = step.staff.notes.map((n) => midiFromSpelled(parseSpelled(n.name)));
+        const expected = step.play.staffIndex ? step.play.staffIndex.map((i) => shown[i]!) : shown;
+        expect(
+          step.play.notes.map((p) => p.midi),
+          `${lesson.id}: ${step.title}`,
+        ).toEqual(expected.map((m, i) => (step.play!.notes[i]?.instrument === 'piano' ? m : m - 12)));
       }
     }
   });
@@ -247,6 +251,19 @@ describe('a picked letter sounds where it would sit (R33)', () => {
   });
   it('stays silent for a choice that is not a note name', () => {
     expect(near('C major', 'C4')).toBeNull();
+  });
+});
+
+describe('guitar against piano (R37)', () => {
+  const step = PART_0[1]!.steps.find((s) => s.title === 'Written higher than it sounds')!;
+  it("plays the guitar's written E5, then the piano's E4 at the same pitch, then the piano's E5 an octave up", () => {
+    if (step.kind !== 'explain') throw new Error('not an explanation');
+    const [guitar, pianoLow, pianoHigh] = step.play!.notes;
+    expect(guitar!.instrument).toBeUndefined();
+    expect([pianoLow!.instrument, pianoHigh!.instrument]).toEqual(['piano', 'piano']);
+    expect(pianoLow!.midi).toBe(guitar!.midi);
+    expect(pianoHigh!.midi).toBe(guitar!.midi + 12);
+    expect(step.piano!.marks.map((m) => m.midi)).toEqual([guitar!.midi, guitar!.midi + 12]);
   });
 });
 

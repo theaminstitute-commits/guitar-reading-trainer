@@ -141,9 +141,9 @@
     },
     {
       "id": "samples-fluidr3",
-      "name": "FluidR3_GM acoustic steel guitar samples",
+      "name": "FluidR3_GM acoustic steel guitar and acoustic grand piano samples",
       "version": "midi-js-soundfonts",
-      "role": "Guitar sound",
+      "role": "Guitar and piano sound",
       "licence": "CC-BY-3.0",
       "copyright": [
         "FluidR3_GM soundfont by Frank Wen.",
