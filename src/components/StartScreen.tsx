@@ -168,7 +168,7 @@ export default function StartScreen({
         </div>
         <p className="muted small-note">{mode.note}</p>
         <label className="toggle muted">
-          <input type="checkbox" checked={progress.hints} onChange={(e) => onHints(e.target.checked)} /> Beginner hints on stages 1 and 2: a coach for each note, note names on the fretboard, a slower first play
+          <input type="checkbox" checked={progress.hints} onChange={(e) => onHints(e.target.checked)} /> Beginner hints on stage 1: a coach for each note, note names on the fretboard, a slower first play
         </label>
         {/* Listen only shows no fretboard, so handedness has nothing to mirror there. */}
         {progress.mode === 'watch' && (

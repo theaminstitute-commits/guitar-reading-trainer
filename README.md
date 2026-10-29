@@ -15,9 +15,9 @@ npm run build      # production build + PWA service worker in dist/
 node tools/single-file.mjs  # one self-contained HTML file from dist/
 ```
 
-Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.19.4 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
+Linux Mint / Ubuntu packages (.deb, .run, zip) come from `VERSION=0.19.5 sh linux/build-packages.sh` run on Linux or WSL after the single-file build; see `linux/INSTALL-LINUX.txt`.
 
-The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.19.4` in PowerShell builds `dist/GuitarReadingTrainer-v0.19.4.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
+The Android app is the same single-file page in a WebView (`android/`): `.androiduild-apk.ps1 -Version 0.19.5` in PowerShell builds `dist/GuitarReadingTrainer-v0.19.5.apk` without Gradle, using Android Studio's bundled JDK and SDK build-tools 36 (aapt2, javac, d8, zipalign, apksigner with the debug key); the versionCode is derived from the version. The wrapper needs no permissions, draws edge to edge and hands the system bar insets to the page as the CSS variables `--safe-top` and `--safe-bottom`; the page reports its theme through `window.AndroidTheme` so the status bar icons stay readable. See `android/INSTALL-ANDROID.txt`.
 
 ## Music rules baked into the code
 
@@ -68,7 +68,7 @@ The stage ladder in `docs/stage-ladder.md` is implemented in `src/melody/stages.
 
 ## Tutorial
 
-`src/tutorial/` holds the beginner course as data and pure functions. `lessons.ts` defines Part 0 (five lessons before stage 1) and the stage lessons that run before the guides of stages 3, 5, 6, 7, 12, 14 and 18; a lesson is a list of steps: an explanation with an example staff, fretboard and sound, a drill of generated questions, or the coached first melody. `questions.ts` generates the question kinds (name the note, tap the line or space, staff to fretboard, fretboard to staff, which rhythm, tap along), `placement.ts` the placement test's tiers and the stage it places at, `coach.ts` the note-by-note verdicts, and `tap.ts` the tap-along timing. The screens are `LessonRunner`, `QuestionCard` (draws and grades every question kind on a `MiniStaff` and a tappable `Fretboard`), and `PlacementScreen`. `Progress.tutorial` remembers finished lessons, `Progress.tutorialSkipped` hides the welcome panel, and `Progress.hints` switches the beginner hints on stages 1 and 2. Rules R24 to R27 in `docs/rules.md`.
+`src/tutorial/` holds the beginner course as data and pure functions. `lessons.ts` defines Part 0 (five lessons before stage 1) and the stage lessons that run before the guides of stages 3, 5, 6, 7, 12, 14 and 18; a lesson is a list of steps: an explanation with an example staff, fretboard and sound, a drill of generated questions, or the coached first melody. `questions.ts` generates the question kinds (name the note, tap the line or space, staff to fretboard, fretboard to staff, which rhythm, tap along), `placement.ts` the placement test's tiers and the stage it places at, `coach.ts` the note-by-note verdicts, and `tap.ts` the tap-along timing. The screens are `LessonRunner`, `QuestionCard` (draws and grades every question kind on a `MiniStaff` and a tappable `Fretboard`), and `PlacementScreen`. `Progress.tutorial` remembers finished lessons, `Progress.tutorialSkipped` hides the welcome panel, and `Progress.hints` switches the beginner hints on stage 1. Rules R24 to R27 in `docs/rules.md`.
 
 ## Chords
 

@@ -69,7 +69,7 @@ export interface Progress {
   tutorial: string[];
   /** The learner chose not to take the tutorial (skipped it, or took the placement test). */
   tutorialSkipped: boolean;
-  /** Beginner hints on stages 1 and 2: a coach, note names on the fretboard, a slower first play (R26). */
+  /** Beginner hints on stage 1: a coach, note names on the fretboard, a slower first play (R26). */
   hints: boolean;
 }
 
