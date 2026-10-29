@@ -33,7 +33,6 @@ interface StartScreenProps {
   onLesson: (lesson: Lesson) => void;
   onPlacement: () => void;
   onHints: (on: boolean) => void;
-  onDismissWelcome: () => void;
 }
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
@@ -71,7 +70,6 @@ export default function StartScreen({
   onLesson,
   onPlacement,
   onHints,
-  onDismissWelcome,
 }: StartScreenProps) {
   const [confirmReset, setConfirmReset] = useState(false);
   /** A brand-new learner: no melodies, no lessons, and they have not said they can read. */
@@ -105,9 +103,6 @@ export default function StartScreen({
                 I can already read music 😊
               </button>
             </div>
-            <button className="link subtle" onClick={onDismissWelcome}>
-              Skip to stage 1
-            </button>
           </div>
         </div>
       )}

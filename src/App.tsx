@@ -303,7 +303,6 @@ export default function App() {
           onLesson={(l) => openLesson(l, l.stage ? 'start' : 'next-part-0')}
           onPlacement={() => setScreen('placement')}
           onHints={(hints) => updateProgress({ ...progress, hints })}
-          onDismissWelcome={() => updateProgress({ ...progress, tutorialSkipped: true })}
         />
       )}
 
