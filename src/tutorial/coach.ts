@@ -1,6 +1,6 @@
 /**
- * The coach on beginner melodies (the coached lesson, and stage 1 with
- * hints on): every note is checked against the melody as it is written. A
+ * The coach on the tutorial's coached first melody (no stage has one, R26):
+ * every note is checked against the melody as it is written. A
  * wrong note is flagged at once; after a set number of wrong tries at the same
  * note the coach names it and says where it sits on the staff.
  */

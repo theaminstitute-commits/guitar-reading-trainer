@@ -327,7 +327,7 @@ export default function App() {
           metronome={progress.metronome}
           onMetronome={onMetronome}
           onCheck={onCheck}
-          {...(progress.hints && exercise.level.number === 1 ? { coach: { revealAfter: 2 }, noteNames: true, firstPlayRate: 0.85 } : {})}
+          {...(progress.hints && exercise.level.number === 1 ? { noteNames: true, firstPlayRate: 0.85 } : {})}
         />
       )}
 
