@@ -1293,6 +1293,26 @@ button.link.subtle {
   animation: pulse 0.5s ease-out;
 }
 
+/* Lesson dots that follow the staff's colours (R40): the marked notes' blue, the others dark grey. Same in every theme, like the paper staff. */
+.fb-active.mark .fb-active-dot,
+.fb-active.mark .fb-active-glow {
+  fill: #1f6fb2;
+}
+.fb-active.plain .fb-active-dot,
+.fb-active.plain .fb-active-glow {
+  fill: #3b4350;
+}
+.fb-active.mark .fb-dot-label,
+.fb-active.plain .fb-dot-label {
+  fill: #ffffff;
+}
+/* A thin light ring keeps the grey readable on dark rosewood as well as on maple. */
+.fb-active.mark .fb-active-dot,
+.fb-active.plain .fb-active-dot {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1.5;
+}
+
 @keyframes pulse {
   from {
     opacity: 0.6;

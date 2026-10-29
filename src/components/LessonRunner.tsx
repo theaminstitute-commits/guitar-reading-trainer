@@ -156,17 +156,21 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
 
   const dots = step.fretboard?.dots ?? [];
   // At rest, notes on the same fret (F♯ and G♭) share one dot carrying both names; while playing each lights on its own.
-  const still = dots.reduce<{ dots: FretPosition[]; labels: string[] }>(
+  // Where the staff marks some notes in blue, each dot takes its note's colour: blue for a marked note, dark grey for the rest (R40).
+  const anyMarked = step.staff?.notes.some((n) => n.mark) === true;
+  const toneOf = (i: number): 'mark' | 'plain' | undefined => (anyMarked ? (step.staff?.notes[staffIndexOf(step, i)]?.mark ? 'mark' : 'plain') : undefined);
+  const still = dots.reduce<{ dots: FretPosition[]; labels: string[]; tones: ('mark' | 'plain' | undefined)[] }>(
     (acc, d, i) => {
       const name = step.fretboard?.labels?.[i] ?? '';
       const at = acc.dots.findIndex((o) => o.string === d.string && o.fret === d.fret);
       if (at < 0) {
         acc.dots.push(d);
         acc.labels.push(name);
+        acc.tones.push(toneOf(i));
       } else if (name && !acc.labels[at]!.split('/').includes(name)) acc.labels[at] = acc.labels[at] ? `${acc.labels[at]}/${name}` : name;
       return acc;
     },
-    { dots: [], labels: [] },
+    { dots: [], labels: [], tones: [] },
   );
   return (
     <div className="panel lesson-step">
@@ -189,6 +193,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
           frets={step.fretboard.frets}
           active={lit !== null ? (dots[lit] ? [dots[lit]!] : []) : still.dots}
           labels={lit !== null && dots[lit] ? [step.fretboard.labels?.[lit] ?? ''] : step.fretboard.labels ? still.labels : undefined}
+          tones={lit !== null ? [toneOf(lit)] : still.tones}
           ringing={lit !== null && dots[lit] ? [dots[lit]!] : []}
           ringKey={lit ?? undefined}
           mirrored={leftHanded}

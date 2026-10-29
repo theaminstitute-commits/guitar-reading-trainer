@@ -11,6 +11,11 @@ interface FretboardProps {
   mirrored?: boolean;
   /** Text inside each lit dot, parallel to `active` (beginner hints, lessons). */
   labels?: readonly string[];
+  /**
+   * Colour of each lit dot, parallel to `active` (R40): `mark` is the blue of the marked notes on the
+   * lesson staff, `plain` a dark grey like its black notes. Without it every dot has the accent colour.
+   */
+  tones?: readonly ('mark' | 'plain' | undefined)[];
   /** Makes every string and fret tappable (lesson drills). */
   onPick?: (position: FretPosition) => void;
   /** Answer marks for drills: a green or red ring at a position. */
@@ -48,7 +53,7 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
-export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey, naturalNames = false }: FretboardProps) {
+export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey, naturalNames = false, tones }: FretboardProps) {
   const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
   const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
@@ -200,7 +205,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
       {/* The note, or every note of the chord, sounding now */}
       {actives.map((a, i) =>
         inWindow(a) ? (
-          <g key={`a${i}`} className="fb-active">
+          <g key={`a${i}`} className={`fb-active${tones?.[i] ? ` ${tones[i]}` : ''}`}>
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={13} className="fb-active-glow" />
             <circle cx={noteX(a.fret)} cy={stringY(a.string)} r={9} className="fb-active-dot" />
             {/* The dot's letter: the label given, or on an open string its name, which the dot would otherwise hide. */}
