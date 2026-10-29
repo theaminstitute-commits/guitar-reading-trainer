@@ -17,6 +17,7 @@ import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
 import { describeMeter } from './melody/meter';
 import { STAGES, type Stage } from './melody/stages';
+import { THEMES } from './session/themes';
 import type { Melody } from './melody/types';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
@@ -221,8 +222,10 @@ export default function App() {
     const apply = () => {
       if (progress.theme === 'system') delete rootEl.dataset.theme;
       else rootEl.dataset.theme = progress.theme;
-      const dark = progress.theme === 'dark' || (progress.theme === 'system' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14181f' : '#efeae2');
+      const info = THEMES.find((t) => t.id === progress.theme);
+      const dark = info?.dark ?? !window.matchMedia('(prefers-color-scheme: light)').matches;
+      const bar = info && info.dark !== null ? info.bg : dark ? '#14181f' : '#efeae2';
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bar);
       // The Android wrapper colours its status and navigation bar icons to match (android/src/.../MainActivity.java).
       (window as Window & { AndroidTheme?: { set(dark: boolean): void } }).AndroidTheme?.set(dark);
     };

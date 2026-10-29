@@ -75,4 +75,13 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
     expect(p.write.stage).toBe(29);
     expect(p.seenGuides).toEqual([30]);
   });
+
+  it('keeps every theme the picker offers and drops unknown ones to Auto', () => {
+    for (const theme of ['midnight', 'plum', 'ocean', 'frost', 'contrast', 'light', 'dark']) {
+      localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme, metronome: false, seenGuides: [], write: track(0, 0) }));
+      expect(localProgressStore.load(STAGES).theme).toBe(theme);
+    }
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'neon', metronome: false, seenGuides: [], write: track(0, 0) }));
+    expect(localProgressStore.load(STAGES).theme).toBe('system');
+  });
 });

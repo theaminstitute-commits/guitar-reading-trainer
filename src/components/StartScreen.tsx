@@ -4,6 +4,7 @@ import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
 import type { ExerciseMode, Handedness, Progress, Theme, Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
+import { THEMES } from '../session/themes';
 import { PART_0, STAGE_LESSONS, type Lesson } from '../tutorial/lessons';
 
 export interface SessionStats {
@@ -183,12 +184,18 @@ export default function StartScreen({
             </div>
           </div>
         )}
-        <div className="row-between">
+        {/* Colour themes as swatches: the page colour with a corner of the accent (Auto: half light, half dark). */}
+        <div className="theme-picker">
           <span className="muted">Theme</span>
-          <div className="segmented compact" role="group" aria-label="Theme">
-            {(['system', 'light', 'dark'] as const).map((t) => (
-              <button key={t} className={`seg${progress.theme === t ? ' on' : ''}`} aria-pressed={progress.theme === t} onClick={() => onTheme(t)}>
-                {t === 'system' ? 'Auto' : t === 'light' ? 'Light' : 'Dark'}
+          <div className="theme-grid" role="group" aria-label="Theme">
+            {THEMES.map((t) => (
+              <button key={t.id} className={`theme-swatch${progress.theme === t.id ? ' on' : ''}`} aria-pressed={progress.theme === t.id} onClick={() => onTheme(t.id)}>
+                <span
+                  className="theme-dot"
+                  aria-hidden="true"
+                  style={{ background: t.id === 'system' ? 'linear-gradient(135deg, #efeae2 0 50%, #14181f 50% 100%)' : `linear-gradient(135deg, ${t.bg} 0 58%, ${t.accent} 58% 100%)` }}
+                />
+                {t.label}
               </button>
             ))}
           </div>

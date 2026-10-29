@@ -83,7 +83,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
+  :root:not([data-theme]) {
     --bg: #efeae2;
     --bg-2: #e8e2d8;
     --surface: #fffdf9;
@@ -116,6 +116,193 @@
     --marker: #3b3127;
     color-scheme: light;
   }
+}
+
+/* ---------- More themes (picked on the start screen; Auto above follows the device) ---------- */
+/* Midnight: true black for phone OLED screens, cyan accent, ebony fretboard. */
+:root[data-theme='midnight'] {
+  --bg: #000000;
+  --bg-2: #07090c;
+  --surface: #0e1116;
+  --surface-2: #161a21;
+  --surface-3: #1f242d;
+  --text: #e8edf3;
+  --muted: #8b96a5;
+  --faint: #5c6675;
+  --accent: #3fb6d9;
+  --accent-2: #2a9cbd;
+  --accent-soft: rgba(63, 182, 217, 0.16);
+  --accent-line: rgba(63, 182, 217, 0.34);
+  --accent-shadow: rgba(63, 182, 217, 0.26);
+  --accent-text: #00222b;
+  --info: #7fd3ea;
+  --glow: rgba(63, 182, 217, 0.1);
+  --wood: #1f1b19;
+  --wood-edge: #0b0a09;
+  --nut: #e8e2d6;
+  --wire: #9a958e;
+  --string: #cfcac2;
+  --marker: #5b5550;
+  color-scheme: dark;
+}
+
+/* Plum dusk: deep aubergine, soft violet accent, rosewood fretboard. */
+:root[data-theme='plum'] {
+  --bg: #19141f;
+  --bg-2: #1e1826;
+  --surface: #241c2c;
+  --surface-2: #2e2538;
+  --surface-3: #3a2f46;
+  --text: #f1ecf6;
+  --muted: #a99bb8;
+  --faint: #75678a;
+  --accent: #a77bf0;
+  --accent-2: #8f62dc;
+  --accent-soft: rgba(167, 123, 240, 0.18);
+  --accent-line: rgba(167, 123, 240, 0.36);
+  --accent-shadow: rgba(167, 123, 240, 0.28);
+  --accent-text: #1b0f2e;
+  --info: #c7a8ff;
+  --glow: rgba(167, 123, 240, 0.12);
+  color-scheme: dark;
+}
+
+/* Ocean: dark teal-navy, turquoise accent. */
+:root[data-theme='ocean'] {
+  --bg: #0d1b22;
+  --bg-2: #10212a;
+  --surface: #13262f;
+  --surface-2: #1a313c;
+  --surface-3: #233e4b;
+  --text: #e6f1f4;
+  --muted: #8fa9b3;
+  --faint: #5d7782;
+  --accent: #26b5c9;
+  --accent-2: #1a9aad;
+  --accent-soft: rgba(38, 181, 201, 0.16);
+  --accent-line: rgba(38, 181, 201, 0.34);
+  --accent-shadow: rgba(38, 181, 201, 0.26);
+  --accent-text: #032b31;
+  --info: #7fd8e4;
+  --glow: rgba(38, 181, 201, 0.1);
+  --wood: #3d2c22;
+  --wood-edge: #261a13;
+  color-scheme: dark;
+}
+
+/* Frost: cool grey light theme, indigo accent, maple fretboard. */
+:root[data-theme='frost'] {
+  --bg: #eef2f7;
+  --bg-2: #e6ebf2;
+  --surface: #ffffff;
+  --surface-2: #f4f6fa;
+  --surface-3: #e5e9f0;
+  --border: rgba(20, 30, 50, 0.1);
+  --border-strong: rgba(20, 30, 50, 0.2);
+  --text: #1b2533;
+  --muted: #5d6b7e;
+  --faint: #98a3b3;
+  --accent: #4c5fd5;
+  --accent-2: #3f50bd;
+  --accent-soft: rgba(76, 95, 213, 0.12);
+  --accent-line: rgba(76, 95, 213, 0.34);
+  --accent-shadow: rgba(76, 95, 213, 0.24);
+  --accent-text: #ffffff;
+  --good: #1e7a4a;
+  --good-soft: rgba(30, 122, 74, 0.13);
+  --bad: #b3261e;
+  --bad-soft: rgba(179, 38, 30, 0.11);
+  --info: #3f50bd;
+  --glow: rgba(76, 95, 213, 0.1);
+  --shadow: 0 10px 30px rgba(20, 30, 60, 0.12);
+  --shadow-sm: 0 2px 8px rgba(20, 30, 60, 0.07);
+  --wood: #e6c994;
+  --wood-edge: #c4a46c;
+  --nut: #f7efdc;
+  --wire: #8d8578;
+  --string: #6e6558;
+  --marker: #3b3127;
+  color-scheme: light;
+}
+
+/* High contrast: black and white with strong outlines, for low vision or bright sun. */
+:root[data-theme='contrast'] {
+  --bg: #000000;
+  --bg-2: #000000;
+  --surface: #000000;
+  --surface-2: #0d0d0d;
+  --surface-3: #1a1a1a;
+  --border: rgba(255, 255, 255, 0.75);
+  --border-strong: #ffffff;
+  --text: #ffffff;
+  --muted: #e6e6e6;
+  --faint: #bdbdbd;
+  --accent: #ffffff;
+  --accent-2: #e6e6e6;
+  --accent-soft: rgba(255, 255, 255, 0.16);
+  --accent-line: rgba(255, 255, 255, 0.7);
+  --accent-shadow: rgba(255, 255, 255, 0.2);
+  --accent-text: #000000;
+  --good: #6bff9e;
+  --good-soft: rgba(107, 255, 158, 0.16);
+  --bad: #ff8a7a;
+  --bad-soft: rgba(255, 138, 122, 0.18);
+  --info: #9fd3ff;
+  --glow: transparent;
+  --shadow: none;
+  --shadow-sm: none;
+  --wood: #000000;
+  --wood-edge: #ffffff;
+  --nut: #ffffff;
+  --wire: #ffffff;
+  --string: #ffffff;
+  --marker: #9e9e9e;
+  color-scheme: dark;
+}
+
+:root[data-theme='contrast'] .panel {
+  border-width: 2px;
+}
+
+/* The theme picker: one swatch per theme. */
+.theme-picker {
+  margin-top: 6px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.theme-swatch.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-line);
+}
+
+.theme-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(128, 128, 128, 0.55);
 }
 
 * {
@@ -1874,19 +2061,21 @@ html.theme-fade *::after {
   color: #e0598b;
 }
 
-:root[data-theme='light'] .aid-lines {
+:root[data-theme='light'] .aid-lines,
+:root[data-theme='frost'] .aid-lines {
   color: #6741d9;
 }
 
-:root[data-theme='light'] .aid-spaces {
+:root[data-theme='light'] .aid-spaces,
+:root[data-theme='frost'] .aid-spaces {
   color: #c2255c;
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .aid-lines {
+  :root:not([data-theme]) .aid-lines {
     color: #6741d9;
   }
-  :root:not([data-theme='dark']) .aid-spaces {
+  :root:not([data-theme]) .aid-spaces {
     color: #c2255c;
   }
 }

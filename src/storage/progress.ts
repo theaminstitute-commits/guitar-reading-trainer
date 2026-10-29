@@ -5,6 +5,7 @@
 import { MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
 import { initialProgress, type Progress, type Track } from '../session/progression';
+import { isTheme } from '../session/themes';
 
 export interface ProgressStore {
   load(stages: readonly Stage[]): Progress;
@@ -96,7 +97,7 @@ function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
     version: 7,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
-    theme: value.theme === 'light' || value.theme === 'dark' ? value.theme : 'system',
+    theme: isTheme(value.theme) ? value.theme : 'system',
     metronome: value.metronome === true,
     seenGuides: Array.isArray(value.seenGuides)
       ? [...new Set(value.seenGuides.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))]
