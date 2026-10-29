@@ -102,7 +102,7 @@ export default function StartScreen({
             </button>
             <div className="cta-row">
               <button className="btn" onClick={onPlacement}>
-                I can already read music
+                I can already read music 😊
               </button>
             </div>
             <button className="link subtle" onClick={onDismissWelcome}>
