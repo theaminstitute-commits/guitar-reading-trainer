@@ -77,11 +77,14 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
   });
 
   it('keeps every theme the picker offers and drops unknown ones to Auto', () => {
-    for (const theme of ['midnight', 'plum', 'ocean', 'frost', 'contrast', 'light', 'dark']) {
+    for (const theme of ['midnight', 'plum', 'frost', 'contrast', 'light', 'dark']) {
       localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme, metronome: false, seenGuides: [], write: track(0, 0) }));
       expect(localProgressStore.load(STAGES).theme).toBe(theme);
     }
     localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'neon', metronome: false, seenGuides: [], write: track(0, 0) }));
+    expect(localProgressStore.load(STAGES).theme).toBe('system');
+    // Ocean was dropped in 0.19.2: a learner who had picked it goes back to Auto.
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'ocean', metronome: false, seenGuides: [], write: track(0, 0) }));
     expect(localProgressStore.load(STAGES).theme).toBe('system');
   });
 });

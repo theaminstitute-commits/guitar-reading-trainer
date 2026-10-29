@@ -17,7 +17,7 @@ import type { Stage } from '../melody/stages';
 export type ExerciseMode = 'watch' | 'listen';
 export type Handedness = 'right' | 'left';
 /** Colour theme: follow the device, or a fixed choice. */
-export type Theme = 'system' | 'light' | 'dark' | 'midnight' | 'plum' | 'ocean' | 'frost' | 'contrast';
+export type Theme = 'system' | 'light' | 'dark' | 'midnight' | 'plum' | 'frost' | 'contrast';
 
 export interface Track {
   /** Index into the stage list. */

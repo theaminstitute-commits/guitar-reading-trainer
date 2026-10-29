@@ -168,30 +168,6 @@
   color-scheme: dark;
 }
 
-/* Ocean: dark teal-navy, turquoise accent. */
-:root[data-theme='ocean'] {
-  --bg: #0d1b22;
-  --bg-2: #10212a;
-  --surface: #13262f;
-  --surface-2: #1a313c;
-  --surface-3: #233e4b;
-  /* Body text is mostly --muted: kept bright so it reads clearly on the teal-navy. */
-  --text: #f5fbfd;
-  --muted: #bfd5dc;
-  --faint: #85a2ad;
-  --accent: #26b5c9;
-  --accent-2: #1a9aad;
-  --accent-soft: rgba(38, 181, 201, 0.16);
-  --accent-line: rgba(38, 181, 201, 0.34);
-  --accent-shadow: rgba(38, 181, 201, 0.26);
-  --accent-text: #032b31;
-  --info: #7fd8e4;
-  --glow: rgba(38, 181, 201, 0.1);
-  --wood: #3d2c22;
-  --wood-edge: #261a13;
-  color-scheme: dark;
-}
-
 /* Frost: cool grey light theme, indigo accent, maple fretboard. */
 :root[data-theme='frost'] {
   --bg: #eef2f7;
