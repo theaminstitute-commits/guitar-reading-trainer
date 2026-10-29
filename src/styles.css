@@ -1092,8 +1092,13 @@ button.link.subtle {
   font-size: 11px;
   font-weight: 800;
 }
+.piano-label {
+  transition: font-size 0.15s ease-out;
+}
 .piano-label.lit {
   fill: var(--accent);
+  font-size: 16px;
+  font-weight: 900;
 }
 
 /* A question's note falls onto the staff and settles with a small bounce. */
@@ -1674,6 +1679,14 @@ button.undo span {
   stroke: var(--paper);
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+
+/* The name of the note sounding now grows, and settles back when it ends (R39). */
+.pitch-label {
+  transition: font-size 0.15s ease-out;
+}
+.pitch-label.on {
+  font-weight: 800;
 }
 
 .pitch-label.ghost {

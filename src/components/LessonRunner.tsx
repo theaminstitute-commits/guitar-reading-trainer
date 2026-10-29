@@ -139,6 +139,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
         chord: n.chord,
         label: n.label,
         sign: n.sign,
+        on: isLit(n, i),
         color: isLit(n, i) ? litColor(n.name) : n.mark ? PAPER.active : undefined,
       })),
       key,

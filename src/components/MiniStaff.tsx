@@ -8,9 +8,9 @@ import { staveAt, stepFromY, yFromStep } from '../notation/hitTest';
 import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
-/** Staff steps of the notes the octave bands are measured from. */
 /** The lower octave band: a cool slate, never a warm tint on the cream paper. */
 const OCTAVE_4 = '#5b6b80';
+/** Staff steps of the notes the octave bands are measured from. */
 const OCTAVE_STEP = { D4: 4 * 7 + 1, B4: 4 * 7 + 6, G5: 5 * 7 + 4 } as const;
 
 export interface MiniNote {
@@ -21,6 +21,8 @@ export interface MiniNote {
   color?: string;
   /** Text under the note, on one baseline below the staff. */
   label?: string;
+  /** The note sounds now: its label grows (R39). */
+  on?: boolean;
   rest?: boolean;
 }
 
@@ -75,7 +77,7 @@ const MAX_STEP = staffStep(parseSpelled('E6'));
 
 /** Notes written in a key, as mini-staff notes with the signs the key needs; a forced sign wins. */
 export function miniNotes(
-  notes: readonly { note: SpelledNote; duration?: DurationId; chord?: number; color?: string; label?: string; sign?: Exclude<Sign, 'none'> }[],
+  notes: readonly { note: SpelledNote; duration?: DurationId; chord?: number; color?: string; label?: string; on?: boolean; sign?: Exclude<Sign, 'none'> }[],
   key: Key,
 ): MiniNote[] {
   const signs = displaySignsForBars([notes.map((n) => n.note)], key)[0]!;
@@ -86,6 +88,7 @@ export function miniNotes(
     chord: n.chord,
     color: n.color,
     label: n.label,
+    on: n.on,
   }));
 }
 
@@ -185,7 +188,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         const stave = layout.staves[g.barIndex] ?? layout.staves[layout.staves.length - 1]!;
         // Centre the name under the notehead: the layout gives its left edge, and a whole note is wider than the others.
         const half = (note.duration === 'w' ? 8 : 5.5) * scale;
-        return [{ x: g.x + half + gutter, y: stave.topLineY + stave.lineSpacing * 8.4, text: note.label, color: note.color ?? PAPER.ink }];
+        return [{ x: g.x + half + gutter, y: stave.topLineY + stave.lineSpacing * 8.4, text: note.label, color: note.color ?? PAPER.ink, on: note.on === true }];
       })
     : [];
 
@@ -242,7 +245,16 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
             </g>
           ))}
           {labels.map((l, i) => (
-            <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" className="pitch-label" fill={l.color} fontSize={labelSize}>
+            <text
+              key={i}
+              x={l.x}
+              y={l.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className={`pitch-label${l.on ? ' on' : ''}`}
+              fill={l.color}
+              style={{ fontSize: (l.on ? 1.5 : 1) * labelSize }}
+            >
               {l.text}
             </text>
           ))}
