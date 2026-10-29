@@ -1,11 +1,11 @@
 /**
  * Button feedback (R34): a soft felt-key thud on every button press, quiet
  * under the guitar. Buttons that already sound a note (Play, Hear it, letter
- * picks, the tap pad) carry data-sound="none" and stay silent here. It has its
- * own small audio context, started by the first press, so it never waits for
- * the guitar samples to load.
+ * picks, the tap pad) carry data-sound="none" and stay silent here. It plays in
+ * the app's one audio context (R35) and needs no samples, so it never waits.
  */
-let ctx: AudioContext | null = null;
+import { audioContext, unlockAudio } from './unlock';
+
 let enabled = true;
 
 export function setButtonSounds(on: boolean): void {
@@ -13,11 +13,12 @@ export function setButtonSounds(on: boolean): void {
 }
 
 function context(): AudioContext | null {
-  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  ctx ??= new Ctor();
-  if (ctx.state === 'suspended') void ctx.resume();
-  return ctx;
+  unlockAudio();
+  try {
+    return audioContext();
+  } catch {
+    return null;
+  }
 }
 
 /** The felt key: a low triangle tone, slightly falling, through a soft low-pass, about 90 ms. */

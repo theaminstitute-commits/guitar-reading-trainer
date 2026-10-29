@@ -19,6 +19,7 @@ import { describeMeter } from './melody/meter';
 import { STAGES, type Stage } from './melody/stages';
 import { THEMES } from './session/themes';
 import { installButtonSounds, setButtonSounds } from './audio/uiSound';
+import { installAudioUnlock } from './audio/unlock';
 import type { Melody } from './melody/types';
 import { keyFromId, keyName } from './music/key';
 import type { AnswerNote } from './notation/answer';
@@ -246,6 +247,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [progress.theme]);
 
+  useEffect(() => installAudioUnlock(), []);
   useEffect(() => installButtonSounds(), []);
   useEffect(() => setButtonSounds(progress.buttonSounds), [progress.buttonSounds]);
 

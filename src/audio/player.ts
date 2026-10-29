@@ -9,6 +9,7 @@
  */
 import * as Tone from 'tone';
 import { seikoClick } from './click';
+import { unlockAudio } from './unlock';
 import { groupEvents, totalBeats as countBeats } from '../melody/bars';
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import type { Midi } from '../music/pitch';
@@ -77,11 +78,11 @@ export class GuitarPlayer {
     return this._isPlaying;
   }
 
-  /** Must be called from a user gesture the first time (mobile audio unlock). */
+  /** Decodes the samples once. Starting the sound itself is unlockAudio's job (R35): never awaited, so a tap iOS refuses cannot stall every later play. */
   load(): Promise<void> {
+    unlockAudio();
     if (!this.loading) {
       this.loading = (async () => {
-        await Tone.start();
         const buffers = await loadSampleBuffers(GUITAR_SAMPLES);
         this.sampler = new Tone.Sampler({
           urls: buffers,
@@ -106,6 +107,8 @@ export class GuitarPlayer {
   }
 
   async play(notes: readonly PlayableNote[], options: PlayOptions, events: PlayerEvents = {}) {
+    // Before any await: still inside the tap, where iOS allows sound to start.
+    unlockAudio();
     await this.load();
     this.stop();
     const sampler = this.sampler!;
@@ -211,6 +214,7 @@ export class GuitarPlayer {
    * context times of the clicks after the count-in, so taps can be graded against them.
    */
   async clickTrack(tempo: number, beats: number, countIn = 4, onTick?: (index: number) => void): Promise<number[]> {
+    unlockAudio();
     await this.load();
     this.stop();
     const spb = 60 / tempo;
