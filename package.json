@@ -1,7 +1,7 @@
 {
   "name": "guitar-reading-trainer",
   "private": true,
-  "version": "0.19.7",
+  "version": "0.19.8",
   "author": "Dirk Swanepoel",
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",

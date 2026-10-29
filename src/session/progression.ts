@@ -93,6 +93,18 @@ export function initialProgress(stages: readonly Stage[]): Progress {
   return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true };
 }
 
+/** Anything a reset would clear: melodies, a stage reached or chosen, guides seen, lessons, or the tutorial skipped (R32). */
+export function hasProgress(progress: Progress): boolean {
+  const t = progress.write;
+  return t.exercises > 0 || t.stage > 0 || t.unlocked > 0 || t.tally > 0 || Object.keys(t.melodies).length > 0 || progress.seenGuides.length > 0 || progress.tutorial.length > 0 || progress.tutorialSkipped;
+}
+
+/** Reset progress (R32): the ladder, guides and tutorial start again; the settings (mode, hand, theme, click, hints) stay. */
+export function resetProgress(progress: Progress, stages: readonly Stage[]): Progress {
+  const fresh = initialProgress(stages);
+  return { ...fresh, mode: progress.mode, handedness: progress.handedness, theme: progress.theme, metronome: progress.metronome, hints: progress.hints };
+}
+
 export function trackOf(progress: Progress): Track {
   return progress.write;
 }

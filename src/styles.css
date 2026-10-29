@@ -1694,6 +1694,23 @@ button.undo span {
 }
 
 /* ---------- Sheets (explainers) ---------- */
+/* The "are you sure?" sheet: No on the left with the focus, Yes on the right in the warning colour. */
+.confirm-card {
+  max-width: 420px;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn.danger {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
 .card-backdrop {
   position: fixed;
   inset: 0;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_COUNTS, MIN_COUNTS } from '../melody/meter';
 import { generateMelody } from '../melody/generator';
 import { MAIN_STAGE_COUNT, STAGES } from '../melody/stages';
-import { accuracyOf, applyResult, fingerprint, hasHeard, initialProgress, initialTrack, MELODIES_KEPT, trackOf, withMelodyHeard, withStage, withTrack, withUnlocked, type Track } from './progression';
+import { accuracyOf, applyResult, fingerprint, hasHeard, hasProgress, initialProgress, resetProgress, initialTrack, MELODIES_KEPT, trackOf, withMelodyHeard, withStage, withTrack, withUnlocked, type Track } from './progression';
 
 const perfect = { pitchScore: 1, rhythmScore: 1 };
 const clean = { pitchScore: 0.95, rhythmScore: 0.95 };
@@ -154,5 +154,27 @@ describe('stage ladder progression', () => {
     p = { ...p, mode: 'listen' };
     expect(trackOf(p)).toBe(p.write);
     expect(trackOf(p).stage).toBe(1);
+  });
+});
+
+describe('reset progress (R32)', () => {
+  const fresh = initialProgress(STAGES);
+
+  it('offers a reset for any progress, not only after a melody', () => {
+    expect(hasProgress(fresh)).toBe(false);
+    expect(hasProgress({ ...fresh, theme: 'plum', handedness: 'left', hints: false })).toBe(false);
+    expect(hasProgress({ ...fresh, tutorial: ['staff'] })).toBe(true);
+    expect(hasProgress({ ...fresh, tutorialSkipped: true })).toBe(true);
+    expect(hasProgress({ ...fresh, seenGuides: [1] })).toBe(true);
+    expect(hasProgress({ ...fresh, write: { ...fresh.write, unlocked: 17, stage: 17 } })).toBe(true);
+    expect(hasProgress({ ...fresh, write: { ...fresh.write, exercises: 1 } })).toBe(true);
+  });
+
+  it('clears the ladder, guides and lessons but keeps the settings', () => {
+    const used = { ...fresh, mode: 'listen' as const, handedness: 'left' as const, theme: 'frost' as const, metronome: true, hints: false, seenGuides: [1, 2], tutorial: ['staff', 'neck'], tutorialSkipped: true, write: { ...fresh.write, stage: 5, unlocked: 6, tally: 3, exercises: 40, melodies: { '1': ['x'] } } };
+    const reset = resetProgress(used, STAGES);
+    expect(hasProgress(reset)).toBe(false);
+    expect(reset.write).toEqual(fresh.write);
+    expect([reset.mode, reset.handedness, reset.theme, reset.metronome, reset.hints]).toEqual(['listen', 'left', 'frost', true, false]);
   });
 });

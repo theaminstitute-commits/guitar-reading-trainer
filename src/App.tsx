@@ -24,7 +24,6 @@ import type { AnswerNote } from './notation/answer';
 import {
   accuracyOf,
   applyResult,
-  initialProgress,
   trackOf,
   withStage,
   withTrack,
@@ -37,6 +36,7 @@ import {
   hasHeard,
   withMelodyHeard,
   type Track,
+  resetProgress,
 } from './session/progression';
 import { hearWrittenAnswer, yoursFromAnswer, type HearMine } from './session/yours';
 import { localProgressStore } from './storage/progress';
@@ -246,8 +246,7 @@ export default function App() {
   }, [progress.theme]);
 
   const onReset = () => {
-    store.clear();
-    setProgress(initialProgress(STAGES));
+    updateProgress(resetProgress(progress, STAGES));
     setSession({ exercises: 0, accuracySum: 0 });
   };
 

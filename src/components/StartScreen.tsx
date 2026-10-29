@@ -1,9 +1,11 @@
 import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
-import type { ExerciseMode, Handedness, Progress, Theme, Track } from '../session/progression';
+import { hasProgress, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
+import ConfirmDialog from './ConfirmDialog';
+import { useState } from 'react';
 import { THEMES } from '../session/themes';
 import { PART_0, STAGE_LESSONS, type Lesson } from '../tutorial/lessons';
 
@@ -71,6 +73,7 @@ export default function StartScreen({
   onHints,
   onDismissWelcome,
 }: StartScreenProps) {
+  const [confirmReset, setConfirmReset] = useState(false);
   /** A brand-new learner: no melodies, no lessons, and they have not said they can read. */
   const isNew = progress.write.exercises === 0 && progress.tutorial.length === 0 && !progress.tutorialSkipped && track.unlocked === 0;
   const nextPart0 = PART_0.find((l) => !progress.tutorial.includes(l.id));
@@ -308,12 +311,24 @@ export default function StartScreen({
         <button className="link subtle" onClick={onAbout}>
           <BookIcon size={14} /> About and licences
         </button>
-        {progress.write.exercises > 0 && (
-          <button className="link subtle" onClick={onReset}>
+        {/* Shown whenever there is anything to clear, not only after a melody (R32). */}
+        {hasProgress(progress) && (
+          <button className="link subtle" onClick={() => setConfirmReset(true)}>
             <RefreshIcon size={14} /> Reset progress
           </button>
         )}
       </p>
+      {confirmReset && (
+        <ConfirmDialog
+          title="Reset all progress?"
+          message="Your stages, flawless counts, finished lessons and heard melodies will be cleared. Your settings stay. This can't be undone."
+          onNo={() => setConfirmReset(false)}
+          onYes={() => {
+            setConfirmReset(false);
+            onReset();
+          }}
+        />
+      )}
     </section>
   );
 }
