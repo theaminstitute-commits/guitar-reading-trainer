@@ -25,6 +25,7 @@ const ROLE = {
   '@babel/runtime': 'Support code used by the audio engine',
   tslib: 'Support code used by the audio engine',
   vexflow: 'Music notation drawing',
+  '@fontsource-variable/plus-jakarta-sans': 'Interface font (Plus Jakarta Sans)',
 };
 
 function licenceFile(dir) {
