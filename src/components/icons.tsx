@@ -85,3 +85,11 @@ export const RefreshIcon = (p: IconProps) => (
     <path d="M20 4v5h-5" />
   </svg>
 );
+
+/** A quill: a feather vane curving up to the right, its shaft running down to a nib. */
+export const QuillIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M20 3C13 3.5 8.5 7.5 7 14l-.5 2.5L9 16c6.5-1.5 10.5-6 11-13z" />
+    <path d="M20 3 3 21" />
+  </svg>
+);

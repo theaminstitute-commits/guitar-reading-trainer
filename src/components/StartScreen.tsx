@@ -2,7 +2,7 @@ import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
 import { hasProgress, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
-import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, RefreshIcon, SparkIcon } from './icons';
+import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, QuillIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
 import ConfirmDialog from './ConfirmDialog';
 import { useState } from 'react';
@@ -96,7 +96,7 @@ export default function StartScreen({
           </p>
           <div className="cta">
             <button className="btn primary big" onClick={() => onLesson(PART_0[0]!)}>
-              <BookIcon size={20} /> Start the tutorial
+              <QuillIcon size={20} /> Start the tutorial
             </button>
             <div className="cta-row">
               <button className="btn" onClick={onPlacement}>
