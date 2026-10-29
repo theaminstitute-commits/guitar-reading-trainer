@@ -334,8 +334,11 @@ export default function App() {
       {screen === 'lesson' && lesson && (() => {
         const partIndex = PART_0.findIndex((l) => l.id === lesson.lesson.id);
         const nextLesson = lesson.then === 'next-part-0' && partIndex >= 0 ? PART_0[partIndex + 1] : undefined;
+        // The end of Part 0 leads into stage 1 only for a learner who has not gone past it; anyone further on
+        // (taking the tutorial again) goes back to the start screen with their stage and count untouched.
+        const intoStage1 = lesson.then === 'next-part-0' && track.unlocked === 0;
         const label =
-          lesson.then === 'guide' ? 'Continue to the stage guide' : nextLesson ? `Next: ${nextLesson.title}` : lesson.then === 'next-part-0' ? 'Start stage 1' : 'Back to start';
+          lesson.then === 'guide' ? 'Continue to the stage guide' : nextLesson ? `Next: ${nextLesson.title}` : intoStage1 ? 'Start stage 1' : 'Back to start';
         return (
           <LessonRunner
             lesson={lesson.lesson}
@@ -349,9 +352,10 @@ export default function App() {
             onContinue={() => {
               if (lesson.then === 'guide') setScreen('guide');
               else if (nextLesson) openLesson(nextLesson, 'next-part-0');
-              else if (lesson.then === 'next-part-0') {
-                const first = withTrack(progress, withStage(track, 0, STAGES));
-                updateProgress(first);
+              else if (intoStage1) {
+                // Already on stage 1 with its count kept: only a learner not yet on it is moved there.
+                const first = track.stage === 0 ? progress : withTrack(progress, withStage(track, 0, STAGES));
+                if (first !== progress) updateProgress(first);
                 begin(first);
               } else setScreen('start');
             }}

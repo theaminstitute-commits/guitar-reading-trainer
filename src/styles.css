@@ -510,6 +510,12 @@ button.ghost {
   background: transparent;
 }
 
+/* Take the finished tutorial again, under the Learn note. */
+.btn.tutorial-again {
+  width: 100%;
+  margin: 2px 0 12px;
+}
+
 button.big,
 .btn.big {
   width: 100%;

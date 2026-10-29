@@ -215,8 +215,14 @@ export default function StartScreen({
       {/* Tutorial and lessons, above the long stage list so they are easy to find */}
       <h2 className="section-title">Learn</h2>
       <p className="muted small-note">
-        {nextPart0 ? `Tutorial: ${part0Done} of ${PART_0.length} lessons done.` : 'Tutorial finished. Replay any lesson whenever you like.'}
+        {nextPart0 ? `Tutorial: ${part0Done} of ${PART_0.length} lessons done.` : 'Tutorial finished. Take it again from the start, or replay any single lesson. Your stage and progress stay as they are.'}
       </p>
+      {/* A finished tutorial can always be taken again from lesson 1; the lessons then run on in order (the user, 2026-10-29). */}
+      {!nextPart0 && (
+        <button className="btn tutorial-again" onClick={() => onLesson(PART_0[0]!)}>
+          <BookIcon size={18} /> Take the tutorial again
+        </button>
+      )}
       <div className="lesson-list">
         {PART_0.map((l) => (
           <button key={l.id} className={`lesson-card${progress.tutorial.includes(l.id) ? ' done' : ''}${l === nextPart0 ? ' next' : ''}`} onClick={() => onLesson(l)}>
