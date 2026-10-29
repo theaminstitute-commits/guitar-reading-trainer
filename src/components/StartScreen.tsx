@@ -190,7 +190,7 @@ export default function StartScreen({
           <div className="theme-grid" role="group" aria-label="Theme">
             {THEMES.map((t) => (
               <button key={t.id} className={`theme-swatch${progress.theme === t.id ? ' on' : ''}`} aria-pressed={progress.theme === t.id} onClick={() => onTheme(t.id)}>
-                <ThemeDot id={t.id} bg={t.id === 'system' ? '#efeae2' : t.bg} accent={t.id === 'system' ? '#14181f' : t.accent} split={t.id === 'system' ? 0.5 : 0.58} />
+                <ThemeDot id={t.id} bg={t.id === 'system' ? '#efeae2' : t.bg} accent={t.id === 'system' ? '#14181f' : t.accent} />
                 {t.label}
               </button>
             ))}
@@ -313,8 +313,8 @@ export default function StartScreen({
 }
 
 /** A theme swatch: the page colour with a diagonal corner of the accent, drawn in SVG so the circle and the split stay smooth. */
-function ThemeDot({ id, bg, accent, split }: { id: string; bg: string; accent: string; split: number }) {
-  const c = split * 60 - 30; // the accent corner covers x + y >= split * 60 of the 30 x 30 box
+function ThemeDot({ id, bg, accent }: { id: string; bg: string; accent: string }) {
+  const c = 4.8; // every swatch splits a little past centre (the Dark swatch's look): accent covers x + y >= 34.8
   const clip = `theme-dot-${id}`;
   return (
     <svg className="theme-dot" viewBox="0 0 30 30" width="30" height="30" aria-hidden="true">
