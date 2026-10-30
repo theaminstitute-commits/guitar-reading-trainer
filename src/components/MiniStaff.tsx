@@ -4,7 +4,7 @@ import { keySignatureCount, keySignatureSpec, type Key } from '../music/key';
 import { parseSpelled, staffStep, type SpelledNote } from '../music/pitch';
 import { displaySignsForBars, type Sign } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
-import { staveAt, stepFromY, yFromStep } from '../notation/hitTest';
+import { staveAt, stepFromY, TREBLE_TOP_LINE_STEP, yFromStep } from '../notation/hitTest';
 import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
@@ -178,6 +178,15 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
 
   const flat = bars.flat();
   const labelSize = 9 * scale;
+  // Labels sit on one baseline per row, 8.4 spaces below the top line; a note hanging lower (the open
+  // low E, E3, under three ledger lines) pushes its row's baseline down so the name clears the notehead.
+  const labelSpaces = (stave: { topLineY: number }) => {
+    const low = layout!.notes
+      .filter((g) => (layout!.staves[g.barIndex] ?? layout!.staves[layout!.staves.length - 1]!).topLineY === stave.topLineY)
+      .reduce((m, g) => Math.min(m, flat[g.id]?.rest ? Infinity : (flat[g.id]?.step ?? Infinity)), Infinity);
+    return Math.max(8.4, (TREBLE_TOP_LINE_STEP - low) / 2 + 1.5);
+  };
+  const labelDrop = layout ? Math.max(0, ...layout.staves.map((s) => labelSpaces(s) - 8.4)) * (layout.staves[0]?.lineSpacing ?? 0) : 0;
   const labels = layout
     ? layout.notes.flatMap((g) => {
         const note = flat[g.id];
@@ -188,7 +197,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         const stave = layout.staves[g.barIndex] ?? layout.staves[layout.staves.length - 1]!;
         // Centre the name under the notehead: the layout gives its left edge, and a whole note is wider than the others.
         const half = (note.duration === 'w' ? 8 : 5.5) * scale;
-        return [{ x: g.x + half + gutter, y: stave.topLineY + stave.lineSpacing * 8.4, text: note.label, color: note.color ?? PAPER.ink, on: note.on === true }];
+        return [{ x: g.x + half + gutter, y: stave.topLineY + stave.lineSpacing * labelSpaces(stave), text: note.label, color: note.color ?? PAPER.ink, on: note.on === true }];
       })
     : [];
 
@@ -231,7 +240,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
     <div ref={wrapRef} className={`mini-staff guide-staff${onTapStep ? ' tappable' : ''}`} onPointerDown={onPointerDown}>
       <div ref={canvasRef} className="staff-canvas static" style={gutter ? { marginLeft: gutter, width: staffWidth } : undefined} />
       {layout && (labels.length > 0 || legendItems.length > 0 || bands.length > 0) && (
-        <svg className="feedback-overlay" width={width} height={layout.height + labelSize} aria-hidden="true">
+        <svg className="feedback-overlay" width={width} height={layout.height + labelSize * 1.5 + labelDrop} aria-hidden="true">
           {bands.map((b, i) => (
             <g key={`o${i}`}>
               <rect x={b.left} y={b.top} width={b.right - b.left} height={b.split - b.top} fill={PAPER.active} opacity={0.17} />
