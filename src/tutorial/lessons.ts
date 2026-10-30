@@ -258,9 +258,21 @@ export const PART_0: readonly Lesson[] = [
       },
       {
         kind: 'drill',
-        title: 'Frets, sharps and flats',
-        intro: 'Find the note one fret higher, or the other name of a sharp or flat. Watch for E\u2060–\u2060F and B\u2060–\u2060C.',
+        title: 'Name the sharp or flat',
+        intro: 'A sharp or flat sits in front of the note. Name the note, sign included.',
         make: (rng) => sharpsAndFlats(rng),
+      },
+      // The user, 2026-10-30: after naming a few flats, a brief word on keys, where the flats are written once.
+      {
+        kind: 'explain',
+        title: 'Key signatures',
+        body: [
+          'Instead of a sign in front of every note, music often writes the flats or sharps once, at the start of each line, right after the clef. That is the key signature: every note on that line or space is then flat (or sharp), with no sign in front of it.',
+          'Here is F major: one flat, on the B line, so every B is played as B♭.',
+          'C major has no sharps or flats at all, so its key signature is empty. Stages 1 and 2 are in C major, which is why they only use plain letters. Key signatures come in at stage 3.',
+        ],
+        staff: { key: K('F'), notes: [n('A4', 'A'), { ...n('Bb4', 'B♭'), mark: true }, n('C5', 'C'), n('D5', 'D')] },
+        play: { notes: ['A4', 'Bb4', 'C5', 'D5'].map((x) => sounding(x)) },
       },
       // Formerly lesson 3, "Notes on the neck", merged in here by the user on 2026-10-29 (its two explanation
       // screens were taken out as confusing). The drills teach the stage 1 notes, every letter shown on the fretboard.
