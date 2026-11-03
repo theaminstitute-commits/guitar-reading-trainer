@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sharedPlayer } from './audio/player';
 import { SAMPLE_CREDIT } from './audio/sampleMap';
+import { introFor } from './audio/instrumentIntro';
 import AboutScreen from './components/AboutScreen';
 import ExerciseScreen from './components/ExerciseScreen';
 import LessonRunner from './components/LessonRunner';
@@ -212,9 +213,13 @@ export default function App() {
   const onTheme = (theme: Theme) => updateProgress({ ...progress, theme });
   /** Switch between guitar and bass (R41): each keeps its own ladder; a fresh melody for the new one is drawn at once. */
   const onInstrument = (id: InstrumentId) => {
+    // Each choice greets with its own phrase (R42), also when tapped again: a guitar arpeggio or a bass lick.
+    const player = sharedPlayer();
+    player.voice = id;
+    const intro = introFor(id);
+    void player.play(intro.notes, { tempo: intro.tempo, timeSignature: [4, 4], countIn: false });
     const next = withInstrument(progress, id);
     if (next === progress) return;
-    sharedPlayer().voice = id;
     // A melody for the new ladder, kept only as a placeholder: Start draws (and records) the real one.
     setExercise(makeExercise(trackOf(next), stagesFor(id)).exercise);
     updateProgress(next);

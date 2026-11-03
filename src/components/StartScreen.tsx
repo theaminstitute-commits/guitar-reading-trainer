@@ -113,7 +113,7 @@ export default function StartScreen({
         <span className="eyebrow">Instrument</span>
         <div className="segmented" role="group" aria-label="Instrument">
           {INSTRUMENTS.map((i) => (
-            <button key={i.id} className={`seg${instrument.id === i.id ? ' on' : ''}`} aria-pressed={instrument.id === i.id} onClick={() => onInstrument(i.id)}>
+            <button key={i.id} className={`seg${instrument.id === i.id ? ' on' : ''}`} aria-pressed={instrument.id === i.id} data-sound="none" onClick={() => onInstrument(i.id)}>
               <span className={`clef-glyph ${i.clef}`} aria-hidden="true">
                 {i.clef === 'bass' ? '𝄢' : '𝄞'}
               </span>

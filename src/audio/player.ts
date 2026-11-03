@@ -24,6 +24,8 @@ export interface PlayableNote {
   chord?: number;
   /** Played on the piano instead of the instrument in use (the lessons that compare the two, R37). */
   instrument?: 'piano';
+  /** Let it ring to the end of the phrase, like a held open string (the instrument intros, R42). */
+  ring?: boolean;
 }
 
 /** Seconds between the notes of a strummed chord. */
@@ -195,6 +197,8 @@ export class GuitarPlayer {
     }
 
     let index = 0;
+    /** When the last note ends: a ringing note is held until then. */
+    const phraseEnd = cursor + countBeats(notes) * secondsPerBeat;
     for (const group of groupEvents(notes)) {
       const at = cursor;
       const length = beatsOf(group[0]!.duration) * secondsPerBeat;
@@ -206,7 +210,8 @@ export class GuitarPlayer {
         const voice = note.instrument === 'piano' && this.piano ? this.piano : sampler;
         this.scheduledIds.push(
           transport.schedule((time) => {
-            voice.triggerAttackRelease(name, Math.max(0.05, length * GATE - offset), time);
+            const held = note.ring ? phraseEnd - at - offset : length * GATE - offset;
+            voice.triggerAttackRelease(name, Math.max(0.05, held), time);
             if (k === 0) uiAt(() => events.onNote?.(firstIndex), time);
           }, at + offset),
         );
