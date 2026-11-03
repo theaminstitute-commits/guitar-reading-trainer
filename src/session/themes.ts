@@ -18,7 +18,7 @@ export const THEMES: readonly ThemeInfo[] = [
   { id: 'midnight', label: 'Midnight', dark: true, bg: '#000000', accent: '#3fb6d9' },
   { id: 'plum', label: 'Plum dusk', dark: true, bg: '#19141f', accent: '#a77bf0' },
   { id: 'frost', label: 'Frost', dark: false, bg: '#eef2f7', accent: '#4c5fd5' },
-  { id: 'contrast', label: 'High contrast', dark: true, bg: '#000000', accent: '#ffffff' },
+  { id: 'contrast', label: 'Contrast', dark: true, bg: '#000000', accent: '#ffffff' },
 ];
 
 export const isTheme = (value: unknown): value is Theme => THEMES.some((t) => t.id === value);
