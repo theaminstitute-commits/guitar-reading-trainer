@@ -99,7 +99,9 @@ export class GuitarPlayer {
           volume: 2,
         }).toDestination();
         this.piano = new Tone.Sampler({ urls: await loadSampleBuffers(PIANO_SAMPLES), release: 0.8, volume: 0 }).toDestination();
-        this.bass = new Tone.Sampler({ urls: await loadSampleBuffers(BASS_SAMPLES), release: 0.5, volume: 4 }).toDestination();
+        // +12 dB (the user, 2026-11-03: "could be a bit louder"): low notes sound quieter than the guitar at the same level,
+        // more so on phone and laptop speakers. The samples peak at -18 dBFS, so single notes still peak near -6 dBFS.
+        this.bass = new Tone.Sampler({ urls: await loadSampleBuffers(BASS_SAMPLES), release: 0.5, volume: 12 }).toDestination();
         // The Seiko-style beep from the user's Tempus metronome, rendered once into a buffer.
         const rate = Tone.getContext().sampleRate;
         const samples = seikoClick(rate);
