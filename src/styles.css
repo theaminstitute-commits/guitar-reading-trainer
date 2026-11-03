@@ -2384,7 +2384,13 @@ html.theme-fade *::after {
 /* The G clef reaches far above and below its line; the F clef is compact. Sized to look alike. */
 .clef-glyph.treble {
   font-size: 1.15rem;
+  /* The G clef's ink sits above the middle of its em box: lowered so it centres on the label (the user, 2026-11-03). */
+  position: relative;
+  top: 0.2em;
 }
 .clef-glyph.bass {
   font-size: 1.75rem;
+  /* The F clef's ink sits a little below the middle: raised to match. */
+  position: relative;
+  top: -0.1em;
 }
