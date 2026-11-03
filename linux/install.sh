@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs Guitar Reading Trainer for the current user (no sudo) and adds it to the menu.
+# Installs Staff & Strings for the current user (no sudo) and adds it to the menu.
 set -e
 SRC="$(cd "$(dirname "$0")" && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -13,7 +13,7 @@ chmod +x "$DEST/guitar-reading-trainer.sh"
 cat > "$APPS/guitar-reading-trainer.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=Guitar Reading Trainer
+Name=Staff & Strings
 Comment=Hear a melody on the fretboard, write it on the staff, learn from every mistake
 Exec="$DEST/guitar-reading-trainer.sh"
 Icon=$DEST/guitar-reading-trainer.svg
@@ -23,7 +23,7 @@ DESKTOP
 chmod +x "$APPS/guitar-reading-trainer.desktop"
 update-desktop-database "$APPS" >/dev/null 2>&1 || true
 
-echo "Guitar Reading Trainer installed to $DEST"
+echo "Staff & Strings installed to $DEST"
 echo "Open it from the menu (Sound & Video / Education), or run: $DEST/guitar-reading-trainer.sh"
 if ! command -v chromium >/dev/null 2>&1 && ! command -v chromium-browser >/dev/null 2>&1 \
    && ! command -v google-chrome >/dev/null 2>&1; then

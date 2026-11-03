@@ -1,5 +1,5 @@
 #!/bin/sh
-# Opens Guitar Reading Trainer in its own app window (Chromium-family browsers), else Firefox.
+# Opens Staff & Strings in its own app window (Chromium-family browsers), else Firefox.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 PAGE="$DIR/guitar-reading-trainer.html"
 [ -f "$PAGE" ] || PAGE=/usr/share/guitar-reading-trainer/guitar-reading-trainer.html

@@ -1,10 +1,10 @@
-GUITAR READING TRAINER - Linux Mint / Ubuntu
+STAFF & STRINGS - Linux Mint / Ubuntu
 ============================================
 
 Install (no sudo needed):
   1. Unzip this folder anywhere.
   2. Open a terminal in it and run:   sh install.sh
-  3. Start "Guitar Reading Trainer" from the menu (Sound & Video, or Education).
+  3. Start "Staff & Strings" from the menu (Sound & Video, or Education).
 
 Try without installing:   sh guitar-reading-trainer.sh
 

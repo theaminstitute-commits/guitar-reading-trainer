@@ -1,9 +1,9 @@
-GUITAR READING TRAINER for Linux Mint / Ubuntu - pick ONE of these
+STAFF & STRINGS for Linux Mint / Ubuntu - pick ONE of these
 ===================================================================
 
-1) guitar-reading-trainer_0.20.7_all.deb   (recommended)
+1) guitar-reading-trainer_0.21.0_all.deb   (recommended)
    Double-click it. Mint's Package Installer opens: click "Install Package"
-   and enter your password. Guitar Reading Trainer then appears in the menu
+   and enter your password. Staff & Strings then appears in the menu
    under Sound & Video and Education.
    Remove later with:  sudo apt remove guitar-reading-trainer
 

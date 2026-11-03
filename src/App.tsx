@@ -300,7 +300,7 @@ export default function App() {
             </span>
           )}
           <div>
-            <h1>Guitar Reading Trainer</h1>
+            <h1>Staff & Strings</h1>
             <p>
               {screen === 'lesson' && lesson
                 ? lesson.lesson.stage

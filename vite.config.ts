@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'samples/**/*'],
       manifest: {
-        name: 'Guitar Reading Trainer',
-        short_name: 'ReadGuitar',
-        description: 'Hear a melody on the fretboard, write it on the staff, learn from every mistake.',
+        name: 'Staff & Strings',
+        short_name: 'Staff & Strings',
+        description: 'Learn to read music on guitar or bass: hear a melody on the fretboard, write it on the staff, learn from every mistake.',
         theme_color: '#14181f',
         background_color: '#14181f',
         display: 'standalone',

@@ -1,4 +1,4 @@
-# Builds the Guitar Reading Trainer APK without Gradle, using Android Studio's bundled JDK and the SDK build tools.
+# Builds the Staff & Strings APK without Gradle, using Android Studio's bundled JDK and the SDK build tools.
 # Usage (PowerShell, from anywhere):  .\android\build-apk.ps1 -Version 0.16.1
 # Output: dist\GuitarReadingTrainer-v<Version>.apk, signed with the local debug key (~\.android\debug.keystore).
 # The versionCode is derived from the version (major*10000 + minor*100 + patch), so it rises with every release

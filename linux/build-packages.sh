@@ -24,7 +24,7 @@ install -m 644 "$ROOT/linux/guitar-reading-trainer.svg" "$PKG/usr/share/icons/hi
 cat > "$PKG/usr/share/applications/guitar-reading-trainer.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=Guitar Reading Trainer
+Name=Staff & Strings
 Comment=Hear a melody on the fretboard, write it on the staff, learn from every mistake
 Exec=guitar-reading-trainer
 Icon=guitar-reading-trainer
@@ -42,9 +42,9 @@ Installed-Size: $SIZE
 Recommends: chromium | google-chrome-stable | firefox
 Section: sound
 Priority: optional
-Description: Learn to read guitar notation by ear
- Hear a short melody played on a sampled guitar, watch it on the fretboard,
- write it on a treble staff, and get every mistake graded and explained.
+Description: Learn to read guitar and bass notation by ear
+ Hear a short melody played on a sampled guitar or bass, watch it on the fretboard,
+ write it on a treble or bass staff, and get every mistake graded and explained.
  Melodies start at one bar and grow as you improve.
 CONTROL
 dpkg-deb --root-owner-group --build "$PKG" "$ROOT/dist/guitar-reading-trainer_${VERSION}_all.deb" >/dev/null
@@ -54,7 +54,7 @@ RUN="$ROOT/dist/GuitarReadingTrainer.run"
 {
   cat <<'HEADER'
 #!/bin/sh
-# Guitar Reading Trainer - single-file app for Linux Mint / Ubuntu. Nothing to install:
+# Staff & Strings - single-file app for Linux Mint / Ubuntu. Nothing to install:
 # right-click > Properties > Permissions > "Allow executing file as program",
 # then double-click it (choose "Run").
 PAGE="${XDG_DATA_HOME:-$HOME/.local/share}/guitar-reading-trainer/guitar-reading-trainer.html"

@@ -34,7 +34,7 @@ export default function AboutScreen({ onBack }: { onBack: () => void }) {
     <section className="about">
       <div className="panel">
         <span className="eyebrow">About</span>
-        <h2 className="about-title">Guitar Reading Trainer</h2>
+        <h2 className="about-title">Staff & Strings</h2>
         <p className="muted">Version {__APP_VERSION__}</p>
         <p>
           Hear a melody on the fretboard, write it on the staff, and learn from every mistake. Created and maintained by <strong>Dirk Swanepoel</strong>.
@@ -47,7 +47,7 @@ export default function AboutScreen({ onBack }: { onBack: () => void }) {
       <div className="panel">
         <span className="eyebrow">This app's licence</span>
         <p>
-          Guitar Reading Trainer is licensed under the <strong>PolyForm Noncommercial License 1.0.0</strong>. You may use, study, change and share it for any
+          Staff & Strings is licensed under the <strong>PolyForm Noncommercial License 1.0.0</strong>. You may use, study, change and share it for any
           noncommercial purpose, including personal practice, teaching, schools and charities. Selling it, or building a paid product on it, needs a separate
           licence from the copyright holder.
         </p>
