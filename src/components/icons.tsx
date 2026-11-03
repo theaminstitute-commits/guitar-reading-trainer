@@ -94,27 +94,3 @@ export const QuillIcon = (p: IconProps) => (
     <path d="M20 3 3 21" />
   </svg>
 );
-
-/**
- * The Staff & Strings mark: five thin staff lines run into a nut and carry on as strings,
- * thicker towards the low side. A whole note sits on the staff, and the same note is a
- * filled dot on its string: read it on the left, play it on the right.
- */
-export const BrandMark = ({ size = 26 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="brand-svg">
-    <g stroke="currentColor" strokeLinecap="round">
-      {[12, 16, 20, 24, 28].map((y, i) => (
-        <g key={y}>
-          <line x1="4" x2="21" y1={y} y2={y} strokeWidth="1.4" opacity="0.9" />
-          <line x1="23" x2="37" y1={y} y2={y} strokeWidth={1.4 + i * 0.3} />
-        </g>
-      ))}
-    </g>
-    {/* The nut, where the staff turns into strings. */}
-    <rect x="20.5" y="8.5" width="3" height="23" rx="1.2" fill="currentColor" />
-    {/* A whole note on the middle line. */}
-    <ellipse cx="11.5" cy="20" rx="4.3" ry="3.1" fill="none" stroke="currentColor" strokeWidth="2.1" />
-    {/* The same note, fretted: a dot on the middle string. */}
-    <circle cx="31" cy="20" r="3.4" fill="currentColor" />
-  </svg>
-);
