@@ -168,7 +168,7 @@ export default function StartScreen({
           </h2>
           <p className="hero-summary">{level.summary}</p>
         </div>
-        <Ring value={onTop ? track.tally / level.unlockAfter : 1} label={onTop ? `${track.tally}/${level.unlockAfter}` : '✓'} sub={onTop ? 'flawless' : 'reached'} />
+        <Ring value={onTop ? track.tally / level.unlockAfter : 1} label={onTop ? `${track.tally}/${level.unlockAfter}` : '✓'} sub={onTop ? undefined : 'reached'} />
       </div>
       {next ? (
         <p className="muted small-note hint">
