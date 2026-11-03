@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { sharedPlayer } from '../audio/player';
 import { explainMistake, type ExplainerId } from '../grading/explain';
+import { instrumentOf } from '../music/instrument';
 import type { GradeResult } from '../grading/grade';
 import { splitIntoBars } from '../melody/bars';
 import { barBeatsForCounts, describeMeter } from '../melody/meter';
@@ -90,7 +91,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   const targetBars = splitIntoBars(melody.notes, melody.barBeats);
   const notesInBar = (bar: number) => targetBars[bar]?.notes.length ?? 0;
-  const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, melody.key, notesInBar));
+  const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, melody.key, notesInBar, instrumentOf(melody.instrument)));
   const perfect = result.mistakes.length === 0;
   const rightNotes = result.targetCount - result.missingCount - result.pairs.filter((p) => p.target && p.answer && p.mistakes.length > 0).length;
 
@@ -175,7 +176,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
                 <p>{e.text}</p>
                 {e.explainer && (
                   <button className="link" onClick={() => onExplainer(e.explainer!)}>
-                    Read: {EXPLAINER_LABEL[e.explainer]}
+                    Read: {e.explainer === 'guitar-octave' ? `${instrumentOf(melody.instrument).name} octave` : EXPLAINER_LABEL[e.explainer]}
                   </button>
                 )}
               </div>

@@ -8,6 +8,7 @@
 import { Accidental, Annotation, BarlineType, Dot, Formatter, Renderer, Stave, StaveNote, type RenderContext } from 'vexflow/core';
 import { groupEvents } from '../melody/bars';
 import { DURATIONS, type DurationId } from '../music/duration';
+import { GUITAR, type Instrument } from '../music/instrument';
 import { spelledFromStaffStep } from '../music/pitch';
 import type { Sign } from './accidentals';
 import type { NoteGeometry, StaveGeometry } from './hitTest';
@@ -55,6 +56,8 @@ export interface RenderOptions {
   keySignature?: string;
   /** How many sharps or flats that signature has, for the stave width it needs. */
   keySignatureAccidentals?: number;
+  /** Whose staff: the guitar's treble clef (the default) or the bass clef (R41). */
+  instrument?: Instrument;
 }
 
 export interface StaffLayout {
@@ -85,6 +88,8 @@ function vexKey(step: number): string {
 export function renderStaff(container: HTMLDivElement, bars: RenderBar[], options: RenderOptions): StaffLayout {
   container.innerHTML = '';
   const { scale, barsPerRow, timeSignature, ink } = options;
+  const instrument = options.instrument ?? GUITAR;
+  const clef = instrument.clef;
   const showClef = options.showClef ?? true;
   const showTimeSignature = options.showTimeSignature ?? true;
   const keySpec = options.keySignature && options.keySignature !== 'C' && options.keySignature !== 'Am' ? options.keySignature : undefined;
@@ -123,7 +128,7 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
       const width = baseWidth + (isFirst ? extra : 0) + (showTs ? TIME_SIG_EXTRA : 0);
       const stave = new Stave(x, y, width);
       // Order on the stave: clef, key signature, time signature.
-      if (isFirst && showClef) stave.addClef('treble');
+      if (isFirst && showClef) stave.addClef(clef);
       if (isFirst && keySpec) stave.addKeySignature(keySpec);
       if (showTs) stave.addTimeSignature(`${tsAt(barIndex)[0]}/${tsAt(barIndex)[1]}`);
       if (barIndex === bars.length - 1) stave.setEndBarType(BarlineType.END);
@@ -145,14 +150,14 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
         const first = group[0]!;
         if (first.rest) {
           // A whole rest hangs from the fourth line, the others sit in the middle of the staff.
-          const rest = new StaveNote({ keys: [first.duration === 'w' ? 'd/5' : 'b/4'], duration: `${DURATIONS[first.duration].vexflow}r`, clef: 'treble' });
+          const rest = new StaveNote({ keys: [first.duration === 'w' ? instrument.restKeys.whole : instrument.restKeys.other], duration: `${DURATIONS[first.duration].vexflow}r`, clef });
           if (DURATIONS[first.duration].dots > 0) Dot.buildAndAttach([rest], { all: true });
           return rest;
         }
         const note = new StaveNote({
           keys: group.map((n) => vexKey(n.step)),
           duration: DURATIONS[first.duration].vexflow,
-          clef: 'treble',
+          clef,
           autoStem: true,
         });
         group.forEach((n, k) => {
@@ -204,6 +209,7 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
         topLineY: stave.getYForLine(0) * scale,
         lineSpacing: stave.getSpacingBetweenLines() * scale,
         noteStartX: stave.getNoteStartX() * scale,
+        topStep: instrument.topLine,
       });
       x += width;
     });

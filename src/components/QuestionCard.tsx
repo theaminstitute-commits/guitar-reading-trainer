@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { sharedPlayer } from '../audio/player';
 import { midiAt, type FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
-import { midiFromSpelled, parseSpelled, spelledName, soundingFromWritten, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
+import { middleLine, type Instrument } from '../music/instrument';
+import { useInstrument } from './InstrumentContext';
+import { midiFromSpelled, spelledName, soundingFromWritten, spelledFromStaffStep, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
 import { PAPER } from '../notation/paper';
 import { choiceNote, isRightFret, isRightStep, keyAccidental, nameWithOctave, type Question } from '../tutorial/questions';
 import { gradeTaps, tapPassed, tapVerdict, type TapResult } from '../tutorial/tap';
@@ -25,9 +27,6 @@ interface QuestionCardProps {
   retry?: boolean;
 }
 
-/** Sounding pitch of the rhythm questions: written B4, the middle line. */
-const RHYTHM_MIDI = 59;
-const RHYTHM_STEP = staffStep(parseSpelled('B4'));
 
 /** `correct` counts for the score (right first time); `solved` colours the message (finally right). */
 type Outcome = { correct: boolean; solved: boolean; text: string } | null;
@@ -37,6 +36,9 @@ type Outcome = { correct: boolean; solved: boolean; text: string } | null;
  * and an immediate verdict with the right answer before moving on.
  */
 export default function QuestionCard({ question: q, leftHanded, onNext, nextLabel = 'Next', retry = false }: QuestionCardProps) {
+  const instrument = useInstrument();
+  const tuning = instrument.tuning;
+  const OPEN_LABEL = openLabels(instrument);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [picked, setPicked] = useState<string | number | null>(null);
   const [tappedStep, setTappedStep] = useState<number | null>(null);
@@ -183,9 +185,9 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
     case 'staff-to-fret': {
       const marks: { position: FretPosition; tone: 'good' | 'bad' | 'also' }[] = [];
       const place = (a: FretPosition) => (a.fret === 0 ? `the open ${a.string}${ordinal(a.string)} string` : `string ${a.string}, fret ${a.fret}`);
-      const everywhere = samePitchPlaces(q.note, q.frets);
+      const everywhere = samePitchPlaces(q.note, q.frets, instrument);
       if (tappedFret) {
-        const right = isRightFret(q, tappedFret);
+        const right = isRightFret(q, tappedFret, tuning);
         marks.push({ position: tappedFret, tone: right ? 'good' : 'bad' });
         if (!right && !retry) everywhere.forEach((p) => marks.push({ position: p, tone: 'good' }));
         if (right && !q.openOnly) {
@@ -193,7 +195,7 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
           const others = everywhere.filter((p) => p.string !== tappedFret.string || p.fret !== tappedFret.fret);
           others.forEach((p) => marks.push({ position: p, tone: 'also' }));
           if (others.length > 0) {
-            alsoNote = `The same ${nameWithOctave(q.note)} is also on ${others.map(place).join(' and ')}, ringed in light green. A guitar often has one note in more than one place; each of them is right.`;
+            alsoNote = `The same ${nameWithOctave(q.note)} is also on ${others.map(place).join(' and ')}, ringed in light green. A ${instrument.noun} often has one note in more than one place; each of them is right.`;
           }
         }
       }
@@ -215,10 +217,10 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
                     // An open-string question reads a tap anywhere on a string as that open string.
                     const p = q.openOnly ? { string: tap.string, fret: 0 } : tap;
                     // Every tapped note sounds at once and its string vibrates, right or wrong (the user: hear what you tap).
-                    void sharedPlayer().play([{ midi: midiAt(p), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
+                    void sharedPlayer().play([{ midi: midiAt(p, tuning), duration: 'h' }], { tempo: 100, timeSignature: [4, 4], countIn: false });
                     setRing((r) => ({ at: p, n: (r?.n ?? 0) + 1 }));
                     setTappedFret(p);
-                    const right = isRightFret(q, p);
+                    const right = isRightFret(q, p, tuning);
                     if (q.openOnly) {
                       if (right) solved(`${OPEN_LABEL[p.string]} is correct!`);
                       else if (retry) tryAgain(OPEN_LABEL[p.string]!);
@@ -267,9 +269,18 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
       {q.kind !== 'place' && q.kind !== 'fret-to-staff' && <p className="question-prompt">{q.prompt}</p>}
       {q.memoryAid && (
         <p className="memory-aid">
-          <span className="aid-lines">Lines E G B D F: Every Good Boy Deserves Fruit</span>
-          <span className="aid-spaces">Spaces: F A C E</span>
-          {q.octaveSplit && <span className="aid-octave">The number goes up at C: B4, then C5</span>}
+          {instrument.clef === 'bass' ? (
+            <>
+              <span className="aid-lines">Lines G B D F A: Good Boys Do Fine Always</span>
+              <span className="aid-spaces">Spaces A C E G: All Cows Eat Grass</span>
+            </>
+          ) : (
+            <>
+              <span className="aid-lines">Lines E G B D F: Every Good Boy Deserves Fruit</span>
+              <span className="aid-spaces">Spaces: F A C E</span>
+            </>
+          )}
+          {q.octaveSplit && <span className="aid-octave">{instrument.clef === 'bass' ? 'The number goes up at C: B2, then C3' : 'The number goes up at C: B4, then C5'}</span>}
         </p>
       )}
       {body}
@@ -298,16 +309,24 @@ export default function QuestionCard({ question: q, leftHanded, onNext, nextLabe
   );
 }
 
-/** Open strings by number, as the lessons name them. */
-const OPEN_LABEL = ['', '1st (high E)', '2nd (B)', '3rd (G)', '4th (D)', '5th (A)', '6th (low E)'];
+/** Open strings by number, as the lessons name them: 1st (high E) to 6th (low E) on the guitar, 1st (G) to 4th (low E) on the bass. */
+function openLabels(instrument: Instrument): string[] {
+  const names = instrument.stringNames;
+  return ['', ...names.map((name, i) => {
+    const string = i + 1;
+    const which = name === 'E' && names.indexOf('E') !== names.lastIndexOf('E') ? (string === 1 ? 'high E' : 'low E') : string === names.length && name === 'E' ? 'low E' : name;
+    return `${string}${ordinal(string)} (${which})`;
+  })];
+}
 
 /** Every place on the drawn fretboard (open strings when the nut shows) that sounds a written note. */
-function samePitchPlaces(note: SpelledNote, frets: readonly [number, number]): FretPosition[] {
+function samePitchPlaces(note: SpelledNote, frets: readonly [number, number], instrument: Instrument): FretPosition[] {
   const { first, last } = visibleFrets(frets);
   const cells = [...(frets[0] === 0 ? [0] : []), ...Array.from({ length: last - first + 1 }, (_, i) => first + i)];
   const target = midiFromSpelled(note);
   const out: FretPosition[] = [];
-  for (let string = 1; string <= 6; string++) for (const fret of cells) if (writtenFromSounding(midiAt({ string, fret })) === target) out.push({ string, fret });
+  for (let string = 1; string <= instrument.stringNames.length; string++)
+    for (const fret of cells) if (writtenFromSounding(midiAt({ string, fret }, instrument.tuning)) === target) out.push({ string, fret });
   return out;
 }
 
@@ -329,11 +348,14 @@ function emphasise(text: string, name: string): ReactNode {
 }
 
 function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind: 'rhythm' }>; picked: string | number | null; wrong: readonly (string | number)[]; onPick: (i: number) => void }) {
+  const rhythmInstrument = useInstrument();
+  /** The bar sounds on the middle line of the staff: B4 written on the guitar, D3 on the bass. */
+  const rhythmMidi = soundingFromWritten(midiFromSpelled(spelledFromStaffStep(middleLine(rhythmInstrument))));
   const [playing, setPlaying] = useState(false);
   const play = async () => {
     setPlaying(true);
     await sharedPlayer().play(
-      q.options[q.answer]!.map((d) => ({ midi: RHYTHM_MIDI, duration: d })),
+      q.options[q.answer]!.map((d) => ({ midi: rhythmMidi, duration: d })),
       { tempo: 76, timeSignature: [4, 4], countIn: true },
       { onEnd: () => setPlaying(false) },
     );
@@ -358,7 +380,7 @@ function RhythmBody({ q, picked, wrong, onPick }: { q: Extract<Question, { kind:
           const chosen = picked !== null ? i === picked : wrong[wrong.length - 1] === i;
           return (
             <button key={i} className={`rhythm-option${state}${chosen ? ' chosen' : ''}`} disabled={picked !== null || wrong.includes(i)} onClick={() => onPick(i)} aria-label={`Rhythm ${i + 1}`}>
-              <MiniStaff bars={[bar.map((d) => ({ step: RHYTHM_STEP, sign: 'none', duration: d }))]} musicKey={C_MAJOR} timeSignature barsPerRow={1} />
+              <MiniStaff bars={[bar.map((d) => ({ step: middleLine(rhythmInstrument), sign: 'none', duration: d }))]} musicKey={C_MAJOR} timeSignature barsPerRow={1} />
             </button>
           );
         })}

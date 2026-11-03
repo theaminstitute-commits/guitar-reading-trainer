@@ -7,6 +7,7 @@
 import { chordNotes, choicesFor, type ChordChoice } from '../chords/generator';
 import type { DurationId } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
+import { instrumentOf } from '../music/instrument';
 import { keyId, keyName, spellInKey, type Key } from '../music/key';
 import { spelledName, staffStep, writtenFromSounding, type Midi } from '../music/pitch';
 import { displaySignsForBars, type Sign } from '../notation/accidentals';
@@ -119,7 +120,8 @@ export function stageGuide(stage: Stage, previous: Stage | null): StageGuide {
         ? keyName(stage.keys[0]!)
         : `${joinWords(stage.keys.map((k) => keyName(k)))}, chosen at random`;
   const lengths = `${joinWords(stage.durations.map((d) => DURATION_WORDS[d]))} notes`;
-  const strings = stage.strings.length === 6 ? 'all six strings' : `strings ${stage.strings[0]} to ${stage.strings[stage.strings.length - 1]}`;
+  const all = instrumentOf(stage.instrument).stringNames.length;
+  const strings = stage.strings.length === all ? `all ${all === 6 ? 'six' : 'four'} strings` : `strings ${stage.strings[0]} to ${stage.strings[stage.strings.length - 1]}`;
   const range = `${strings}, frets ${stage.fretRange[0]} to ${stage.fretRange[1]}`;
   const listens = `${stage.maxListens} listens per melody`;
   const guide: StageGuide = { stage, key, pitches, keys, lengths, range, listens };

@@ -1,4 +1,5 @@
 import type { ExplainerId } from '../grading/explain';
+import type { InstrumentId } from '../music/instrument';
 import { keyFromId, type Key } from '../music/key';
 import { parseSpelled, staffStep } from '../music/pitch';
 import type { Sign } from '../notation/accidentals';
@@ -142,3 +143,78 @@ export const EXPLAINERS: Record<ExplainerId, Explainer> = {
 };
 
 export const EXPLAINER_ORDER: ExplainerId[] = ['staff-basics', 'key-signatures', 'minor-keys', 'ledger-lines', 'durations', 'guitar-octave'];
+
+/**
+ * The same cards for the bass (R41): the bass staff, its lines and spaces, and the bass's
+ * own octave. Key signatures, minor keys and note lengths read the same; only their
+ * examples move onto the bass staff.
+ */
+const BASS_EXPLAINERS: Record<ExplainerId, Explainer> = {
+  'staff-basics': {
+    id: 'staff-basics',
+    title: 'Reading the bass staff',
+    paragraphs: [
+      'The bass staff has five lines and four spaces. Its clef, the bass clef, has two dots either side of the F line, the fourth line from the bottom. Every line and every space is a letter, and the letters run up the alphabet from A to G and start again.',
+      'The lines, from the bottom up, are G B D F A: "Good Boys Do Fine Always". The spaces, from the bottom up, are A C E G: "All Cows Eat Grass". Notes that go higher or lower than the staff sit on short extra lines called ledger lines.',
+      EXPLAINERS['staff-basics'].paragraphs[2]!,
+    ],
+    example: {
+      notes: ['G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3'].map((name, i) => note(i + 1, name, 'q', name[0]!)),
+      caption: 'Lines G B D F A, spaces A C E G, from the bottom up.',
+    },
+  },
+  'key-signatures': {
+    ...EXPLAINERS['key-signatures'],
+    example: {
+      key: keyFromId('G')!,
+      notes: ['G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3'].map((name, i) => note(i + 1, name, 'q', name === 'F3' ? 'F♯' : name[0]!)),
+      caption: 'G major: the F on the fourth line is F♯ because of the key signature. No sign is written.',
+    },
+  },
+  'minor-keys': {
+    ...EXPLAINERS['minor-keys'],
+    example: {
+      key: keyFromId('Am-h')!,
+      notes: ['A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3'].map((name, i) => (name === 'G3' ? note(i + 1, name, 'q', 'G♯', 'sharp') : note(i + 1, name, 'q', name[0]!))),
+      caption: 'A harmonic minor: no key signature, and the raised seventh G♯ carries its own sign.',
+    },
+  },
+  'ledger-lines': {
+    id: 'ledger-lines',
+    title: 'Ledger lines',
+    paragraphs: [
+      EXPLAINERS['ledger-lines'].paragraphs[0]!,
+      'Below the bass staff: the space just under the bottom line is F, and the first ledger line is E, the open low E string. On the bass that string runs E on the ledger line, F in the space, G on the bottom line.',
+      'Above the staff: the space over the top line is B, the first ledger line is middle C (C4), the space above it D, and the second ledger line E. The higher frets of the G string live up here: its 12th fret is G4, on the third ledger line.',
+    ],
+    example: {
+      notes: ['E2', 'F2', 'G2', 'A3', 'B3', 'C4', 'D4', 'E4'].map((name, i) => note(i + 1, name, 'q', name[0]!)),
+      caption: 'The open low E on the ledger line below; B, C, D, E climbing above the staff.',
+    },
+  },
+  durations: {
+    ...EXPLAINERS.durations,
+    example: {
+      notes: [note(1, 'D3', 'w', '4'), note(2, 'D3', 'h', '2'), note(3, 'D3', 'q', '1'), note(4, 'D3', 'q.', '1½'), note(5, 'D3', 'e', '½'), note(6, 'D3', 'e', '½')],
+      caption: 'Whole, half, quarter, dotted quarter and a pair of eighths on D, with their beats.',
+    },
+  },
+  'guitar-octave': {
+    id: 'guitar-octave',
+    title: 'Why bass music is written an octave up',
+    paragraphs: [
+      'The bass is a transposing instrument, like the guitar: everything it plays sounds one octave lower than it is written. The open G string sounds G2, but on the page it is written G3, in the top space of the staff.',
+      'This keeps bass music on the bass staff without piles of ledger lines below it. It also means the note you hear and the note you write are not in the same octave.',
+      'A quick check: the open A string (string 3) is written A2, in the bottom space. The A on the G string, second fret, an octave higher, is written A3, on the top line.',
+    ],
+    example: {
+      notes: [note(1, 'A2', 'h', 'string 3 open'), note(2, 'A3', 'h', 'string 1, fret 2')],
+      caption: 'Both notes are A. The written note is an octave above what you hear.',
+    },
+  },
+};
+
+/** The explainer cards for an instrument. */
+export function explainersFor(instrument: InstrumentId): Record<ExplainerId, Explainer> {
+  return instrument === 'bass' ? BASS_EXPLAINERS : EXPLAINERS;
+}

@@ -3,7 +3,9 @@ import { sharedPlayer } from '../audio/player';
 import { gradeAnswer, type GradeResult } from '../grading/grade';
 import type { ExplainerId } from '../grading/explain';
 import { generateMelody } from '../melody/generator';
-import { STAGES } from '../melody/stages';
+import { stagesFor } from '../melody/stages';
+import type { InstrumentId } from '../music/instrument';
+import { useInstrument } from './InstrumentContext';
 import type { Melody } from '../melody/types';
 import type { FretPosition } from '../music/fretboard';
 import { C_MAJOR } from '../music/key';
@@ -40,8 +42,8 @@ interface LessonRunnerProps {
 }
 
 /** Notes of the coached melody: stage 1, so beginners meet exactly what stage 1 asks. */
-function coachedMelody(): Melody {
-  return generateMelody(STAGES[0]!, Math.floor(Math.random() * 1_000_000_000));
+function coachedMelody(instrument: InstrumentId): Melody {
+  return generateMelody(stagesFor(instrument)[0]!, Math.floor(Math.random() * 1_000_000_000));
 }
 
 /**
@@ -117,6 +119,7 @@ export default function LessonRunner({ lesson, leftHanded, metronome, onMetronom
 }
 
 function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep; leftHanded: boolean; onNext: () => void; onBack?: () => void }) {
+  const instrument = useInstrument();
   const [playing, setPlaying] = useState(false);
   const [lit, setLit] = useState<number | null>(null);
   /** The staff note sounding now (a step may play only some of the notes it shows). */
@@ -131,7 +134,7 @@ function ExplainScreen({ step, leftHanded, onNext, onBack }: { step: ExplainStep
     // With the line and space letters shown, the sounding note takes its letter's colour: violet on a line, pink in a space.
     const legend = step.staff.legend;
     const litColor = (name: string) =>
-      !legend ? PAPER.active : (staffStep(parseSpelled(name)) - staffStep(parseSpelled('E4'))) % 2 === 0 ? PAPER.lineLetter : PAPER.spaceLetter;
+      !legend ? PAPER.active : (staffStep(parseSpelled(name)) - instrument.bottomLine) % 2 === 0 ? PAPER.lineLetter : PAPER.spaceLetter;
     const notes = miniNotes(
       step.staff.notes.map((n, i) => ({
         note: parseSpelled(n.name),
@@ -281,9 +284,10 @@ interface Checked {
 }
 
 function CoachedScreen({ intro, leftHanded, metronome, onMetronome, onExplainer, onDone }: { intro: string; leftHanded: boolean; metronome: boolean; onMetronome: (on: boolean) => void; onExplainer: (id: ExplainerId) => void; onDone: () => void }) {
-  const [melody, setMelody] = useState<Melody>(coachedMelody);
+  const instrument = useInstrument();
+  const [melody, setMelody] = useState<Melody>(() => coachedMelody(instrument.id));
   const [checked, setChecked] = useState<Checked | null>(null);
-  const stage = STAGES[0]!;
+  const stage = stagesFor(instrument.id)[0]!;
 
   if (checked) {
     return (
@@ -303,7 +307,7 @@ function CoachedScreen({ intro, leftHanded, metronome, onMetronome, onExplainer,
             onDone();
             return;
           }
-          setMelody(coachedMelody());
+          setMelody(coachedMelody(instrument.id));
           setChecked(null);
         }}
       />

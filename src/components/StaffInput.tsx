@@ -18,6 +18,7 @@ import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
 import { noteAt, staveAt, stepFromY } from '../notation/hitTest';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
+import { useInstrument } from './InstrumentContext';
 
 interface StaffInputProps {
   answer: AnswerState;
@@ -68,6 +69,7 @@ function NoteIcon({ duration }: { duration: DurationId }) {
  * accidental and nudge buttons. Undo, delete and clear as usual.
  */
 export default function StaffInput({ answer, dispatch, limits, durations, musicKey, disabled = false }: StaffInputProps) {
+  const instrument = useInstrument();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<StaffLayout | null>(null);
@@ -145,6 +147,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       ink: COLORS.ink,
       keySignature: keySignatureSpec(musicKey),
       keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
+      instrument,
     });
     const layout = layoutRef.current;
     // An insertion cursor after the last note of every bar that still has room.
@@ -158,7 +161,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         return [{ bar: stave.barIndex, x, y: stave.topLineY - stave.lineSpacing * 1.5, width: w, height: stave.lineSpacing * 7 }];
       }),
     );
-  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.barBeats, musicKey]);
+  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.barBeats, musicKey, instrument]);
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {
@@ -336,6 +339,8 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         <button className="icon-button" onClick={() => nudge(-1)} disabled={disabled || !hasSelection} aria-label="Move note down">
           ▼
         </button>
+        {/* The bass reads single lines (R41): no chords to stack. */}
+        {instrument.id !== 'bass' && (
         <button
           className={`chord-toggle${stacking ? ' selected' : ''}`}
           onClick={() => {
@@ -348,6 +353,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         >
           Chord
         </button>
+        )}
         <span className="palette-gap" />
         <button onClick={() => { if (selectedId !== null) { setMessage(null); dispatch({ type: 'delete', id: selectedId }); } }} disabled={disabled || !hasSelection}>
           Delete

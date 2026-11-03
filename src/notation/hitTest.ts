@@ -16,6 +16,8 @@ export interface StaveGeometry {
   lineSpacing: number;
   /** Where notes may start (after clef / time signature). */
   noteStartX: number;
+  /** Staff step of the top line: F5 on a treble staff (the default), A3 on a bass staff. */
+  topStep?: number;
 }
 
 export interface NoteGeometry {
@@ -27,14 +29,14 @@ export interface NoteGeometry {
 }
 
 /** Staff step for a y coordinate: lines and spaces snap to the nearest half-space. */
-export function stepFromY(y: number, stave: Pick<StaveGeometry, 'topLineY' | 'lineSpacing'>): number {
+export function stepFromY(y: number, stave: Pick<StaveGeometry, 'topLineY' | 'lineSpacing' | 'topStep'>): number {
   const halfSpace = stave.lineSpacing / 2;
-  return TREBLE_TOP_LINE_STEP + Math.round((stave.topLineY - y) / halfSpace);
+  return (stave.topStep ?? TREBLE_TOP_LINE_STEP) + Math.round((stave.topLineY - y) / halfSpace);
 }
 
 /** y coordinate of a staff step on a stave. */
-export function yFromStep(step: number, stave: Pick<StaveGeometry, 'topLineY' | 'lineSpacing'>): number {
-  return stave.topLineY - (step - TREBLE_TOP_LINE_STEP) * (stave.lineSpacing / 2);
+export function yFromStep(step: number, stave: Pick<StaveGeometry, 'topLineY' | 'lineSpacing' | 'topStep'>): number {
+  return stave.topLineY - (step - (stave.topStep ?? TREBLE_TOP_LINE_STEP)) * (stave.lineSpacing / 2);
 }
 
 /**

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { STAGES } from '../melody/stages';
+import { BASS_STAGES, STAGES } from '../melody/stages';
+import { hasProgress, initialProgress, resetProgress, withInstrument } from '../session/progression';
 import { localProgressStore } from './progress';
 
 const KEY = 'guitar-reading-trainer.progress.v1';
@@ -41,7 +42,7 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
   it('moves free reading and the bonus stages up by 29 and leaves stages 1 to 17 alone', () => {
     localStorage.setItem(KEY, JSON.stringify({ version: 6, mode: 'listen', handedness: 'left', theme: 'dark', metronome: true, seenGuides: [1, 17, 18, 19], write: track(17, 20, { '18': ['C|60q'], '19': ['G|67h'], '5': ['C|62q'] }) }));
     const p = localProgressStore.load(STAGES);
-    expect(p.version).toBe(7);
+    expect(p.version).toBe(8);
     expect(p.mode).toBe('listen');
     expect(p.write.stage).toBe(46);
     expect(p.write.unlocked).toBe(49);
@@ -61,7 +62,7 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
   it('still reads a version 4 record through both renumberings and drops its playing track', () => {
     localStorage.setItem(KEY, JSON.stringify({ version: 4, mode: 'play', handedness: 'right', theme: 'light', metronome: false, seenGuides: [1, 21], write: { ...track(20, 20), tally: undefined }, play: track(2, 2) }));
     const p = localProgressStore.load(STAGES);
-    expect(p.version).toBe(7);
+    expect(p.version).toBe(8);
     expect(p.mode).toBe('watch');
     // Old stage index 20 (free reading on the 21-stage ladder) became 17 at version 5 and 46 now.
     expect(p.write.stage).toBe(46);
@@ -93,5 +94,57 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
     expect(localProgressStore.load(STAGES).buttonSounds).toBe(true);
     localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: track(0, 0), buttonSounds: false }));
     expect(localProgressStore.load(STAGES).buttonSounds).toBe(false);
+  });
+});
+
+describe('guitar and bass keep their own progress (R41)', () => {
+  beforeEach(() => {
+    globalThis.localStorage = fakeStorage();
+  });
+
+  it('reads a version 7 record as guitar, with no bass lane yet', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [3], write: track(5, 9) }));
+    const p = localProgressStore.load(STAGES);
+    expect(p.instrument).toBe('guitar');
+    expect(p.other).toBeNull();
+    expect(p.write.stage).toBe(5);
+  });
+
+  it('switches to bass with a fresh ladder and back to guitar with the guitar ladder intact', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'left', theme: 'frost', metronome: false, seenGuides: [3], write: track(5, 9) }));
+    const guitar = localProgressStore.load(STAGES);
+    const bass = withInstrument(guitar, 'bass');
+    expect(bass.instrument).toBe('bass');
+    expect(bass.write.stage).toBe(0);
+    expect(bass.write.unlocked).toBe(0);
+    expect(bass.seenGuides).toEqual([]);
+    expect([bass.handedness, bass.theme]).toEqual(['left', 'frost']);
+    const back = withInstrument({ ...bass, write: { ...bass.write, stage: 2, unlocked: 2 } }, 'guitar');
+    expect(back.write.stage).toBe(5);
+    expect(back.seenGuides).toEqual([3]);
+    expect(back.other?.write.stage).toBe(2);
+  });
+
+  it('saves and loads a bass record against the bass ladder, keeping the guitar lane', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: track(40, 45) }));
+    const bass = withInstrument(localProgressStore.load(STAGES), 'bass');
+    localProgressStore.save({ ...bass, write: { ...bass.write, stage: 30, unlocked: 30 } });
+    const loaded = localProgressStore.load(STAGES);
+    expect(loaded.instrument).toBe('bass');
+    // The bass ladder has 17 stages: anything past it is clamped to stage 17.
+    expect(loaded.write.stage).toBe(BASS_STAGES.length - 1);
+    expect(loaded.other?.write.stage).toBe(40);
+  });
+
+  it('resets only the instrument in use, with its lessons', () => {
+    const start = initialProgress(STAGES);
+    const guitar = { ...start, tutorial: ['staff', 'octave'], write: { ...start.write, stage: 4, unlocked: 4, exercises: 9 } };
+    const bass = { ...withInstrument(guitar, 'bass'), tutorial: ['staff', 'octave', 'bass-staff'] };
+    const reset = resetProgress({ ...bass, write: { ...bass.write, exercises: 3 } }, BASS_STAGES);
+    expect(reset.instrument).toBe('bass');
+    expect(reset.write.exercises).toBe(0);
+    expect(reset.tutorial).toEqual(['staff', 'octave']);
+    expect(reset.other?.write.stage).toBe(4);
+    expect(hasProgress(reset)).toBe(false);
   });
 });

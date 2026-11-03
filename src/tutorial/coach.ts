@@ -5,6 +5,7 @@
  * note the coach names it and says where it sits on the staff.
  */
 import { describeStaffPosition } from '../grading/explain';
+import { instrumentOf } from '../music/instrument';
 import { gradedTargets } from '../grading/grade';
 import type { Melody } from '../melody/types';
 import { DURATIONS } from '../music/duration';
@@ -46,7 +47,7 @@ export function coachVerdict(melody: Melody, bars: readonly (readonly AnswerNote
     };
   }
   if (wrongTries >= revealAfter) {
-    return { tone: 'reveal', text: `This note is ${name(target.written)}, ${describeStaffPosition(target.written)}. Tap your note and move it with the arrows.` };
+    return { tone: 'reveal', text: `This note is ${name(target.written)}, ${describeStaffPosition(target.written, instrumentOf(melody.instrument))}. Tap your note and move it with the arrows.` };
   }
   return { tone: 'try', text: `Not quite: that is ${name(written)}. Listen again and try another line or space.` };
 }

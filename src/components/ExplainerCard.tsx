@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { EXPLAINERS } from '../explainers/content';
+import { explainersFor } from '../explainers/content';
+import { useInstrument } from './InstrumentContext';
 import type { ExplainerId } from '../grading/explain';
 import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
@@ -14,7 +15,8 @@ interface ExplainerCardProps {
 
 /** A short teaching card shown over the current screen. */
 export default function ExplainerCard({ id, onClose }: ExplainerCardProps) {
-  const explainer = EXPLAINERS[id];
+  const instrument = useInstrument();
+  const explainer = explainersFor(instrument.id)[id];
   const exampleRef = useRef<HTMLDivElement>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [width, setWidth] = useState(0);
@@ -62,8 +64,9 @@ export default function ExplainerCard({ id, onClose }: ExplainerCardProps) {
       showTimeSignature: false,
       keySignature: explainer.example.key ? keySignatureSpec(explainer.example.key) : undefined,
       keySignatureAccidentals: explainer.example.key ? Math.abs(keySignatureCount(explainer.example.key)) : 0,
+      instrument,
     });
-  }, [explainer, fontsReady, width]);
+  }, [explainer, fontsReady, width, instrument]);
 
   return (
     <div className="card-backdrop" onClick={onClose} role="presentation">

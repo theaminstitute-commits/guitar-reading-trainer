@@ -1,5 +1,5 @@
 /**
- * Guitar playback with Tone.js.
+ * Guitar and bass playback with Tone.js.
  *
  * Plays any list of {midi, duration} notes (a target melody or a learner's
  * answer) at a tempo, with an optional one-bar count-in click. UI callbacks fire
@@ -14,14 +14,15 @@ import { groupEvents, totalBeats as countBeats } from '../melody/bars';
 import { beatsOf, beatsPerBar, type DurationId } from '../music/duration';
 import type { Midi } from '../music/pitch';
 import { loadSampleBuffers } from './loadSamples';
-import { GUITAR_SAMPLES, PIANO_SAMPLES } from './sampleMap';
+import type { InstrumentId } from '../music/instrument';
+import { BASS_SAMPLES, GUITAR_SAMPLES, PIANO_SAMPLES } from './sampleMap';
 
 export interface PlayableNote {
   midi: Midi;
   duration: DurationId;
   /** Notes with the same id sound together, strummed from the lowest up. */
   chord?: number;
-  /** Played on the piano instead of the guitar (the guitar-and-piano lesson, R37). */
+  /** Played on the piano instead of the instrument in use (the lessons that compare the two, R37). */
   instrument?: 'piano';
 }
 
@@ -69,6 +70,10 @@ const GATE = 0.92;
 export class GuitarPlayer {
   /** The guitar sampler once loaded. */
   sampler: Tone.Sampler | null = null;
+  /** The bass sampler once loaded (R41). */
+  private bass: Tone.Sampler | null = null;
+  /** Which instrument plays the notes: the one the learner chose. */
+  voice: InstrumentId = 'guitar';
   /** The piano, for the one lesson that compares the two. */
   private piano: Tone.Sampler | null = null;
   private click: Tone.ToneAudioBuffer | null = null;
@@ -94,6 +99,7 @@ export class GuitarPlayer {
           volume: 2,
         }).toDestination();
         this.piano = new Tone.Sampler({ urls: await loadSampleBuffers(PIANO_SAMPLES), release: 0.8, volume: 0 }).toDestination();
+        this.bass = new Tone.Sampler({ urls: await loadSampleBuffers(BASS_SAMPLES), release: 0.5, volume: 4 }).toDestination();
         // The Seiko-style beep from the user's Tempus metronome, rendered once into a buffer.
         const rate = Tone.getContext().sampleRate;
         const samples = seikoClick(rate);
@@ -111,12 +117,17 @@ export class GuitarPlayer {
     return this.sampler !== null && this.sampler.loaded;
   }
 
+  /** The sampler for the instrument in use: the bass once chosen and loaded, otherwise the guitar. */
+  private get main(): Tone.Sampler {
+    return this.voice === 'bass' && this.bass ? this.bass : this.sampler!;
+  }
+
   async play(notes: readonly PlayableNote[], options: PlayOptions, events: PlayerEvents = {}) {
     // Before any await: still inside the tap, where iOS allows sound to start.
     unlockAudio();
     await this.load();
     this.stop();
-    const sampler = this.sampler!;
+    const sampler = this.main;
     const transport = Tone.getTransport();
 
     const rate = options.rate ?? 1;
@@ -256,6 +267,7 @@ export class GuitarPlayer {
     transport.cancel(0);
     this.sampler?.releaseAll();
     this.piano?.releaseAll();
+    this.bass?.releaseAll();
     const events = this.currentEvents;
     this.currentEvents = null;
     this._isPlaying = false;
@@ -267,6 +279,8 @@ export class GuitarPlayer {
     this.sampler?.dispose();
     this.piano?.dispose();
     this.piano = null;
+    this.bass?.dispose();
+    this.bass = null;
     this.click?.dispose();
     this.clickGain?.dispose();
     this.clickGain = null;

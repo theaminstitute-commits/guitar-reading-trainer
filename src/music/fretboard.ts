@@ -1,6 +1,7 @@
 /**
  * Fretboard geometry: which sounding pitch lives at each string/fret.
- * Strings are numbered the guitarist's way: 1 = high E, 6 = low E.
+ * Strings are numbered the player's way: 1 = the thinnest. On the guitar 1 = high E,
+ * 6 = low E; the bass has its own tuning (music/instrument.ts) with 1 = G, 4 = low E.
  */
 import type { Midi } from './pitch';
 

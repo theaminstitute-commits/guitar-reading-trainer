@@ -4,6 +4,7 @@ import { keySignatureCount, keySignatureSpec } from '../music/key';
 import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
 import { renderStaff } from '../notation/renderStaff';
+import { instrumentOf } from '../music/instrument';
 import { startNoteBar } from '../notation/startNote';
 
 interface StartNoteProps {
@@ -51,6 +52,7 @@ export default function StartNote({ melody }: StartNoteProps) {
       showTimeSignature: false,
       keySignature: keySignatureSpec(melody.key),
       keySignatureAccidentals: Math.abs(keySignatureCount(melody.key)),
+      instrument: instrumentOf(melody.instrument),
     });
   }, [melody, width, fontsReady]);
 

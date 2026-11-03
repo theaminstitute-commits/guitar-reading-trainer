@@ -9,7 +9,6 @@ import { keyName } from '../music/key';
 import { tonicReference } from '../melody/tonic';
 import { spellInKey } from '../music/key';
 import { spelledName } from '../music/pitch';
-import { parseSpelled, staffStep } from '../music/pitch';
 import {
   answerReducer,
   createAnswer,
@@ -25,12 +24,10 @@ import StaffInput from './StaffInput';
 import StartNote from './StartNote';
 import { coachVerdict, isRightPitch, type CoachVerdict } from '../tutorial/coach';
 import { writtenFromSounding } from '../music/pitch';
+import { instrumentOf } from '../music/instrument';
 
 export const SLOW_RATE = 0.7;
 
-/** Notes may be written from three ledger lines below the staff (the open low E) to three above (fret 12 on the first string). */
-const INPUT_MIN_STEP = staffStep(parseSpelled('E3'));
-const INPUT_MAX_STEP = staffStep(parseSpelled('E6'));
 
 interface ExerciseScreenProps {
   melody: Melody;
@@ -69,8 +66,10 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
   const [error, setError] = useState<string | null>(null);
 
   const limits = useMemo<AnswerLimits>(
-    () => ({ barBeats: melody.barBeats, minStep: INPUT_MIN_STEP, maxStep: INPUT_MAX_STEP }),
-    [melody.barBeats],
+    // Notes may be written from the open low E to fret 12 on the first string: on the guitar three ledger lines
+    // below and above the treble staff, on the bass one below and three above the bass staff (R41).
+    () => ({ barBeats: melody.barBeats, minStep: instrumentOf(melody.instrument).inputRange[0], maxStep: instrumentOf(melody.instrument).inputRange[1] }),
+    [melody.barBeats, melody.instrument],
   );
   const [answer, dispatchAnswer] = useReducer(
     (state: AnswerState, action: AnswerAction) => answerReducer(state, action, limits),
@@ -190,7 +189,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
     <section className="exercise">
       <div className="panel tight status-card">
       <div className="status-line" aria-live="polite">
-        {status === 'loading' && 'Loading guitar sounds…'}
+        {status === 'loading' && `Loading ${instrumentOf(melody.instrument).noun} sounds…`}
         {status === 'reference' && `Key note: ${tonicName}. The melody is in ${keyName(melody.key)}.`}
         {status === 'counting' && countBeat !== null && (
           <span className="count-in">

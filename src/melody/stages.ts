@@ -10,6 +10,7 @@
 import { keyFitsVocabulary } from '../chords/generator';
 import { FREE_READING_CHORDS, PART_D } from '../chords/vocabulary';
 import { keyFromId, MAJOR_KEYS, withMode, type Key } from '../music/key';
+import type { InstrumentId } from '../music/instrument';
 import { LEVEL_1, type LevelConfig } from './levelConfig';
 import type { FretPosition } from '../music/fretboard';
 import { barBeatsForCounts, describeMeter, MAX_COUNTS, MIN_COUNTS } from './meter';
@@ -287,6 +288,16 @@ const BONUS: Stage[] = Array.from({ length: MAX_COUNTS - MIN_COUNTS }, (_, i) =>
   };
 });
 
+/** R7 for a ladder: each stage after the first records the positions it adds; chord stages span the neck from the start. */
+function withIntroductions(ladder: Stage[]): Stage[] {
+  return ladder.map((stage, i, all) => {
+    // Chord stages span the whole neck from the start; the voicings decide where notes fall, not R7.
+    if (i === 0 || stage.chords) return stage;
+    const introduces = introducedBy(stage, all[i - 1]!);
+    return introduces.length > 0 ? { ...stage, introduces } : stage;
+  });
+}
+
 function positionsOf(level: LevelConfig): FretPosition[] {
   const out: FretPosition[] = [];
   for (const string of level.strings) for (let fret = level.fretRange[0]; fret <= level.fretRange[1]; fret++) out.push({ string, fret });
@@ -299,17 +310,59 @@ function introducedBy(stage: Stage, previous: Stage): FretPosition[] {
   return positionsOf(stage).filter((p) => !before.some((q) => q.string === p.string && q.fret === p.fret));
 }
 
-const MAIN: Stage[] = [
+const MAIN: Stage[] = withIntroductions([
   STAGE_1, STAGE_2, STAGE_3, STAGE_4, STAGE_5, STAGE_6, STAGE_7, STAGE_8, STAGE_9, STAGE_10,
   STAGE_11, STAGE_12, STAGE_13, STAGE_14, STAGE_15, STAGE_16, STAGE_17, ...PART_D_STAGES, STAGE_FREE,
-].map((stage, i, all) => {
-  // Chord stages span the whole neck from the start; the voicings decide where notes fall, not R7.
-  if (i === 0 || stage.chords) return stage;
-  const introduces = introducedBy(stage, all[i - 1]!);
-  return introduces.length > 0 ? { ...stage, introduces } : stage;
+]);
+
+/** The guitar ladder: the main stages, then the bonus stages. */
+export const STAGES: readonly Stage[] = [...MAIN, ...BONUS];
+
+/**
+ * The bass ladder (R41): the guitar's stages 1 to 17, on the four strings of the bass
+ * and the bass staff, and nothing after: stage 18 is where chords begin on the guitar,
+ * and the bass reads single lines. Same keys, rhythms, positions and listens as the
+ * guitar stage of the same number. The first five stages use the three upper strings
+ * (G, D and A), which keep every note on the staff, as the guitar's first four strings
+ * do; the low E string, under the staff, arrives at stage 6 as the guitar's low strings do.
+ */
+const BASS_UPPER = [1, 2, 3];
+const BASS_ALL = [1, 2, 3, 4];
+const bass = (stage: Stage, text: Partial<Pick<Stage, 'title' | 'summary'>> = {}): Stage => ({
+  ...stage,
+  ...text,
+  id: `bass-${stage.id}`,
+  instrument: 'bass',
+  strings: stage.strings.length > 4 ? BASS_ALL : BASS_UPPER,
 });
 
-export const STAGES: readonly Stage[] = [...MAIN, ...BONUS];
+export const BASS_STAGES: readonly Stage[] = withIntroductions([
+  bass(STAGE_1, { summary: 'Quarter and half notes on the G, D and A strings, frets 0 to 3: written A2 to A3, every note on the staff.' }),
+  bass(STAGE_2, { summary: 'Frets 0 to 4: the fourth fret of the G string reaches the B just above the staff. Leaps up to a fourth.' }),
+  bass(STAGE_3),
+  bass(STAGE_4),
+  bass(STAGE_5),
+  bass(STAGE_6, {
+    title: 'Stage 6: three accidentals, on all four strings',
+    summary: 'A major and E♭ major only, now on all four strings from the open low E. The ledger line below the staff begins.',
+  }),
+  bass(STAGE_7, { summary: 'Whole notes, and a dotted quarter followed by an eighth, in every key so far on all four strings.' }),
+  bass(STAGE_8),
+  bass(STAGE_9),
+  bass(STAGE_10),
+  bass(STAGE_11),
+  bass(STAGE_12, { summary: 'Frets 5 to 9 on all four strings, in any major key. Reading away from the nut, up to the ledger lines above.' }),
+  bass(STAGE_13, { summary: 'Frets 9 to 12 on all four strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.' }),
+  bass(STAGE_14),
+  bass(STAGE_15),
+  bass(STAGE_16),
+  bass(STAGE_17),
+]);
+
+/** The ladder for an instrument. */
+export function stagesFor(instrument: InstrumentId): readonly Stage[] {
+  return instrument === 'bass' ? BASS_STAGES : STAGES;
+}
 
 export function stageAt(index: number): Stage {
   return STAGES[Math.max(0, Math.min(STAGES.length - 1, index))]!;

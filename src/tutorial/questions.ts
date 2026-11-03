@@ -4,9 +4,9 @@
  * the components in components/QuestionCard.tsx draw and grade them.
  */
 import { cellBeats, DURATIONS, type DurationId } from '../music/duration';
-import { midiAt, type FretPosition } from '../music/fretboard';
+import { midiAt, STANDARD_TUNING, type FretPosition } from '../music/fretboard';
 import { C_MAJOR, isDiatonic, keyName, spellInKey, type Key } from '../music/key';
-import { letterStep, midiFromSpelled, parseSpelled, spelledName, staffStep, writtenFromSounding, type SpelledNote } from '../music/pitch';
+import { letterStep, midiFromSpelled, parseSpelled, spelledName, staffStep, writtenFromSounding, type Midi, type SpelledNote } from '../music/pitch';
 import type { Rng } from '../melody/random';
 
 /** Name the note (or notes) drawn on the staff: pick one of the choices. */
@@ -179,6 +179,8 @@ const ODD = ['C♭', 'F♭', 'E♯', 'B♯'];
 /** Notes with a sign in front, in the stage 1 range, one per name: mostly flats (the user asked for a flat), two sharps. */
 const FLAT_NOTES = ['Bb4', 'Eb5', 'Ab4', 'Db5', 'Gb4'];
 const SHARP_NOTES = ['F#4', 'C#5', 'G#4'];
+/** The same on the bass staff (R41), one note per name, all on the staff and on the bass's first frets. */
+export const BASS_SIGNED = { flats: ['Bb2', 'Eb3', 'Ab2', 'Db3', 'Gb3'], sharps: ['F#3', 'C#3', 'G#2'] } as const;
 
 /**
  * "Name the note, sign included" (R36): a flat or sharp is drawn in front of the note, the
@@ -208,9 +210,9 @@ export function signedNoteQuestion(text: string, rng: Rng): NameQuestion {
 }
 
 /** The sharps and flats drill: four flats and two sharps, all different, shuffled. */
-export function sharpsAndFlats(rng: Rng): NameQuestion[] {
-  const flats = shuffle(FLAT_NOTES, rng).slice(0, 4);
-  const sharps = shuffle(SHARP_NOTES, rng).slice(0, 2);
+export function sharpsAndFlats(rng: Rng, notes: { flats: readonly string[]; sharps: readonly string[] } = { flats: FLAT_NOTES, sharps: SHARP_NOTES }): NameQuestion[] {
+  const flats = shuffle(notes.flats, rng).slice(0, 4);
+  const sharps = shuffle(notes.sharps, rng).slice(0, 2);
   return shuffle([...flats, ...sharps], rng).map((text) => signedNoteQuestion(text, rng));
 }
 
@@ -254,22 +256,22 @@ export function placeNotes(notes: readonly SpelledNote[], count: number, rng: Rn
   return pickSeries(notes, count, rng).map((target) => ({ kind: 'place', prompt: `Tap the line or space where ${nameWithOctave(target)} is written.`, key, target }));
 }
 
-/** Every position in a window that sounds the written note (guitar sounds an octave below the page). */
-export function positionsOf(n: SpelledNote, strings: readonly number[], frets: readonly [number, number]): FretPosition[] {
+/** Every position in a window that sounds the written note (guitar and bass sound an octave below the page). */
+export function positionsOf(n: SpelledNote, strings: readonly number[], frets: readonly [number, number], tuning: readonly Midi[] = STANDARD_TUNING): FretPosition[] {
   const sounding = (n.octave + 1) * 12 + [0, 2, 4, 5, 7, 9, 11]['CDEFGAB'.indexOf(n.letter)]! + n.accidental - 12;
   const out: FretPosition[] = [];
   for (const string of strings) {
-    for (let fret = frets[0]; fret <= frets[1]; fret++) if (midiAt({ string, fret }) === sounding) out.push({ string, fret });
+    for (let fret = frets[0]; fret <= frets[1]; fret++) if (midiAt({ string, fret }, tuning) === sounding) out.push({ string, fret });
   }
   return out;
 }
 
 /** Notes of a key playable in a window, written, with their positions. */
-export function windowNotes(key: Key, strings: readonly number[], frets: readonly [number, number]): { note: SpelledNote; positions: FretPosition[] }[] {
+export function windowNotes(key: Key, strings: readonly number[], frets: readonly [number, number], tuning: readonly Midi[] = STANDARD_TUNING): { note: SpelledNote; positions: FretPosition[] }[] {
   const byStep = new Map<number, { note: SpelledNote; positions: FretPosition[] }>();
   for (const string of strings) {
     for (let fret = frets[0]; fret <= frets[1]; fret++) {
-      const midi = midiAt({ string, fret });
+      const midi = midiAt({ string, fret }, tuning);
       if (!isDiatonic(midi, key)) continue;
       const note = spellInKey(writtenFromSounding(midi), key);
       const s = staffStep(note);
@@ -281,8 +283,8 @@ export function windowNotes(key: Key, strings: readonly number[], frets: readonl
   return [...byStep.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
 }
 
-export function staffToFret(key: Key, strings: readonly number[], frets: readonly [number, number], count: number, rng: Rng): StaffToFretQuestion[] {
-  return pickSeries(windowNotes(key, strings, frets), count, rng).map(({ note, positions }) => ({
+export function staffToFret(key: Key, strings: readonly number[], frets: readonly [number, number], count: number, rng: Rng, tuning: readonly Midi[] = STANDARD_TUNING): StaffToFretQuestion[] {
+  return pickSeries(windowNotes(key, strings, frets, tuning), count, rng).map(({ note, positions }) => ({
     kind: 'staff-to-fret',
     prompt: 'Where is this note played? Tap it on the fretboard.',
     key,
@@ -292,8 +294,8 @@ export function staffToFret(key: Key, strings: readonly number[], frets: readonl
   }));
 }
 
-export function fretToStaff(key: Key, strings: readonly number[], frets: readonly [number, number], count: number, rng: Rng): FretToStaffQuestion[] {
-  return pickSeries(windowNotes(key, strings, frets), count, rng).map(({ note, positions }) => ({
+export function fretToStaff(key: Key, strings: readonly number[], frets: readonly [number, number], count: number, rng: Rng, tuning: readonly Midi[] = STANDARD_TUNING): FretToStaffQuestion[] {
+  return pickSeries(windowNotes(key, strings, frets, tuning), count, rng).map(({ note, positions }) => ({
     kind: 'fret-to-staff',
     prompt: 'Where is this note written? Tap the line or space.',
     key,
@@ -349,6 +351,6 @@ export function isRightStep(q: PlaceQuestion | FretToStaffQuestion, step: number
  * Grade a fretboard tap by pitch: any place that sounds the written note counts, inside the
  * drill's fret window or not (B4 is the open B string and fret 4 of the G string alike).
  */
-export function isRightFret(q: StaffToFretQuestion, p: FretPosition): boolean {
-  return writtenFromSounding(midiAt(p)) === midiFromSpelled(q.note);
+export function isRightFret(q: StaffToFretQuestion, p: FretPosition, tuning: readonly Midi[] = STANDARD_TUNING): boolean {
+  return writtenFromSounding(midiAt(p, tuning)) === midiFromSpelled(q.note);
 }

@@ -1,4 +1,5 @@
-import { STANDARD_TUNING, type FretPosition } from '../music/fretboard';
+import type { FretPosition } from '../music/fretboard';
+import { useInstrument } from './InstrumentContext';
 
 interface FretboardProps {
   /** Inclusive fret window of the stage; only this part of the neck is drawn (at least five frets). */
@@ -32,7 +33,6 @@ interface FretboardProps {
   naturalNames?: boolean;
 }
 
-const STRING_NAMES = ['E', 'B', 'G', 'D', 'A', 'E'];
 const MARKER_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_MARKER_FRETS = [12, 24];
 const MIN_FRETS = 5;
@@ -48,12 +48,19 @@ export function visibleFrets([low, high]: readonly [number, number]): { first: n
 }
 
 /**
- * Horizontal fretboard, high E string at the top, nut on the left when the window
+ * Horizontal fretboard, the thinnest string at the top (high E on the guitar, G on the
+ * bass, R41), nut on the left when the window
  * starts at the nut; otherwise the board begins at the first fret of the window
  * with the fret numbers saying where on the neck it is. Pure SVG so it scales to
  * any width; at 375px the frets are still finger-sized.
  */
 export default function Fretboard({ frets = [0, 4], active: activeProp, played = [], mirrored = false, labels, onPick, marks = [], ringing = [], ringKey, naturalNames = false, tones }: FretboardProps) {
+  const instrument = useInstrument();
+  const STRING_NAMES = instrument.stringNames;
+  /** Gaps between the outer strings: five on the guitar, three on the bass. */
+  const gaps = STRING_NAMES.length - 1;
+  /** Bass strings are thicker, and drawn so. */
+  const gauge = (i: number) => (instrument.id === 'bass' ? 1.8 + i * 0.6 : 1 + i * 0.35);
   const actives: readonly FretPosition[] = activeProp === null ? [] : Array.isArray(activeProp) ? (activeProp as readonly FretPosition[]) : [activeProp as FretPosition];
   const active = actives[0] ?? null;
   const { first, last } = visibleFrets(frets);
@@ -62,9 +69,10 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
   const left = 42;
   const top = 26;
   const fretWidth = 62;
-  const stringGap = 20;
+  // The bass's four strings sit a little further apart than the guitar's six, as on the instrument.
+  const stringGap = instrument.id === 'bass' ? 24 : 20;
   const width = left + fretWidth * fretCount + 12;
-  const height = top + stringGap * 5 + 22;
+  const height = top + stringGap * gaps + 22;
   const nutX = left;
   /** X of the wire at the far side of a fret. */
   const fretX = (fret: number) => nutX + fretWidth * (fret - first + 1);
@@ -99,7 +107,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
     >
       <g transform={boardTransform}>
       {/* Wood */}
-      <rect x={nutX} y={top - 8} width={fretWidth * fretCount} height={stringGap * 5 + 16} rx={3} className="fb-wood" />
+      <rect x={nutX} y={top - 8} width={fretWidth * fretCount} height={stringGap * gaps + 16} rx={3} className="fb-wood" />
 
       {/* Fret numbers */}
       {drawn.map((fret) => (
@@ -112,20 +120,20 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
       {drawn
         .filter((f) => MARKER_FRETS.includes(f))
         .map((fret) => (
-          <circle key={fret} cx={fretX(fret) - fretWidth / 2} cy={top + stringGap * 2.5} r={5} className="fb-marker" />
+          <circle key={fret} cx={fretX(fret) - fretWidth / 2} cy={top + (stringGap * gaps) / 2} r={5} className="fb-marker" />
         ))}
       {drawn
         .filter((f) => DOUBLE_MARKER_FRETS.includes(f))
-        .flatMap((fret) => [1.5, 3.5].map((row) => <circle key={`${fret}-${row}`} cx={fretX(fret) - fretWidth / 2} cy={top + stringGap * row} r={5} className="fb-marker" />))}
+        .flatMap((fret) => (gaps === 5 ? [1.5, 3.5] : [0.5, gaps - 0.5]).map((row) => <circle key={`${fret}-${row}`} cx={fretX(fret) - fretWidth / 2} cy={top + stringGap * row} r={5} className="fb-marker" />))}
 
       {/* Nut, or the wire where the window starts, then the fret wires */}
       {hasNut ? (
-        <rect x={nutX - 6} y={top - 8} width={7} height={stringGap * 5 + 16} className="fb-nut" />
+        <rect x={nutX - 6} y={top - 8} width={7} height={stringGap * gaps + 16} className="fb-nut" />
       ) : (
-        <line x1={nutX} x2={nutX} y1={top - 8} y2={top + stringGap * 5 + 8} className="fb-wire" />
+        <line x1={nutX} x2={nutX} y1={top - 8} y2={top + stringGap * gaps + 8} className="fb-wire" />
       )}
       {drawn.map((fret) => (
-        <line key={fret} x1={fretX(fret)} x2={fretX(fret)} y1={top - 8} y2={top + stringGap * 5 + 8} className="fb-wire" />
+        <line key={fret} x1={fretX(fret)} x2={fretX(fret)} y1={top - 8} y2={top + stringGap * gaps + 8} className="fb-wire" />
       ))}
 
       {/* Strings, thicker as they get lower */}
@@ -145,7 +153,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
               y1={stringY(string)}
               y2={stringY(string)}
               className="fb-string"
-              strokeWidth={1 + i * 0.35}
+              strokeWidth={gauge(i)}
             />
             {moving && (
               // The moving part: a blurred lens (the swing seen at speed) and the string itself flicking
@@ -153,7 +161,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
               <g key={`v${ringId}`} transform={`translate(0 ${stringY(string)})`}>
                 <g className="fb-ring">
                   <path d={`M ${start} 0 Q ${mid} ${-2 * amp} ${boardEnd} 0 Q ${mid} ${2 * amp} ${start} 0 Z`} className="fb-ring-blur" />
-                  <path d={`M ${start} 0 Q ${mid} ${-2 * amp} ${boardEnd} 0`} className="fb-string fb-vibrate" fill="none" strokeWidth={1 + i * 0.35} />
+                  <path d={`M ${start} 0 Q ${mid} ${-2 * amp} ${boardEnd} 0`} className="fb-string fb-vibrate" fill="none" strokeWidth={gauge(i)} />
                 </g>
               </g>
             )}
@@ -182,7 +190,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
         STRING_NAMES.flatMap((_, i) => {
           const string = i + 1;
           return drawn.map((fret) => {
-            const letter = NATURAL_LETTER[(STANDARD_TUNING[string]! + fret) % 12];
+            const letter = NATURAL_LETTER[(instrument.tuning[string]! + fret) % 12];
             if (!letter) return null;
             return (
               <g key={`n${string}-${fret}`} className="fb-name">

@@ -5,7 +5,7 @@ import AboutScreen from './components/AboutScreen';
 import ExerciseScreen from './components/ExerciseScreen';
 import LessonRunner from './components/LessonRunner';
 import PlacementScreen from './components/PlacementScreen';
-import { lessonForStage, PART_0, type Lesson } from './tutorial/lessons';
+import { lessonForStage, part0For, type Lesson } from './tutorial/lessons';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
@@ -16,7 +16,9 @@ import type { ExplainerId } from './grading/explain';
 import { gradeAnswer, type GradeResult } from './grading/grade';
 import { generateMelody } from './melody/generator';
 import { describeMeter } from './melody/meter';
-import { STAGES, type Stage } from './melody/stages';
+import { STAGES, stagesFor, type Stage } from './melody/stages';
+import { InstrumentContext } from './components/InstrumentContext';
+import { instrumentOf, type InstrumentId } from './music/instrument';
 import { THEMES } from './session/themes';
 import { installButtonSounds, setButtonSounds } from './audio/uiSound';
 import { installAudioUnlock } from './audio/unlock';
@@ -39,6 +41,7 @@ import {
   withMelodyHeard,
   type Track,
   resetProgress,
+  withInstrument,
 } from './session/progression';
 import { hearWrittenAnswer, yoursFromAnswer, type HearMine } from './session/yours';
 import { localProgressStore } from './storage/progress';
@@ -78,8 +81,8 @@ function withKeyOverride(stage: Stage): Stage {
 const FRESH_TRIES = 60;
 
 /** A melody for the track's stage that has not been given on that stage before, and the track that remembers it. */
-function makeExercise(track: Track): { exercise: Exercise; track: Track } {
-  const level = withKeyOverride(STAGES[track.stage]!);
+function makeExercise(track: Track, stages: readonly Stage[]): { exercise: Exercise; track: Track } {
+  const level = withKeyOverride(stages[track.stage]!);
   let melody = generateMelody(level, randomSeed(), track.counts);
   for (let i = 0; i < FRESH_TRIES && hasHeard(track, level.number, melody); i++) melody = generateMelody(level, randomSeed(), track.counts);
   return { exercise: { level, melody }, track: withMelodyHeard(track, level.number, melody) };
@@ -98,23 +101,28 @@ const MODE_LABEL: Record<ExerciseMode, string> = { watch: '', listen: ' · liste
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [progress, setProgress] = useState<Progress>(() => {
+    // Old records are guitar records; a saved bass record is read against the bass ladder (storage/progress.ts).
     const loaded = store.load(STAGES);
     // Write the record back at once, so a migration from an older ladder is saved even before the first result.
     store.save(loaded);
     // `?unlock=59` opens every stage up to that number, for trying stages out.
     const unlock = Number(params.get('unlock'));
     if (!(unlock >= 1)) return loaded;
-    return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, STAGES) };
+    return { ...loaded, write: withUnlocked(loaded.write, unlock - 1, stagesFor(loaded.instrument)) };
   });
+  /** The ladder of the instrument in use (R41): 17 stages on the bass, the full guitar ladder otherwise. */
+  const stages = stagesFor(progress.instrument);
+  const instrument = instrumentOf(progress.instrument);
+  const PART_0 = part0For(progress.instrument);
   const [session, setSession] = useState<SessionStats>({ exercises: 0, accuracySum: 0 });
   const track = trackOf(progress);
-  const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track).exercise);
+  const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track, stages).exercise);
   const [checked, setChecked] = useState<Checked | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
   const [lesson, setLesson] = useState<{ lesson: Lesson; then: LessonThen } | null>(null);
 
   /** The stage the current track is on, for the start screen and the guide. */
-  const level = withKeyOverride(STAGES[track.stage]!);
+  const level = withKeyOverride(stages[track.stage]!);
   const { melody } = exercise;
 
   const updateProgress = useCallback((next: Progress) => {
@@ -124,7 +132,7 @@ export default function App() {
 
   /** Draw a fresh melody for the track's current stage and go to it. */
   const startExercise = (current: Progress) => {
-    const made = makeExercise(trackOf(current));
+    const made = makeExercise(trackOf(current), stagesFor(current.instrument));
     updateProgress(withTrack(current, made.track));
     setExercise(made.exercise);
     setChecked(null);
@@ -132,13 +140,13 @@ export default function App() {
   };
 
   const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null) => {
-    const { track: nextTrack, change } = applyResult(track, result, STAGES);
+    const { track: nextTrack, change } = applyResult(track, result, stages);
     // R17: a stage lost through demotion shows its guide again when it is won back.
-    const lost = change === 'stage-down' ? STAGES[track.stage]!.number : null;
+    const lost = change === 'stage-down' ? stages[track.stage]!.number : null;
     const seenGuides = lost === null ? progress.seenGuides : progress.seenGuides.filter((n) => n !== lost);
     updateProgress(withTrack({ ...progress, seenGuides }, nextTrack));
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
-    setChecked({ result, change, stageAfter: STAGES[nextTrack.stage]!, yours, hearMine });
+    setChecked({ result, change, stageAfter: stages[nextTrack.stage]!, yours, hearMine });
     setScreen('feedback');
   };
 
@@ -147,7 +155,7 @@ export default function App() {
     record(result, yoursFromAnswer(answerBars, melody, melody.key), hearWrittenAnswer(answerBars, melody, melody.key));
   };
 
-  const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, STAGES)));
+  const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, stages)));
   const onMetronome = (on: boolean) => updateProgress({ ...progress, metronome: on });
 
   const openLesson = (l: Lesson, then: LessonThen) => {
@@ -160,12 +168,12 @@ export default function App() {
    * and before the guide the stage's lesson when it has one not yet taken (R27).
    */
   const begin = (current: Progress = progress) => {
-    const number = STAGES[trackOf(current).stage]!.number;
+    const number = stagesFor(current.instrument)[trackOf(current).stage]!.number;
     if (current.seenGuides.includes(number)) {
       startExercise(current);
       return;
     }
-    const stageLesson = lessonForStage(number);
+    const stageLesson = lessonForStage(number, current.instrument);
     if (stageLesson && !current.tutorial.includes(stageLesson.id)) openLesson(stageLesson, 'guide');
     else setScreen('guide');
   };
@@ -187,7 +195,7 @@ export default function App() {
   /** The placement test (R25) opens every stage up to the result and starts there. */
   const onPlaced = (stageNumber: number) => {
     const index = stageNumber - 1;
-    const placed = withStage(withUnlocked(track, index, STAGES), index, STAGES);
+    const placed = withStage(withUnlocked(track, index, stages), index, stages);
     const next = withTrack({ ...progress, tutorialSkipped: true }, placed);
     updateProgress(next);
     begin(next);
@@ -202,6 +210,21 @@ export default function App() {
   const onMode = (mode: ExerciseMode) => updateProgress({ ...progress, mode });
   const onHandedness = (handedness: Handedness) => updateProgress({ ...progress, handedness });
   const onTheme = (theme: Theme) => updateProgress({ ...progress, theme });
+  /** Switch between guitar and bass (R41): each keeps its own ladder; a fresh melody for the new one is drawn at once. */
+  const onInstrument = (id: InstrumentId) => {
+    const next = withInstrument(progress, id);
+    if (next === progress) return;
+    sharedPlayer().voice = id;
+    // A melody for the new ladder, kept only as a placeholder: Start draws (and records) the real one.
+    setExercise(makeExercise(trackOf(next), stagesFor(id)).exercise);
+    updateProgress(next);
+    setChecked(null);
+  };
+
+  // Melodies and examples sound on the instrument being learnt.
+  useEffect(() => {
+    sharedPlayer().voice = progress.instrument;
+  }, [progress.instrument]);
 
   // The theme is a data attribute on <html>; "system" removes it so the prefers-color-scheme rules apply.
   // A change after the first paint crossfades: the View Transitions API where the browser has it,
@@ -252,11 +275,12 @@ export default function App() {
   useEffect(() => setButtonSounds(progress.buttonSounds), [progress.buttonSounds]);
 
   const onReset = () => {
-    updateProgress(resetProgress(progress, STAGES));
+    updateProgress(resetProgress(progress, stages));
     setSession({ exercises: 0, accuracySum: 0 });
   };
 
   return (
+    <InstrumentContext.Provider value={instrument}>
     <main className="app">
       <header className="app-bar">
         {screen !== 'start' && (
@@ -292,7 +316,7 @@ export default function App() {
 
       {screen === 'start' && (
         <StartScreen
-          stages={STAGES}
+          stages={stages}
           level={level}
           progress={progress}
           track={track}
@@ -310,13 +334,14 @@ export default function App() {
           onPlacement={() => setScreen('placement')}
           onHints={(hints) => updateProgress({ ...progress, hints })}
           onButtonSounds={(buttonSounds) => updateProgress({ ...progress, buttonSounds })}
+          onInstrument={onInstrument}
         />
       )}
 
       {screen === 'guide' && (
         <StageGuide
           stage={level}
-          previous={track.stage > 0 ? STAGES[track.stage - 1]! : null}
+          previous={track.stage > 0 ? stages[track.stage - 1]! : null}
           leftHanded={progress.handedness === 'left'}
           onStart={onGuideStart}
           onBack={() => setScreen('start')}
@@ -359,7 +384,7 @@ export default function App() {
               else if (nextLesson) openLesson(nextLesson, 'next-part-0');
               else if (intoStage1) {
                 // Already on stage 1 with its count kept: only a learner not yet on it is moved there.
-                const first = track.stage === 0 ? progress : withTrack(progress, withStage(track, 0, STAGES));
+                const first = track.stage === 0 ? progress : withTrack(progress, withStage(track, 0, stages));
                 if (first !== progress) updateProgress(first);
                 begin(first);
               } else setScreen('start');
@@ -398,5 +423,6 @@ export default function App() {
 
       <footer className="muted small">{SAMPLE_CREDIT}</footer>
     </main>
+    </InstrumentContext.Provider>
   );
 }

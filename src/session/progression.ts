@@ -12,7 +12,8 @@
 import type { GradeResult } from '../grading/grade';
 import type { Melody } from '../melody/types';
 import { keyId } from '../music/key';
-import type { Stage } from '../melody/stages';
+import type { InstrumentId } from '../music/instrument';
+import { stagesFor, type Stage } from '../melody/stages';
 
 export type ExerciseMode = 'watch' | 'listen';
 export type Handedness = 'right' | 'left';
@@ -55,8 +56,23 @@ export function withMelodyHeard(track: Track, stageNumber: number, melody: Melod
   return { ...track, melodies: { ...track.melodies, [key]: list } };
 }
 
+/**
+ * One instrument's own progress (R41): its ladder, the stage guides it has shown, and
+ * whether its tutorial was skipped. The instrument in use keeps its lane in the top-level
+ * fields of Progress; the other instrument's lane waits in `other` until it is chosen.
+ */
+export interface Lane {
+  write: Track;
+  seenGuides: number[];
+  tutorialSkipped: boolean;
+}
+
 export interface Progress {
-  version: 7;
+  version: 8;
+  /** The instrument being learnt: guitar (treble staff, six strings) or bass (bass staff, four strings). */
+  instrument: InstrumentId;
+  /** The lane of the instrument not in use, kept for when it is chosen again; null until it has been used. */
+  other: Lane | null;
   mode: ExerciseMode;
   handedness: Handedness;
   theme: Theme;
@@ -65,7 +81,7 @@ export interface Progress {
   /** Stage numbers whose guide page has been shown; the guide opens by itself before any other stage. */
   seenGuides: number[];
   write: Track;
-  /** Ids of the tutorial lessons finished (Part 0 and stage lessons). */
+  /** Ids of the tutorial lessons finished (Part 0 and stage lessons; the bass lessons have their own ids). */
   tutorial: string[];
   /** The learner chose not to take the tutorial (skipped it, or took the placement test). */
   tutorialSkipped: boolean;
@@ -92,19 +108,69 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 7, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true, buttonSounds: true };
+  return { version: 8, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true, buttonSounds: true };
 }
 
-/** Anything a reset would clear: melodies, a stage reached or chosen, guides seen, lessons, or the tutorial skipped (R32). */
+/** Anything a reset would clear: melodies, a stage reached or chosen, guides seen, lessons, or the tutorial skipped (R32), on the instrument in use. */
 export function hasProgress(progress: Progress): boolean {
   const t = progress.write;
-  return t.exercises > 0 || t.stage > 0 || t.unlocked > 0 || t.tally > 0 || Object.keys(t.melodies).length > 0 || progress.seenGuides.length > 0 || progress.tutorial.length > 0 || progress.tutorialSkipped;
+  return (
+    t.exercises > 0 ||
+    t.stage > 0 ||
+    t.unlocked > 0 ||
+    t.tally > 0 ||
+    Object.keys(t.melodies).length > 0 ||
+    progress.seenGuides.length > 0 ||
+    lessonsDone(progress).length > 0 ||
+    progress.tutorialSkipped
+  );
 }
 
-/** Reset progress (R32): the ladder, guides and tutorial start again; the settings (mode, hand, theme, click, hints) stay. */
+/** The finished lessons of the instrument in use (R41): bass lessons on the bass, the others on the guitar. */
+export function lessonsDone(progress: Progress): string[] {
+  return progress.tutorial.filter((id) => isBassLesson(id) === (progress.instrument === 'bass'));
+}
+
+/**
+ * Reset progress (R32): the ladder, guides and tutorial start again; the settings (mode, hand, theme, click, hints) stay.
+ * Only the instrument in use is reset (R41): the other instrument's ladder and lessons are kept.
+ */
 export function resetProgress(progress: Progress, stages: readonly Stage[]): Progress {
   const fresh = initialProgress(stages);
-  return { ...fresh, mode: progress.mode, handedness: progress.handedness, theme: progress.theme, metronome: progress.metronome, hints: progress.hints, buttonSounds: progress.buttonSounds };
+  const mine = (id: string) => isBassLesson(id) === (progress.instrument === 'bass');
+  return {
+    ...fresh,
+    instrument: progress.instrument,
+    other: progress.other,
+    tutorial: progress.tutorial.filter((id) => !mine(id)),
+    mode: progress.mode,
+    handedness: progress.handedness,
+    theme: progress.theme,
+    metronome: progress.metronome,
+    hints: progress.hints,
+    buttonSounds: progress.buttonSounds,
+  };
+}
+
+/** Bass lessons carry ids starting "bass-" (R41); every other id is a guitar lesson. */
+export function isBassLesson(id: string): boolean {
+  return id.startsWith('bass-');
+}
+
+/** A lane that has not been used yet. */
+export function freshLane(stages: readonly Stage[]): Lane {
+  return { write: initialTrack(stages), seenGuides: [], tutorialSkipped: false };
+}
+
+/**
+ * Switch instrument (R41): the lane in use goes into `other`, and the chosen instrument's
+ * lane comes out of it (fresh, the first time). Settings and finished lessons stay as they are.
+ */
+export function withInstrument(progress: Progress, instrument: InstrumentId): Progress {
+  if (progress.instrument === instrument) return progress;
+  const away: Lane = { write: progress.write, seenGuides: progress.seenGuides, tutorialSkipped: progress.tutorialSkipped };
+  const back = progress.other ?? freshLane(stagesFor(instrument));
+  return { ...progress, instrument, other: away, write: back.write, seenGuides: back.seenGuides, tutorialSkipped: back.tutorialSkipped };
 }
 
 export function trackOf(progress: Progress): Track {

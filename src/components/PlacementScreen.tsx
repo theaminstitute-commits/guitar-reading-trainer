@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { STAGES } from '../melody/stages';
-import { PASS_MARK, placementStage, QUESTIONS_PER_TIER, TIERS, tierQuestions } from '../tutorial/placement';
+import { stagesFor } from '../melody/stages';
+import { PASS_MARK, placementFor, placementStage, QUESTIONS_PER_TIER, tierQuestions } from '../tutorial/placement';
+import { useInstrument } from './InstrumentContext';
 import { CheckIcon } from './icons';
 import QuestionCard from './QuestionCard';
 
@@ -18,16 +19,18 @@ interface PlacementScreenProps {
  * the stage that teaches it.
  */
 export default function PlacementScreen({ leftHanded, onPlaced, onTutorial, onBack }: PlacementScreenProps) {
+  const instrument = useInstrument();
+  const { tiers: TIERS, top } = placementFor(instrument.id);
   const seed = useMemo(() => Math.floor(Math.random() * 1_000_000_000), []);
   const [started, setStarted] = useState(false);
   const [tier, setTier] = useState(0);
   const [at, setAt] = useState(0);
   const [right, setRight] = useState(0);
   const [passed, setPassed] = useState<boolean[]>([]);
-  const questions = useMemo(() => (tier < TIERS.length ? tierQuestions(TIERS[tier]!, seed) : []), [tier, seed]);
+  const questions = useMemo(() => (tier < TIERS.length ? tierQuestions(TIERS[tier]!, seed, TIERS) : []), [tier, seed, TIERS]);
   const finished = passed.length === TIERS.length || passed.includes(false);
-  const stageNumber = placementStage(passed);
-  const stage = STAGES[stageNumber - 1]!;
+  const stageNumber = placementStage(passed, TIERS, top);
+  const stage = stagesFor(instrument.id)[stageNumber - 1]!;
 
   if (!started) {
     return (

@@ -1,17 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import type { DurationId } from '../music/duration';
 import { keySignatureCount, keySignatureSpec, type Key } from '../music/key';
-import { parseSpelled, staffStep, type SpelledNote } from '../music/pitch';
+import { staffStep, type SpelledNote } from '../music/pitch';
+import { useInstrument } from './InstrumentContext';
 import { displaySignsForBars, type Sign } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
-import { staveAt, stepFromY, TREBLE_TOP_LINE_STEP, yFromStep } from '../notation/hitTest';
+import { staveAt, stepFromY, yFromStep } from '../notation/hitTest';
 import { PAPER } from '../notation/paper';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
 /** The lower octave band: a cool slate, never a warm tint on the cream paper. */
 const OCTAVE_4 = '#5b6b80';
-/** Staff steps of the notes the octave bands are measured from. */
-const OCTAVE_STEP = { D4: 4 * 7 + 1, B4: 4 * 7 + 6, G5: 5 * 7 + 4 } as const;
 
 export interface MiniNote {
   step: number;
@@ -46,9 +45,9 @@ interface MiniStaffProps {
    */
   dropKey?: unknown;
   /**
-   * The octave number shown on the staff (R38): everything from the C5 space up is tinted blue
-   * and marked "C5 and up", everything from the middle line (B4) down is tinted grey and marked
-   * "B4 and down", so the learner sees the number change at C.
+   * The octave number shown on the staff (R38): everything from the C on the staff up is tinted
+   * blue and marked "C5 and up", everything from the B below it down is tinted grey and marked
+   * "B4 and down", so the learner sees the number change at C (on the bass staff, C3 and B2).
    */
   octaveSplit?: boolean;
 }
@@ -67,13 +66,7 @@ export function balancedPerRow(bars: readonly MiniNote[][], width: number, legen
   return Math.ceil(count / rows);
 }
 
-/** Staff steps of the five lines and four spaces, E4 to F5. */
-const STAFF_STEPS = Array.from({ length: 9 }, (_, i) => staffStep(parseSpelled('E4')) + i);
 const LETTERS = 'CDEFGAB';
-
-/** Lowest and highest steps a tap may land on: the open low E to fret 12 on the first string. */
-const MIN_STEP = staffStep(parseSpelled('E3'));
-const MAX_STEP = staffStep(parseSpelled('E6'));
 
 /** Notes written in a key, as mini-staff notes with the signs the key needs; a forced sign wins. */
 export function miniNotes(
@@ -102,6 +95,11 @@ const DROP_MS = 600;
 const SHAKE_MS = 420;
 
 export default function MiniStaff({ bars, musicKey, timeSignature = false, barsPerRow, onTapStep, legend = false, legendHighlight = null, dropKey, octaveSplit = false }: MiniStaffProps) {
+  const instrument = useInstrument();
+  /** Staff steps of the five lines and four spaces: E4 to F5 on the treble staff, G2 to A3 on the bass staff. */
+  const staffSteps = Array.from({ length: 9 }, (_, i) => instrument.bottomLine + i);
+  /** Lowest and highest steps a tap may land on: the open low E to fret 12 on the first string. */
+  const [minStep, maxStep] = instrument.inputRange;
   const dropped = useRef<{ key: unknown; at: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -158,6 +156,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         showTimeSignature: timeSignature,
         keySignature: keySignatureSpec(musicKey),
         keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
+        instrument,
       }),
     );
     if (dropKey !== undefined && dropKey !== dropped.current?.key) dropped.current = { key: dropKey, at: performance.now() };
@@ -174,17 +173,17 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
         g.style.animationDelay = wrong[i] ? `${-e}ms, ${DROP_MS - e}ms` : `${-e}ms`;
       });
     }
-  }, [bars, musicKey, timeSignature, barsPerRow, width, staffWidth, scale, fontsReady, legend, dropKey]);
+  }, [bars, musicKey, timeSignature, barsPerRow, width, staffWidth, scale, fontsReady, legend, dropKey, instrument]);
 
   const flat = bars.flat();
   const labelSize = 9 * scale;
   // Labels sit on one baseline per row, 8.4 spaces below the top line; a note hanging lower (the open
   // low E, E3, under three ledger lines) pushes its row's baseline down so the name clears the notehead.
-  const labelSpaces = (stave: { topLineY: number }) => {
+  const labelSpaces = (stave: { topLineY: number; topStep?: number }) => {
     const low = layout!.notes
       .filter((g) => (layout!.staves[g.barIndex] ?? layout!.staves[layout!.staves.length - 1]!).topLineY === stave.topLineY)
       .reduce((m, g) => Math.min(m, flat[g.id]?.rest ? Infinity : (flat[g.id]?.step ?? Infinity)), Infinity);
-    return Math.max(8.4, (TREBLE_TOP_LINE_STEP - low) / 2 + 1.5);
+    return Math.max(8.4, ((stave.topStep ?? instrument.topLine) - low) / 2 + 1.5);
   };
   const labelDrop = layout ? Math.max(0, ...layout.staves.map((s) => labelSpaces(s) - 8.4)) * (layout.staves[0]?.lineSpacing ?? 0) : 0;
   const labels = layout
@@ -205,23 +204,26 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
   const rows = layout ? layout.staves.filter((s, i, all) => i === 0 || s.topLineY !== all[i - 1]!.topLineY) : [];
   const legendItems = legend
     ? rows.flatMap((stave) =>
-        STAFF_STEPS.map((step) => {
-          const isLine = (step - STAFF_STEPS[0]!) % 2 === 0;
+        staffSteps.map((step) => {
+          const isLine = (step - staffSteps[0]!) % 2 === 0;
           // Two staggered columns, lines nearer the clef and spaces outside, so neighbouring letters never touch.
           return { x: gutter * (isLine ? 0.72 : 0.28), y: yFromStep(step, stave), text: LETTERS[step % 7]!, color: isLine ? PAPER.lineLetter : PAPER.spaceLetter, on: legendHighlight === step };
         }),
       )
     : [];
 
-  // The two octave bands meet just above the middle line: the B4 line is in the 4s, the whole C5 space in the 5s.
-  // Their names sit just outside the staff, above and below, clear of the lines.
+  // The two octave bands meet just above the B on the staff: on the treble staff the B4 line is in the 4s and
+  // the whole C5 space in the 5s; on the bass staff B2 and C3. Their names sit just outside the staff, above
+  // and below, clear of the lines. The bands run from the space under the staff to the space over it.
+  const bStep = staffSteps.find((s) => s % 7 === 6)!;
+  const octave = Math.floor(bStep / 7);
   const bands = octaveSplit
     ? rows.map((stave) => {
         const half = stave.lineSpacing / 2;
-        const split = yFromStep(OCTAVE_STEP.B4, stave) - 1.5;
+        const split = yFromStep(bStep, stave) - 1.5;
         const left = gutter + stave.x;
         const right = left + stave.width;
-        return { left, right, top: yFromStep(OCTAVE_STEP.G5, stave) - half, split, bottom: yFromStep(OCTAVE_STEP.D4, stave) + half };
+        return { left, right, top: yFromStep(instrument.topLine + 1, stave) - half, split, bottom: yFromStep(instrument.bottomLine - 1, stave) + half };
       })
     : [];
   const bandSize = 8.6 * scale;
@@ -233,7 +235,7 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
     const y = e.clientY - rect.top;
     const stave = staveAt(layout.staves, x, y);
     if (!stave) return;
-    onTapStep(Math.min(MAX_STEP, Math.max(MIN_STEP, stepFromY(y, stave))));
+    onTapStep(Math.min(maxStep, Math.max(minStep, stepFromY(y, stave))));
   };
 
   return (
@@ -246,10 +248,10 @@ export default function MiniStaff({ bars, musicKey, timeSignature = false, barsP
               <rect x={b.left} y={b.top} width={b.right - b.left} height={b.split - b.top} fill={PAPER.active} opacity={0.17} />
               <rect x={b.left} y={b.split} width={b.right - b.left} height={b.bottom - b.split} fill={OCTAVE_4} opacity={0.14} />
               <text x={b.right - 4} y={b.top - bandSize * 0.85} textAnchor="end" dominantBaseline="central" className="octave-band" fill={PAPER.active} fontSize={bandSize}>
-                C5 and up: 5
+                C{octave + 1} and up: {octave + 1}
               </text>
               <text x={b.right - 4} y={b.bottom + bandSize * 0.85} textAnchor="end" dominantBaseline="central" className="octave-band" fill={OCTAVE_4} fontSize={bandSize}>
-                B4 and down: 4
+                B{octave} and down: {octave}
               </text>
             </g>
           ))}

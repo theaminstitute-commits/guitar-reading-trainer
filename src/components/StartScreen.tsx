@@ -1,13 +1,16 @@
-import { EXPLAINER_ORDER, EXPLAINERS } from '../explainers/content';
+import { EXPLAINER_ORDER, explainersFor } from '../explainers/content';
+import { INSTRUMENTS, type InstrumentId } from '../music/instrument';
+import { useInstrument } from './InstrumentContext';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
-import { hasProgress, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
+import { hasProgress, lessonsDone, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, QuillIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
 import ConfirmDialog from './ConfirmDialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ensureNotationFonts } from '../notation/fonts';
 import { THEMES } from '../session/themes';
-import { PART_0, STAGE_LESSONS, type Lesson } from '../tutorial/lessons';
+import { part0For, stageLessonsFor, type Lesson } from '../tutorial/lessons';
 
 export interface SessionStats {
   exercises: number;
@@ -34,7 +37,15 @@ interface StartScreenProps {
   onPlacement: () => void;
   onHints: (on: boolean) => void;
   onButtonSounds: (on: boolean) => void;
+  /** Guitar or bass (R41). */
+  onInstrument: (instrument: InstrumentId) => void;
 }
+
+/** What each instrument brings, under the picker. */
+const INSTRUMENT_NOTE: Record<InstrumentId, string> = {
+  guitar: 'Six strings, read on the treble staff: single notes, then chords, then free reading.',
+  bass: 'Four strings, read on the bass staff. Stages 1 to 17: single notes in every key, up the neck and in minor. Guitar and bass each keep their own progress.',
+};
 
 const pct = (sum: number, n: number) => (n === 0 ? null : `${Math.round((sum / n) * 100)}%`);
 
@@ -72,10 +83,19 @@ export default function StartScreen({
   onPlacement,
   onHints,
   onButtonSounds,
+  onInstrument,
 }: StartScreenProps) {
   const [confirmReset, setConfirmReset] = useState(false);
-  /** A brand-new learner: no melodies, no lessons, and they have not said they can read. */
-  const isNew = progress.write.exercises === 0 && progress.tutorial.length === 0 && !progress.tutorialSkipped && track.unlocked === 0;
+  // The clefs on the instrument picker are drawn in the music font.
+  useEffect(() => {
+    ensureNotationFonts().catch(() => {});
+  }, []);
+  const instrument = useInstrument();
+  const PART_0 = part0For(instrument.id);
+  const STAGE_LESSONS = stageLessonsFor(instrument.id);
+  const EXPLAINERS = explainersFor(instrument.id);
+  /** A brand-new learner on this instrument: no melodies, no lessons, and they have not said they can read. */
+  const isNew = progress.write.exercises === 0 && lessonsDone(progress).length === 0 && !progress.tutorialSkipped && track.unlocked === 0;
   const nextPart0 = PART_0.find((l) => !progress.tutorial.includes(l.id));
   const part0Done = PART_0.filter((l) => progress.tutorial.includes(l.id)).length;
   const stageLessons = STAGE_LESSONS.filter((l) => (l.stage ?? 0) - 1 <= track.unlocked);
@@ -88,13 +108,29 @@ export default function StartScreen({
 
   return (
     <section className="start">
+      {/* The instrument (R41): guitar on the treble staff, bass on the bass staff. Each has its own ladder and lessons. */}
+      <div className="panel instrument-pick">
+        <span className="eyebrow">Instrument</span>
+        <div className="segmented" role="group" aria-label="Instrument">
+          {INSTRUMENTS.map((i) => (
+            <button key={i.id} className={`seg${instrument.id === i.id ? ' on' : ''}`} aria-pressed={instrument.id === i.id} onClick={() => onInstrument(i.id)}>
+              <span className={`clef-glyph ${i.clef}`} aria-hidden="true">
+                {i.clef === 'bass' ? '𝄢' : '𝄞'}
+              </span>
+              <span>{i.name}</span>
+            </button>
+          ))}
+        </div>
+        <p className="muted small-note">{INSTRUMENT_NOTE[instrument.id]}</p>
+      </div>
+
       {/* Welcome for a brand-new learner: the tutorial, or the placement test (R24, R25) */}
       {isNew && (
         <div className="panel welcome">
           <span className="eyebrow">New here?</span>
           <h2 className="hero-title">Learn to read music from scratch</h2>
           <p className="hero-summary">
-            Four short lessons teach the staff, where the notes are on the guitar, and rhythm, then a first melody with a coach. About twenty minutes in all, and you can stop at any point.
+            Four short lessons teach the {instrument.clef} staff, where the notes are on the {instrument.noun}, and rhythm, then a first melody with a coach. About twenty minutes in all, and you can stop at any point.
           </p>
           <div className="cta">
             <button className="btn primary big" onClick={() => onLesson(PART_0[0]!)}>
@@ -176,7 +212,7 @@ export default function StartScreen({
         {/* Listen only shows no fretboard, so handedness has nothing to mirror there. */}
         {progress.mode === 'watch' && (
           <div className="row-between">
-            <span className="muted">Guitar</span>
+            <span className="muted">{instrument.name}</span>
             <div className="segmented compact" role="group" aria-label="Handedness">
               <button className={`seg${progress.handedness === 'right' ? ' on' : ''}`} aria-pressed={progress.handedness === 'right'} onClick={() => onHandedness('right')}>
                 Right-handed
@@ -320,8 +356,8 @@ export default function StartScreen({
       </p>
       {confirmReset && (
         <ConfirmDialog
-          title="Reset all progress?"
-          message="Your stages, flawless counts, finished lessons and heard melodies will be cleared. Your settings stay. This can't be undone."
+          title={`Reset your ${instrument.noun} progress?`}
+          message={`Your ${instrument.noun} stages, flawless counts, finished lessons and heard melodies will be cleared. Your settings${progress.other ? `, and your ${instrument.id === 'bass' ? 'guitar' : 'bass'} progress,` : ''} stay. This can't be undone.`}
           onNo={() => setConfirmReset(false)}
           onYes={() => {
             setConfirmReset(false);

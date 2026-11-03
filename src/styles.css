@@ -2363,3 +2363,23 @@ html.theme-fade *::after {
   color: var(--text);
   font-size: 0.92rem;
 }
+
+/* The instrument picker (R41): each choice shows its clef. Bravura carries the Unicode clefs; system music fonts stand in until it loads. */
+.instrument-pick .segmented {
+  margin-top: 6px;
+}
+.clef-glyph {
+  font-family: 'Bravura', 'Segoe UI Symbol', 'Noto Music', 'Apple Symbols', serif;
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-block;
+  width: 1.1em;
+  text-align: center;
+}
+/* The G clef reaches far above and below its line; the F clef is compact. Sized to look alike. */
+.clef-glyph.treble {
+  font-size: 1.15rem;
+}
+.clef-glyph.bass {
+  font-size: 1.75rem;
+}

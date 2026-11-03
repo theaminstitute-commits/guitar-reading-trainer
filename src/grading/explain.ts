@@ -5,6 +5,7 @@ import { beatsInWords, DURATIONS, type DurationId } from '../music/duration';
 import { keyName, keySignatureAccidental, keySignatureCount, spellInKey, type Key } from '../music/key';
 import { soundingFromWritten, spelledFromStaffStep, spelledName, staffStep, type SpelledNote } from '../music/pitch';
 import type { GradedPair, Mistake } from './grade';
+import { GUITAR, type Instrument } from '../music/instrument';
 
 export type ExplainerId = 'staff-basics' | 'key-signatures' | 'minor-keys' | 'ledger-lines' | 'durations' | 'guitar-octave';
 
@@ -21,10 +22,9 @@ export interface Explanation {
 const LINE_NAMES = ['first (bottom)', 'second', 'third', 'fourth', 'fifth (top)'];
 const SPACE_NAMES = ['first (bottom)', 'second', 'third', 'fourth'];
 
-/** Where a written note sits on the treble staff, in words. */
-export function describeStaffPosition(note: SpelledNote): string {
-  const bottomLine = staffStep({ letter: 'E', accidental: 0, octave: 4 });
-  const offset = staffStep(note) - bottomLine; // 0 = bottom line, 8 = top line
+/** Where a written note sits on the staff (treble for the guitar, bass for the bass), in words. */
+export function describeStaffPosition(note: SpelledNote, instrument: Instrument = GUITAR): string {
+  const offset = staffStep(note) - instrument.bottomLine; // 0 = bottom line, 8 = top line
   if (offset >= 0 && offset <= 8) {
     return offset % 2 === 0 ? `on the ${LINE_NAMES[offset / 2]} line` : `in the ${SPACE_NAMES[(offset - 1) / 2]} space`;
   }
@@ -47,11 +47,9 @@ function durationWords(id: DurationId): string {
 }
 
 /** The card that helps most with a pitch slip: ledger lines off the staff, otherwise staff basics. */
-function pitchCard(written: SpelledNote): ExplainerId {
+function pitchCard(written: SpelledNote, instrument: Instrument): ExplainerId {
   const s = staffStep(written);
-  const bottom = staffStep({ letter: 'E', accidental: 0, octave: 4 });
-  const top = staffStep({ letter: 'F', accidental: 0, octave: 5 });
-  return s < bottom || s > top ? 'ledger-lines' : 'staff-basics';
+  return s < instrument.bottomLine || s > instrument.topLine ? 'ledger-lines' : 'staff-basics';
 }
 
 /** The card that helps most with a sign slip: minor keys when a raised degree is involved, else key signatures. */
@@ -60,7 +58,7 @@ function signCard(key: Key, target: SpelledNote): ExplainerId {
   return key.mode === 'major' && keySignatureCount(key) === 0 ? 'staff-basics' : 'key-signatures';
 }
 
-export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, notesInBar: (bar: number) => number): Explanation {
+export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, notesInBar: (bar: number) => number, instrument: Instrument = GUITAR): Explanation {
   const t = pair.target;
   const a = pair.answer;
   const bar = (t?.bar ?? a?.bar ?? 0) + 1;
@@ -71,8 +69,8 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
       return {
         ...base,
         title: `Wrong note: ${name(a!)} instead of ${name(t!)}`,
-        text: `You wrote ${name(a!)}, but this note is ${name(t!)}, ${describeStaffPosition(t!.written)}. Listen to the two versions and hear the difference.`,
-        explainer: pitchCard(t!.written),
+        text: `You wrote ${name(a!)}, but this note is ${name(t!)}, ${describeStaffPosition(t!.written, instrument)}. Listen to the two versions and hear the difference.`,
+        explainer: pitchCard(t!.written, instrument),
       };
     }
     case 'wrong-accidental': {
@@ -95,7 +93,7 @@ export function explainMistake(mistake: Mistake, pair: GradedPair, key: Key, not
       return {
         ...base,
         title: `Right letter, wrong octave: ${name(a!)} instead of ${name(t!)}`,
-        text: `The note is ${name(t!)}, ${describeStaffPosition(t!.written)}. Guitar music is written one octave higher than it sounds: this note sounds as ${name(sounding)} on the instrument but is written ${name(t!)}.`,
+        text: `The note is ${name(t!)}, ${describeStaffPosition(t!.written, instrument)}. ${instrument.name} music is written one octave higher than it sounds: this note sounds as ${name(sounding)} on the instrument but is written ${name(t!)}.`,
         explainer: 'guitar-octave',
       };
     }

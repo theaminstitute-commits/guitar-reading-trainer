@@ -11,6 +11,7 @@ import { chordNotes, chordsWithTop, drawChord, type ChordChoice } from '../chord
 import type { ChordStageConfig } from '../chords/stageConfig';
 import { beatsOf, cellBeats, DURATIONS, type DurationId } from '../music/duration';
 import { midiAt, type FretPosition } from '../music/fretboard';
+import { instrumentOf } from '../music/instrument';
 import { chordTonePitchClasses, degreeInfoOf, degreeOf, isDiatonic, keySignatureAccidental, keySignatureCount, spellInKey, type Key } from '../music/key';
 import { pitchClass, writtenFromSounding } from '../music/pitch';
 import { barBeatsForCounts, MIN_COUNTS } from './meter';
@@ -33,9 +34,10 @@ interface PoolNote {
 export function pitchPool(config: LevelConfig, key: Key): PoolNote[] {
   const byMidi = new Map<Midi, FretPosition[]>();
   const [low, high] = config.fretRange;
+  const tuning = instrumentOf(config.instrument).tuning;
   for (const string of config.strings) {
     for (let fret = low; fret <= high; fret++) {
-      const midi = midiAt({ string, fret });
+      const midi = midiAt({ string, fret }, tuning);
       if (!isDiatonic(midi, key)) continue;
       const list = byMidi.get(midi) ?? [];
       list.push({ string, fret });
@@ -118,7 +120,7 @@ const samePlace = (a: FretPosition, b: FretPosition) => a.string === b.string &&
 /** R13: the highest fret of the window that carries an in-key note on one of the level's strings, as positions. */
 export function topFretPositions(config: LevelConfig, key: Key): FretPosition[] {
   for (let fret = config.fretRange[1]; fret >= config.fretRange[0]; fret--) {
-    const at = config.strings.map((string) => ({ string, fret })).filter((p) => isDiatonic(midiAt(p), key));
+    const at = config.strings.map((string) => ({ string, fret })).filter((p) => isDiatonic(midiAt(p, instrumentOf(config.instrument).tuning), key));
     if (at.length > 0) return at;
   }
   return [];
@@ -150,13 +152,14 @@ const usesOneOf = (m: Melody, set: readonly FretPosition[]) => m.notes.some((n) 
  */
 function settlePositions(melody: Melody, rules: readonly FretPosition[][]): Melody | null {
   const notes = melody.notes.map((n) => ({ ...n }));
+  const tuning = instrumentOf(melody.instrument).tuning;
   // For each rule, the (note, position) pairs that would satisfy it: the note's own position when it
   // already qualifies (listed first, so nothing moves without need), or another place for the same pitch.
   // A chord tone stays where its voicing put it: it can satisfy a rule, never move for one.
   const options = rules.map((set) =>
     notes.flatMap((n, i) => {
       const own = set.some((p) => samePlace(p, n)) ? [{ i, at: { string: n.string, fret: n.fret } }] : [];
-      const moves = n.chord !== undefined ? [] : set.filter((p) => midiAt(p) === n.midi && !samePlace(p, n)).map((at) => ({ i, at }));
+      const moves = n.chord !== undefined ? [] : set.filter((p) => midiAt(p, tuning) === n.midi && !samePlace(p, n)).map((at) => ({ i, at }));
       return [...own, ...moves];
     }),
   );
@@ -289,6 +292,7 @@ function assemble(config: LevelConfig, seed: number, key: Key, barBeats: number[
     bars: barBeats.length,
     counts,
     notes,
+    ...(config.instrument && config.instrument !== 'guitar' ? { instrument: config.instrument } : {}),
   };
 }
 

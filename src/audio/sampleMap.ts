@@ -1,5 +1,5 @@
 /**
- * Sample URLs for the guitar sampler. Vite turns these imports into URLs, and
+ * Sample URLs for the guitar, bass and piano samplers. Vite turns these imports into URLs, and
  * because `build.assetsInlineLimit` is high they become data URIs in the bundle,
  * so the built app is a single self-contained file. See samples/NOTICE.md for
  * the licence.
@@ -22,6 +22,18 @@ import Bb5 from './samples/Bb5.mp3';
 import C6 from './samples/C6.mp3';
 import PianoE4 from './samples/piano/E4.mp3';
 import PianoE5 from './samples/piano/E5.mp3';
+import PianoG2 from './samples/piano/G2.mp3';
+import PianoG3 from './samples/piano/G3.mp3';
+import BassE1 from './samples/bass/E1.mp3';
+import BassG1 from './samples/bass/G1.mp3';
+import BassBb1 from './samples/bass/Bb1.mp3';
+import BassDb2 from './samples/bass/Db2.mp3';
+import BassE2 from './samples/bass/E2.mp3';
+import BassG2 from './samples/bass/G2.mp3';
+import BassBb2 from './samples/bass/Bb2.mp3';
+import BassDb3 from './samples/bass/Db3.mp3';
+import BassE3 from './samples/bass/E3.mp3';
+import BassG3 from './samples/bass/G3.mp3';
 
 /** Keys are Tone.js note names of the SOUNDING pitch. */
 export const GUITAR_SAMPLES: Record<string, string> = {
@@ -43,8 +55,25 @@ export const GUITAR_SAMPLES: Record<string, string> = {
   C6,
 };
 
-/** The piano, only for the lesson that compares guitar and piano (R37): two notes, the rest pitch-shifted. */
-export const PIANO_SAMPLES: Record<string, string> = { E4: PianoE4, E5: PianoE5 };
+/** The bass (R41), sounding E1 to G3 (open low E to the G string's 12th fret): a minor third apart, the rest pitch-shifted. */
+export const BASS_SAMPLES: Record<string, string> = {
+  E1: BassE1,
+  G1: BassG1,
+  Bb1: BassBb1,
+  Db2: BassDb2,
+  E2: BassE2,
+  G2: BassG2,
+  Bb2: BassBb2,
+  Db3: BassDb3,
+  E3: BassE3,
+  G3: BassG3,
+};
+
+/**
+ * The piano, only for the lessons that compare the instrument with the piano (R37): E4 and E5 for the
+ * guitar's open high E, G2 and G3 for the bass's open G string; the rest pitch-shifted.
+ */
+export const PIANO_SAMPLES: Record<string, string> = { G2: PianoG2, G3: PianoG3, E4: PianoE4, E5: PianoE5 };
 
 export const SAMPLE_CREDIT =
-  'Guitar and piano sound: FluidR3_GM acoustic steel guitar and acoustic grand piano (Frank Wen), MP3 rendering by midi-js-soundfonts, CC BY 3.0.';
+  'Guitar, bass and piano sound: FluidR3_GM acoustic steel guitar, fingered electric bass and acoustic grand piano (Frank Wen), MP3 rendering by midi-js-soundfonts, CC BY 3.0.';

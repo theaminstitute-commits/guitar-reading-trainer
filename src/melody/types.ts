@@ -1,4 +1,5 @@
 import type { DurationId } from '../music/duration';
+import type { InstrumentId } from '../music/instrument';
 import type { Key } from '../music/key';
 import type { Midi, SpelledNote } from '../music/pitch';
 
@@ -32,4 +33,6 @@ export interface Melody {
   /** Total beats. */
   counts: number;
   notes: MelodyNote[];
+  /** Whose melody: the strings and staff it is written for (R41). Absent means guitar. */
+  instrument?: InstrumentId;
 }

@@ -4,7 +4,9 @@
  */
 import { MIN_COUNTS } from '../melody/meter';
 import type { Stage } from '../melody/stages';
-import { initialProgress, type Progress, type Track } from '../session/progression';
+import { isInstrumentId } from '../music/instrument';
+import { stagesFor } from '../melody/stages';
+import { initialProgress, type Lane, type Progress, type Track } from '../session/progression';
 import { isTheme } from '../session/themes';
 
 export interface ProgressStore {
@@ -80,28 +82,43 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
   };
 }
 
+const guideNumbers = (value: unknown, remap: (i: number) => number): number[] =>
+  Array.isArray(value) ? [...new Set(value.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))] : [];
+
+/** The other instrument's lane in a version 8 record (R41); null when absent or malformed. */
+function migrateLane(value: unknown, stages: readonly Stage[]): Lane | null {
+  if (!isRecord(value)) return null;
+  const write = migrateTrack(value.write, stages, (i) => i);
+  if (!write) return null;
+  return { write, seenGuides: guideNumbers(value.seenGuides, (i) => i), tutorialSkipped: value.tutorialSkipped === true };
+}
+
 /**
  * Accept every record shape so far: versions 1-3 kept one set of counters at
  * the top level; versions 4 and 5 had a second, playing track (read and play,
  * removed 2026-10-13), which is dropped; version 6 has the one track; version 7
- * renumbers the stages after Part D (chords) was inserted.
+ * renumbers the stages after Part D (chords) was inserted; version 8 adds the
+ * instrument (R41) and the other instrument's lane. Records before version 8 are guitar.
  */
-function migrate(value: unknown, stages: readonly Stage[]): Progress | null {
+function migrate(value: unknown, guitarStages: readonly Stage[]): Progress | null {
   if (!isRecord(value)) return null;
+  const instrument = value.version === 8 && isInstrumentId(value.instrument) ? value.instrument : 'guitar';
+  const stages = instrument === 'guitar' ? guitarStages : stagesFor(instrument);
+  const otherStages = instrument === 'guitar' ? stagesFor('bass') : guitarStages;
   const remap =
-    value.version === 7 ? (i: number) => i : value.version === 5 || value.version === 6 ? remapForChords : (i: number) => remapForChords(remapStageIndex(i));
+    value.version === 7 || value.version === 8 ? (i: number) => i : value.version === 5 || value.version === 6 ? remapForChords : (i: number) => remapForChords(remapStageIndex(i));
   const write: Track | null = typeof value.version === 'number' && value.version >= 4 ? migrateTrack(value.write, stages, remap) : migrateTrack(value, stages, remap);
   if (!write) return null;
   const mode = value.mode === 'listen' ? 'listen' : 'watch';
   return {
-    version: 7,
+    version: 8,
+    instrument,
+    other: value.version === 8 ? migrateLane(value.other, otherStages) : null,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
     theme: isTheme(value.theme) ? value.theme : 'system',
     metronome: value.metronome === true,
-    seenGuides: Array.isArray(value.seenGuides)
-      ? [...new Set(value.seenGuides.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))]
-      : [],
+    seenGuides: guideNumbers(value.seenGuides, remap),
     write,
     tutorial: Array.isArray(value.tutorial) ? [...new Set(value.tutorial.filter((id): id is string => typeof id === 'string'))] : [],
     tutorialSkipped: value.tutorialSkipped === true,

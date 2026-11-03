@@ -7,6 +7,8 @@
 import type { PlayableNote } from '../audio/player';
 import type { DurationId } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
+import type { InstrumentId } from '../music/instrument';
+import { BASS_PART_0, BASS_STAGE_LESSONS } from './bassLessons';
 import { C_MAJOR, keyFromId, type Key } from '../music/key';
 import { midiFromSpelled, parseSpelled, soundingFromWritten, type SpelledNote } from '../music/pitch';
 import type { Rng } from '../melody/random';
@@ -515,7 +517,17 @@ function chordCountQuestions(rng: Rng, count: number): NameQuestion[] {
   return out;
 }
 
-export const ALL_LESSONS: readonly Lesson[] = [...PART_0, ...STAGE_LESSONS];
+export const ALL_LESSONS: readonly Lesson[] = [...PART_0, ...STAGE_LESSONS, ...BASS_PART_0, ...BASS_STAGE_LESSONS];
+
+/** Part 0 for an instrument (R41): the guitar's four lessons, or the bass's. */
+export function part0For(instrument: InstrumentId): readonly Lesson[] {
+  return instrument === 'bass' ? BASS_PART_0 : PART_0;
+}
+
+/** The stage lessons for an instrument. */
+export function stageLessonsFor(instrument: InstrumentId): readonly Lesson[] {
+  return instrument === 'bass' ? BASS_STAGE_LESSONS : STAGE_LESSONS;
+}
 
 /** An example's notes laid out as written: complete 4/4 bars, a lone last note lengthened to a whole note, rests where a bar is short. */
 export function writtenBars(step: ExplainStep): { duration: DurationId; chord?: number; rest?: boolean; index: number }[][] {
@@ -550,6 +562,6 @@ export function lessonById(id: string): Lesson | undefined {
   return ALL_LESSONS.find((l) => l.id === id);
 }
 
-export function lessonForStage(stageNumber: number): Lesson | undefined {
-  return STAGE_LESSONS.find((l) => l.stage === stageNumber);
+export function lessonForStage(stageNumber: number, instrument: InstrumentId = 'guitar'): Lesson | undefined {
+  return stageLessonsFor(instrument).find((l) => l.stage === stageNumber);
 }

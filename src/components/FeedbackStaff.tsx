@@ -10,6 +10,7 @@ import type { DurationId } from '../music/duration';
 import type { Sign } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
 import { PAPER } from '../notation/paper';
+import { instrumentOf } from '../music/instrument';
 import { renderStaff, type RenderBar, type StaffLayout } from '../notation/renderStaff';
 
 /** What the learner produced, ready to draw: written on the staff, or played and transcribed. */
@@ -140,6 +141,7 @@ export default function FeedbackStaff({ melody, musicKey, result, yours, activeT
       ink: COLORS.ink,
       keySignature: keySignatureSpec(musicKey),
       keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
+      instrument: instrumentOf(melody.instrument),
     };
 
     // --- Top staff: the correct melody, coloured by how the learner did on each note.

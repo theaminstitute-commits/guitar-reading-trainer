@@ -4,6 +4,7 @@ import { eventAt } from '../melody/bars';
 import { stageGuide } from '../melody/stageGuide';
 import type { Stage } from '../melody/stages';
 import { keyName, keySignatureCount, keySignatureSpec, spellInKey } from '../music/key';
+import { instrumentOf } from '../music/instrument';
 import { writtenFromSounding } from '../music/pitch';
 import { displaySignsForBars } from '../notation/accidentals';
 import { ensureNotationFonts } from '../notation/fonts';
@@ -108,9 +109,10 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
         showTimeSignature: false,
         keySignature: keySignatureSpec(guide.key),
         keySignatureAccidentals: Math.abs(keySignatureCount(guide.key)),
+        instrument: instrumentOf(stage.instrument),
       }),
     );
-  }, [guide, chords, width, scale, fontsReady, sounding]);
+  }, [guide, chords, width, scale, fontsReady, sounding, stage.instrument]);
 
   // Names on one baseline under each staff row, clear of three ledger lines, instead of
   // VexFlow's per-note annotations that follow the stems up and down.
@@ -167,7 +169,7 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
           <strong>Note lengths:</strong> {guide.lengths}.
         </li>
         <li>
-          <strong>On the guitar:</strong> {guide.range}.
+          <strong>On the {instrumentOf(stage.instrument).noun}:</strong> {guide.range}.
         </li>
         <li>
           <strong>Listens:</strong> {guide.listens}.
@@ -180,7 +182,7 @@ export default function StageGuide({ stage, previous, leftHanded, onStart, onBac
       <p className="muted small-note">
         {chords
           ? `${chords.length} example chords, named underneath. Write every note of a chord on the staff, lowest to highest; the stage draws its chords from any root.`
-          : `${guide.pitches.length} pitches, lowest to highest, named as written for guitar (an octave above where they sound).${newCount > 0 && previous ? ` The ${newCount} in blue are new in this stage.` : ''}`}
+          : `${guide.pitches.length} pitches, lowest to highest, named as written for ${instrumentOf(stage.instrument).noun} (an octave above where they sound).${newCount > 0 && previous ? ` The ${newCount} in blue are new in this stage.` : ''}`}
       </p>
       <div ref={wrapRef} className="guide-staff">
         <div ref={canvasRef} className="staff-canvas static" />

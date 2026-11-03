@@ -1,6 +1,7 @@
 import type { ChordStageConfig } from '../chords/stageConfig';
 import type { DurationId } from '../music/duration';
 import type { FretPosition } from '../music/fretboard';
+import type { InstrumentId } from '../music/instrument';
 import { C_MAJOR, type Key } from '../music/key';
 import { MIN_COUNTS } from './meter';
 
@@ -30,7 +31,9 @@ export interface LevelConfig {
   maxListens: number;
   /** Play the tonic twice before the count-in so the learner has a tonal anchor. */
   tonicReference: boolean;
-  /** Strings the melody may use, guitarist numbering (1 = high E). */
+  /** The instrument this level is for (R41); absent means guitar. */
+  instrument?: InstrumentId;
+  /** Strings the melody may use, the player's numbering (1 = the thinnest: high E on guitar, G on bass). */
   strings: readonly number[];
   /** Inclusive fret range. */
   fretRange: readonly [number, number];
