@@ -10,7 +10,7 @@ import { lessonForStage, part0For, type Lesson } from './tutorial/lessons';
 import ExplainerCard from './components/ExplainerCard';
 import FeedbackScreen from './components/FeedbackScreen';
 import type { YoursStaff } from './components/FeedbackStaff';
-import { ChevronLeftIcon } from './components/icons';
+import { BrandMark, ChevronLeftIcon } from './components/icons';
 import StageGuide from './components/StageGuide';
 import StartScreen, { type SessionStats } from './components/StartScreen';
 import type { ExplainerId } from './grading/explain';
@@ -296,7 +296,7 @@ export default function App() {
         <div className="brand">
           {screen === 'start' && (
             <span className="brand-mark" aria-hidden="true">
-              ♪
+              <BrandMark size={30} />
             </span>
           )}
           <div>
