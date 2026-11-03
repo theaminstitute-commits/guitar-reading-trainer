@@ -593,10 +593,15 @@ button.big,
   font-weight: 600;
 }
 
+/* The chosen option is filled with the accent, like a primary button, so it reads at a glance (the user, 2026-11-03). */
 .seg.on {
-  background: var(--surface-3);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-text);
+  font-weight: 700;
+  box-shadow: 0 4px 12px var(--accent-shadow);
+}
+.seg {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .seg svg {
