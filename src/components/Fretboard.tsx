@@ -29,7 +29,10 @@ interface FretboardProps {
   ringing?: readonly FretPosition[];
   /** Changes with every new note, so a repeated note starts its vibration again. */
   ringKey?: string | number;
-  /** Beginner aid: the letter of every natural note on the drawn frets; sharps and flats stay blank. */
+  /**
+   * Beginner aid: the name and written octave of every natural note on the drawn frets (C4, E5),
+   * the open strings included, as the staff writes them; sharps and flats stay blank.
+   */
   naturalNames?: boolean;
 }
 
@@ -38,6 +41,8 @@ const DOUBLE_MARKER_FRETS = [12, 24];
 const MIN_FRETS = 5;
 /** Letter of each natural pitch class; the others (sharps and flats) have none. */
 const NATURAL_LETTER: Record<number, string> = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' };
+/** The octave number a sounding pitch is written in: guitar and bass are written an octave up. */
+const writtenOctave = (sounding: number) => Math.floor((sounding + 12) / 12) - 1;
 
 /** The frets drawn for a window: the window itself, widened to at least five frets, pushed down the neck rather than past fret 12. */
 export function visibleFrets([low, high]: readonly [number, number]): { first: number; last: number } {
@@ -168,10 +173,16 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
             {hasNut ? (
               <>
                 {/* The open note, circled on its string; a lit dot there covers it and says the note itself. */}
-                <circle cx={openX} cy={stringY(string)} r={8.5} className="fb-open" />
+                <circle cx={openX} cy={stringY(string)} r={naturalNames ? 9.6 : 8.5} className="fb-open" />
                 {!actives.some((a) => a.string === string && a.fret === 0) && (
-                  <text x={openX} y={stringY(string) + 3.6} className="fb-open-name" textAnchor="middle" transform={label(openX)}>
-                    {name}
+                  <text
+                    x={openX}
+                    y={stringY(string) + (naturalNames ? 3.1 : 3.6)}
+                    className={`fb-open-name${naturalNames ? ' octave' : ''}`}
+                    textAnchor="middle"
+                    transform={label(openX)}
+                  >
+                    {naturalNames ? `${name}${writtenOctave(instrument.tuning[string]!)}` : name}
                   </text>
                 )}
               </>
@@ -190,13 +201,16 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
         STRING_NAMES.flatMap((_, i) => {
           const string = i + 1;
           return drawn.map((fret) => {
-            const letter = NATURAL_LETTER[(instrument.tuning[string]! + fret) % 12];
+            const sounding = instrument.tuning[string]! + fret;
+            const letter = NATURAL_LETTER[sounding % 12];
             if (!letter) return null;
+            // A pill wide enough for the letter and its octave (the user: octave numbers, as it is a tutorial).
             return (
               <g key={`n${string}-${fret}`} className="fb-name">
-                <circle cx={noteX(fret)} cy={stringY(string)} r={7.5} className="fb-name-dot" />
-                <text x={noteX(fret)} y={stringY(string) + 3.4} textAnchor="middle" className="fb-name-text" transform={label(noteX(fret))}>
+                <rect x={noteX(fret) - 10} y={stringY(string) - 7.5} width={20} height={15} rx={7.5} className="fb-name-dot" />
+                <text x={noteX(fret)} y={stringY(string) + 3.2} textAnchor="middle" className="fb-name-text" transform={label(noteX(fret))}>
                   {letter}
+                  {writtenOctave(sounding)}
                 </text>
               </g>
             );

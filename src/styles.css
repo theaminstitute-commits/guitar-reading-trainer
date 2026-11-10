@@ -1193,7 +1193,7 @@ button.link.subtle {
 
 .fb-name-text {
   fill: #2a1f14;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
   font-family: inherit;
 }
@@ -1216,6 +1216,10 @@ button.link.subtle {
   font-weight: 800;
   font-family: inherit;
   pointer-events: none;
+}
+/* Open string with its octave (E5), in the tutorial's lettered fretboard. */
+.fb-open-name.octave {
+  font-size: 8px;
 }
 
 .fb-nut {
