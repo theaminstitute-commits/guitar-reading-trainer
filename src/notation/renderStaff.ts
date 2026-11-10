@@ -58,6 +58,13 @@ export interface RenderOptions {
   keySignatureAccidentals?: number;
   /** Whose staff: the guitar's treble clef (the default) or the bass clef (R41). */
   instrument?: Instrument;
+  /**
+   * Faint guide ledger lines (R43): every ledger line a note between these staff steps would need,
+   * drawn across each bar under the notes, so the learner sees where to tap above or below the staff.
+   */
+  guideLedgers?: readonly [number, number];
+  /** Colour of the guide lines. */
+  guideColor?: string;
 }
 
 export interface StaffLayout {
@@ -143,6 +150,28 @@ export function renderStaff(container: HTMLDivElement, bars: RenderBar[], option
         ctx.restore();
       }
       stave.draw();
+
+      if (options.guideLedgers) {
+        const [low, high] = options.guideLedgers;
+        const top = stave.getYForLine(0);
+        const half = stave.getSpacingBetweenLines() / 2;
+        const steps: number[] = [];
+        for (let s = instrument.bottomLine - 2; s >= low; s -= 2) steps.push(s);
+        for (let s = instrument.topLine + 2; s <= high; s += 2) steps.push(s);
+        const from = stave.getNoteStartX() - 2;
+        const to = x + width - 6;
+        ctx.save();
+        ctx.setStrokeStyle(options.guideColor ?? 'rgba(42, 37, 30, 0.2)');
+        ctx.setLineWidth(1);
+        for (const s of steps) {
+          const gy = top + (instrument.topLine - s) * half;
+          ctx.beginPath();
+          ctx.moveTo(from, gy);
+          ctx.lineTo(to, gy);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
 
       // One StaveNote per event: a single note, or a chord with every note on one stem (keys ascending).
       const events = groupEvents(bar.notes).map((group) => [...group].sort((a, b) => a.step - b.step));

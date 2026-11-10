@@ -25,6 +25,7 @@ import StartNote from './StartNote';
 import { coachVerdict, isRightPitch, type CoachVerdict } from '../tutorial/coach';
 import { writtenFromSounding } from '../music/pitch';
 import { instrumentOf } from '../music/instrument';
+import { writtenStepRange } from '../melody/generator';
 
 export const SLOW_RATE = 0.7;
 
@@ -71,6 +72,8 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
     () => ({ barBeats: melody.barBeats, minStep: instrumentOf(melody.instrument).inputRange[0], maxStep: instrumentOf(melody.instrument).inputRange[1] }),
     [melody.barBeats, melody.instrument],
   );
+  /** Where this stage's notes can go, for the faint guide ledger lines (R43). */
+  const guideRange = useMemo(() => writtenStepRange(level), [level]);
   const [answer, dispatchAnswer] = useReducer(
     (state: AnswerState, action: AnswerAction) => answerReducer(state, action, limits),
     melody.bars,
@@ -260,7 +263,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
             {coachSays?.text ?? 'Coach: write a note and I will tell you if it is right.'}
           </div>
         )}
-        <StaffInput answer={answer} dispatch={coach ? coachedDispatch : dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} />
+        <StaffInput answer={answer} dispatch={coach ? coachedDispatch : dispatchAnswer} limits={limits} durations={level.durations} musicKey={melody.key} guideRange={guideRange} />
       </div>
 
       <div className="sticky-cta">

@@ -29,6 +29,8 @@ interface StaffInputProps {
   /** Key whose signature is drawn on the staff. */
   musicKey: Key;
   disabled?: boolean;
+  /** The stage's written range (staff steps): faint ledger lines are drawn wherever it leaves the staff (R43). */
+  guideRange?: readonly [number, number];
 }
 
 type Selection = { kind: 'note'; id: number } | { kind: 'slot'; bar: number };
@@ -68,7 +70,7 @@ function NoteIcon({ duration }: { duration: DurationId }) {
  * space with the selected duration; tap a note to select it, then use the
  * accidental and nudge buttons. Undo, delete and clear as usual.
  */
-export default function StaffInput({ answer, dispatch, limits, durations, musicKey, disabled = false }: StaffInputProps) {
+export default function StaffInput({ answer, dispatch, limits, durations, musicKey, disabled = false, guideRange }: StaffInputProps) {
   const instrument = useInstrument();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -148,6 +150,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
       keySignature: keySignatureSpec(musicKey),
       keySignatureAccidentals: Math.abs(keySignatureCount(musicKey)),
       instrument,
+      guideLedgers: guideRange,
     });
     const layout = layoutRef.current;
     // An insertion cursor after the last note of every bar that still has room.
@@ -161,7 +164,7 @@ export default function StaffInput({ answer, dispatch, limits, durations, musicK
         return [{ bar: stave.barIndex, x, y: stave.topLineY - stave.lineSpacing * 1.5, width: w, height: stave.lineSpacing * 7 }];
       }),
     );
-  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.barBeats, musicKey, instrument]);
+  }, [answer, selectedId, rejectedBar, width, scale, fontsReady, limits.barBeats, musicKey, instrument, guideRange]);
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLDivElement>) => {

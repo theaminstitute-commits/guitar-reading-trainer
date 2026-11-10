@@ -42,7 +42,8 @@ export const GUITAR: Instrument = {
   stringNames: ['E', 'B', 'G', 'D', 'A', 'E'],
   bottomLine: step('E4'),
   topLine: step('F5'),
-  inputRange: [step('E3'), step('E6')],
+  // E6 is fret 12 on the first string; F6 is that same note spelled F♭ in C♭ major, so it must be writable too.
+  inputRange: [step('E3'), step('F6')],
   restKeys: { whole: 'd/5', other: 'b/4' },
 };
 

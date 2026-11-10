@@ -56,6 +56,23 @@ export function pitchPool(config: LevelConfig, key: Key): PoolNote[] {
 }
 
 /**
+ * The lowest and highest written staff steps any melody of the level can use, over all its keys
+ * (the pool is spelled at sounding pitch; written is an octave, seven steps, higher). Used to draw
+ * faint guide ledger lines on the answer staff where the stage reaches past the staff (R43).
+ */
+export function writtenStepRange(config: LevelConfig): readonly [number, number] {
+  let low = Infinity;
+  let high = -Infinity;
+  for (const key of config.keys) {
+    for (const p of pitchPool(config, key)) {
+      low = Math.min(low, p.step + 7);
+      high = Math.max(high, p.step + 7);
+    }
+  }
+  return [low, high];
+}
+
+/**
  * Fill every bar with durations from the allowed set so each bar adds up
  * exactly. Each pick writes its rhythm cell (an eighth brings its pair, a
  * dotted quarter brings its eighth), so eighths always sit on a beat.
