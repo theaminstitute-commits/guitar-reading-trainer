@@ -57,8 +57,38 @@ function remapForChords(old: number): number {
   return old <= 16 ? old : old + 29;
 }
 
+/**
+ * Records before version 9 on the ladder of R45 (2026-11-16), where eighth notes moved later:
+ * the pitch stages kept their order and closed up (A and E♭ major with the low strings from 6 to 5,
+ * E/A♭ 8 to 6, B/D♭ 9 to 7, F♯/G♭ 10 to 8, C♯/C♭ 11 to 9), and the two rhythm stages moved after
+ * them (eighths 5 to 10; whole and dotted notes 7 to 11). From stage 12 on nothing moved.
+ *
+ * Where a learner stands follows the pitch ladder, so nobody skips a key they have not read yet:
+ * a learner on the old eighths stage (5) is on the new stage 5, and one on the old whole and dotted
+ * stage (7) on the new stage 6.
+ */
+function remapForEighths(old: number): number {
+  const at = [0, 1, 2, 3, 4, 4, 5, 5, 6, 7, 8];
+  return old < at.length ? at[old]! : old;
+}
+
+/** The same move for what belongs to a stage's content (guides seen, melodies heard): eighths 5 to 10, whole and dotted 7 to 11. */
+function remapContentForEighths(old: number): number {
+  const at = [0, 1, 2, 3, 9, 4, 10, 5, 6, 7, 8];
+  return old < at.length ? at[old]! : old;
+}
+
+/** Stage lessons renamed with their stages (R45), for the finished-lesson list. */
+const LESSON_RENAMES: Record<string, string> = { 'stage-5': 'stage-10', 'stage-6': 'stage-5', 'stage-7': 'stage-11' };
+function renameLesson(id: string): string {
+  const bass = id.startsWith('bass-');
+  const plain = bass ? id.slice(5) : id;
+  const renamed = LESSON_RENAMES[plain];
+  return renamed ? (bass ? `bass-${renamed}` : renamed) : id;
+}
+
 /** A track from any older or current record shape; null if it is not one. */
-function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: number) => number): Track | null {
+function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: number) => number, contentRemap: (i: number) => number = remap): Track | null {
   if (!isRecord(value)) return null;
   const numbers = ['weakStreak', 'exercises', 'accuracySum'];
   if (!numbers.every((k) => typeof value[k] === 'number')) return null;
@@ -75,7 +105,7 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
     counts: Math.max(MIN_COUNTS, Math.min(maxCounts, Math.round(counts))),
     // Records before the tally rule carried a clean streak instead; it starts the tally at zero.
     tally: typeof value.tally === 'number' ? Math.max(0, Math.round(value.tally)) : 0,
-    melodies: migrateMelodies(value.melodies, remap),
+    melodies: migrateMelodies(value.melodies, contentRemap),
     weakStreak: value.weakStreak as number,
     exercises: value.exercises as number,
     accuracySum: value.accuracySum as number,
@@ -85,12 +115,12 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
 const guideNumbers = (value: unknown, remap: (i: number) => number): number[] =>
   Array.isArray(value) ? [...new Set(value.filter((n): n is number => typeof n === 'number').map((n) => remap(n - 1) + 1))] : [];
 
-/** The other instrument's lane in a version 8 record (R41); null when absent or malformed. */
-function migrateLane(value: unknown, stages: readonly Stage[]): Lane | null {
+/** The other instrument's lane in a version 8 or 9 record (R41); null when absent or malformed. */
+function migrateLane(value: unknown, stages: readonly Stage[], remap: (i: number) => number, contentRemap: (i: number) => number): Lane | null {
   if (!isRecord(value)) return null;
-  const write = migrateTrack(value.write, stages, (i) => i);
+  const write = migrateTrack(value.write, stages, remap, contentRemap);
   if (!write) return null;
-  return { write, seenGuides: guideNumbers(value.seenGuides, (i) => i), tutorialSkipped: value.tutorialSkipped === true };
+  return { write, seenGuides: guideNumbers(value.seenGuides, contentRemap), tutorialSkipped: value.tutorialSkipped === true };
 }
 
 /**
@@ -98,29 +128,37 @@ function migrateLane(value: unknown, stages: readonly Stage[]): Lane | null {
  * the top level; versions 4 and 5 had a second, playing track (read and play,
  * removed 2026-10-13), which is dropped; version 6 has the one track; version 7
  * renumbers the stages after Part D (chords) was inserted; version 8 adds the
- * instrument (R41) and the other instrument's lane. Records before version 8 are guitar.
+ * instrument (R41) and the other instrument's lane; version 9 moves eighth notes
+ * later (R45). Records before version 8 are guitar.
  */
 function migrate(value: unknown, guitarStages: readonly Stage[]): Progress | null {
   if (!isRecord(value)) return null;
-  const instrument = value.version === 8 && isInstrumentId(value.instrument) ? value.instrument : 'guitar';
+  const lanes = value.version === 8 || value.version === 9;
+  const instrument = lanes && isInstrumentId(value.instrument) ? value.instrument : 'guitar';
   const stages = instrument === 'guitar' ? guitarStages : stagesFor(instrument);
   const otherStages = instrument === 'guitar' ? stagesFor('bass') : guitarStages;
-  const remap =
+  const before =
     value.version === 7 || value.version === 8 ? (i: number) => i : value.version === 5 || value.version === 6 ? remapForChords : (i: number) => remapForChords(remapStageIndex(i));
-  const write: Track | null = typeof value.version === 'number' && value.version >= 4 ? migrateTrack(value.write, stages, remap) : migrateTrack(value, stages, remap);
+  const current = value.version === 9;
+  const remap = current ? (i: number) => i : (i: number) => remapForEighths(before(i));
+  const contentRemap = current ? (i: number) => i : (i: number) => remapContentForEighths(before(i));
+  const write: Track | null =
+    typeof value.version === 'number' && value.version >= 4 ? migrateTrack(value.write, stages, remap, contentRemap) : migrateTrack(value, stages, remap, contentRemap);
   if (!write) return null;
   const mode = value.mode === 'listen' ? 'listen' : 'watch';
   return {
-    version: 8,
+    version: 9,
     instrument,
-    other: value.version === 8 ? migrateLane(value.other, otherStages) : null,
+    other: lanes ? migrateLane(value.other, otherStages, remap, contentRemap) : null,
     mode,
     handedness: value.handedness === 'left' ? 'left' : 'right',
     theme: isTheme(value.theme) ? value.theme : 'system',
     metronome: value.metronome === true,
-    seenGuides: guideNumbers(value.seenGuides, remap),
+    seenGuides: guideNumbers(value.seenGuides, contentRemap),
     write,
-    tutorial: Array.isArray(value.tutorial) ? [...new Set(value.tutorial.filter((id): id is string => typeof id === 'string'))] : [],
+    tutorial: Array.isArray(value.tutorial)
+      ? [...new Set(value.tutorial.filter((id): id is string => typeof id === 'string').map((id) => (current ? id : renameLesson(id))))]
+      : [],
     tutorialSkipped: value.tutorialSkipped === true,
     hints: value.hints !== false,
     buttonSounds: value.buttonSounds !== false,

@@ -34,10 +34,10 @@ describe('the bass tutorial (R41)', () => {
     expect(stageLessonsFor('bass')).toBe(BASS_STAGE_LESSONS);
     expect(BASS_PART_0.map((l) => l.title)).toEqual(['1. The staff', '2. Notes on the bass', '3. Beat and rhythm', '4. Your first melody']);
     for (const l of [...BASS_PART_0, ...BASS_STAGE_LESSONS]) expect(l.id.startsWith('bass-')).toBe(true);
-    expect(BASS_STAGE_LESSONS.map((l) => l.stage)).toEqual([3, 5, 6, 7, 12, 14]);
+    expect(BASS_STAGE_LESSONS.map((l) => l.stage)).toEqual([3, 5, 10, 11, 12, 14]);
     expect(lessonForStage(18, 'bass')).toBeUndefined();
-    expect(lessonForStage(6, 'bass')?.id).toBe('bass-stage-6');
-    expect(lessonForStage(6)?.id).toBe('stage-6');
+    expect(lessonForStage(5, 'bass')?.id).toBe('bass-stage-5');
+    expect(lessonForStage(5)?.id).toBe('stage-5');
   });
 
   it('keeps every example and drill note within the bass staff the app can write', () => {

@@ -33,10 +33,10 @@ describe('stage ladder configs', () => {
 
   it('uses newly added frets or strings in every melody of the stage that adds them', () => {
     const introducing = STAGES.filter((s) => s.introduces && s.introduces.length > 0).map((s) => s.number);
-    expect(introducing).toEqual([2, 6, 12, 13]);
+    expect(introducing).toEqual([2, 5, 12, 13]);
     expect(byNumber(2).introduces!.map((p) => `${p.string}:${p.fret}`)).toEqual(['1:4', '2:4', '3:4', '4:4']);
-    expect(byNumber(6).introduces!.every((p) => p.string >= 5)).toBe(true);
-    expect(byNumber(6).introduces).toHaveLength(10);
+    expect(byNumber(5).introduces!.every((p) => p.string >= 5)).toBe(true);
+    expect(byNumber(5).introduces).toHaveLength(10);
     expect(byNumber(13).introduces!.every((p) => p.fret >= 10)).toBe(true);
     for (const stage of STAGES.filter((s) => s.introduces)) {
       for (const seed of SEEDS) {
@@ -91,10 +91,16 @@ describe('stage ladder configs', () => {
   });
 
   it('uses every key of a stage over enough seeds', () => {
-    const stage = byNumber(10);
+    const stage = byNumber(8);
     const seen = new Set<string>();
     for (let seed = 1; seed < 400; seed++) seen.add(keyId(generateMelody(stage, seed).key));
     expect(seen.size).toBe(stage.keys.length);
+  });
+
+  it('keeps eighth notes until stage 10, and whole and dotted notes until stage 11 (R45)', () => {
+    for (const s of STAGES.filter((x) => x.number <= 9)) expect(s.durations, s.id).toEqual(['q', 'h']);
+    expect(byNumber(10).durations).toEqual(['q', 'h', 'e']);
+    expect(byNumber(11).durations).toEqual(['q', 'h', 'e', 'w', 'q.']);
   });
 
   it('has no optional stage; listens drop to two from Part C, return to three for chords, and are two again from free reading', () => {
@@ -109,13 +115,14 @@ describe('stage ladder configs', () => {
     const ids = (n: number) => byNumber(n).keys.map((k) => keyId(k));
     expect(ids(3)).toEqual(['G', 'F']);
     expect(ids(4)).toEqual(['D', 'Bb']);
-    expect(ids(5)).toEqual(['C', 'G', 'F', 'D', 'Bb']);
-    expect(ids(6)).toEqual(['A', 'Eb']);
-    expect(ids(7)).toEqual(['C', 'G', 'F', 'D', 'Bb', 'A', 'Eb']);
-    expect(ids(8)).toEqual(['E', 'Ab']);
-    expect(ids(9)).toEqual(['B', 'Db']);
-    expect(ids(10)).toEqual(['F#', 'Gb']);
-    expect(ids(11)).toEqual(['C#', 'Cb']);
+    expect(ids(5)).toEqual(['A', 'Eb']);
+    expect(ids(6)).toEqual(['E', 'Ab']);
+    expect(ids(7)).toEqual(['B', 'Db']);
+    expect(ids(8)).toEqual(['F#', 'Gb']);
+    expect(ids(9)).toEqual(['C#', 'Cb']);
+    // R45: the two rhythm stages come after the last major keys and draw from all of them.
+    expect(ids(10)).toHaveLength(15);
+    expect(ids(11)).toHaveLength(15);
     expect(ids(12)).toHaveLength(15);
     expect(ids(13)).toHaveLength(15);
     expect(ids(14)).toEqual(['Am', 'Em', 'Dm']);
@@ -149,9 +156,9 @@ describe('stage ladder configs', () => {
 
   it('covers the whole neck: six strings in two positions and up to fret 12', () => {
     expect(byNumber(1).strings).toEqual([1, 2, 3, 4]);
-    expect(byNumber(5).strings).toEqual([1, 2, 3, 4]);
-    expect(byNumber(6).strings).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(byNumber(6).fretRange).toEqual([0, 4]);
+    expect(byNumber(4).strings).toEqual([1, 2, 3, 4]);
+    expect(byNumber(5).strings).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(byNumber(5).fretRange).toEqual([0, 4]);
     expect(byNumber(12).fretRange).toEqual([5, 9]);
     expect(byNumber(12).strings).toHaveLength(6);
     expect(byNumber(15).strings).toEqual([1, 2, 3, 4, 5, 6]);
@@ -169,9 +176,9 @@ describe('stage ladder configs', () => {
     expect(writtenFromSounding(lowestOf(1))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
     expect(writtenFromSounding(lowestOf(1))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('E4')));
     // The fifth string brings the first ledger lines (written A3 to C4), the sixth the open low E (E3).
-    // Strings 5 and 6 arrive at stage 6 (R19): ledger lines below, down to the open low E (written E3).
-    expect(writtenFromSounding(lowestOf(5))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
-    expect(writtenFromSounding(lowestOf(6))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('G3')));
+    // Strings 5 and 6 arrive at stage 5 (R19, R45): ledger lines below, down to the open low E (written E3).
+    expect(writtenFromSounding(lowestOf(4))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D4')));
+    expect(writtenFromSounding(lowestOf(5))).toBeLessThanOrEqual(midiFromSpelled(parseSpelled('G3')));
     expect(writtenFromSounding(highestOf(12))).toBeGreaterThan(midiFromSpelled(parseSpelled('A5')));
     expect(writtenFromSounding(highestOf(13))).toBeGreaterThanOrEqual(midiFromSpelled(parseSpelled('D6')));
   });

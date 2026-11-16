@@ -5,7 +5,9 @@
  *
  * R18: a stage that introduces keys uses only those keys; every other stage
  * draws from all the keys introduced so far. R19: the fifth and sixth strings
- * arrive with A and E♭ major (stage 6) and stay for every stage after it.
+ * arrive with A and E♭ major (stage 5) and stay for every stage after it.
+ * R45: eighth notes (stage 10) and whole and dotted notes (stage 11) come after
+ * the last major keys; stages 1 to 9 use quarter and half notes.
  */
 import { keyFitsVocabulary } from '../chords/generator';
 import { FREE_READING_CHORDS, PART_D } from '../chords/vocabulary';
@@ -68,23 +70,14 @@ const STAGE_4: Stage = {
   keys: K('D', 'Bb'),
 };
 
+// The user, 2026-11-16 (R45): eighth notes later. The pitch stages keep their order and content;
+// the two rhythm stages (eighths; whole notes and dotted quarters) come after the last major keys.
 const STAGE_5: Stage = {
   ...STAGE_4,
   id: 'stage-5',
   number: 5,
-  name: 'Eighth notes',
-  title: 'Stage 5: eighth notes',
-  summary: 'Pairs of beamed eighths on a beat, in every key so far.',
-  keys: K('C', 'G', 'F', 'D', 'Bb'),
-  durations: ['q', 'h', 'e'],
-};
-
-const STAGE_6: Stage = {
-  ...STAGE_5,
-  id: 'stage-6',
-  number: 6,
   name: 'Three accidentals, low strings',
-  title: 'Stage 6: three accidentals, on all six strings',
+  title: 'Stage 5: three accidentals, on all six strings',
   summary: 'A major and E♭ major only, now on all six strings from the open low E. Ledger lines below the staff begin.',
   keys: K('A', 'Eb'),
   strings: ALL_STRINGS,
@@ -92,56 +85,66 @@ const STAGE_6: Stage = {
   featureFret: false,
 };
 
+const STAGE_6: Stage = {
+  ...STAGE_5,
+  id: 'stage-6',
+  number: 6,
+  name: 'Four accidentals',
+  title: 'Stage 6: four accidentals',
+  summary: 'E major and A♭ major only.',
+  keys: K('E', 'Ab'),
+  featureFret: true,
+};
+
 const STAGE_7: Stage = {
   ...STAGE_6,
   id: 'stage-7',
   number: 7,
-  name: 'Whole and dotted notes',
-  title: 'Stage 7: whole notes and dotted quarters',
-  summary: 'Whole notes, and a dotted quarter followed by an eighth, in every key so far on all six strings.',
-  keys: K('C', 'G', 'F', 'D', 'Bb', 'A', 'Eb'),
-  durations: ['q', 'h', 'e', 'w', 'q.'],
-  featureFret: true,
+  name: 'Five accidentals',
+  title: 'Stage 7: five accidentals',
+  summary: 'B major and D♭ major only.',
+  keys: K('B', 'Db'),
 };
 
 const STAGE_8: Stage = {
   ...STAGE_7,
   id: 'stage-8',
   number: 8,
-  name: 'Four accidentals',
-  title: 'Stage 8: four accidentals',
-  summary: 'E major and A♭ major only.',
-  keys: K('E', 'Ab'),
+  name: 'Six accidentals',
+  title: 'Stage 8: six accidentals, the enharmonic pair',
+  summary: 'F♯ major and G♭ major only: the same sound, two spellings. Strict spelling decides.',
+  keys: K('F#', 'Gb'),
 };
 
 const STAGE_9: Stage = {
   ...STAGE_8,
   id: 'stage-9',
   number: 9,
-  name: 'Five accidentals',
-  title: 'Stage 9: five accidentals',
-  summary: 'B major and D♭ major only.',
-  keys: K('B', 'Db'),
+  name: 'Seven accidentals',
+  title: 'Stage 9: seven accidentals',
+  summary: 'C♯ major and C♭ major only, where E♯, B♯, F♭ and C♭ are ordinary notes.',
+  keys: K('C#', 'Cb'),
 };
 
 const STAGE_10: Stage = {
   ...STAGE_9,
   id: 'stage-10',
   number: 10,
-  name: 'Six accidentals',
-  title: 'Stage 10: six accidentals, the enharmonic pair',
-  summary: 'F♯ major and G♭ major only: the same sound, two spellings. Strict spelling decides.',
-  keys: K('F#', 'Gb'),
+  name: 'Eighth notes',
+  title: 'Stage 10: eighth notes',
+  summary: 'Pairs of beamed eighths on a beat, in every major key, on all six strings.',
+  keys: MAJOR_KEYS,
+  durations: ['q', 'h', 'e'],
 };
 
 const STAGE_11: Stage = {
   ...STAGE_10,
   id: 'stage-11',
   number: 11,
-  name: 'Seven accidentals',
-  title: 'Stage 11: seven accidentals',
-  summary: 'C♯ major and C♭ major only, where E♯, B♯, F♭ and C♭ are ordinary notes.',
-  keys: K('C#', 'Cb'),
+  name: 'Whole and dotted notes',
+  title: 'Stage 11: whole notes and dotted quarters',
+  summary: 'Whole notes, and a dotted quarter followed by an eighth, in every major key on all six strings.',
+  durations: ['q', 'h', 'e', 'w', 'q.'],
 };
 
 const STAGE_12: Stage = {
@@ -322,9 +325,9 @@ export const STAGES: readonly Stage[] = [...MAIN, ...BONUS];
  * The bass ladder (R41): the guitar's stages 1 to 17, on the four strings of the bass
  * and the bass staff, and nothing after: stage 18 is where chords begin on the guitar,
  * and the bass reads single lines. Same keys, rhythms, positions and listens as the
- * guitar stage of the same number. The first five stages use the three upper strings
+ * guitar stage of the same number. The first four stages use the three upper strings
  * (G, D and A), which keep every note on the staff, as the guitar's first four strings
- * do; the low E string, under the staff, arrives at stage 6 as the guitar's low strings do.
+ * do; the low E string, under the staff, arrives at stage 5 as the guitar's low strings do.
  */
 const BASS_UPPER = [1, 2, 3];
 const BASS_ALL = [1, 2, 3, 4];
@@ -341,16 +344,16 @@ export const BASS_STAGES: readonly Stage[] = withIntroductions([
   bass(STAGE_2, { summary: 'Frets 0 to 4: the fourth fret of the G string reaches the B just above the staff. Leaps up to a fourth.' }),
   bass(STAGE_3),
   bass(STAGE_4),
-  bass(STAGE_5),
-  bass(STAGE_6, {
-    title: 'Stage 6: three accidentals, on all four strings',
+  bass(STAGE_5, {
+    title: 'Stage 5: three accidentals, on all four strings',
     summary: 'A major and E♭ major only, now on all four strings from the open low E. The ledger line below the staff begins.',
   }),
-  bass(STAGE_7, { summary: 'Whole notes, and a dotted quarter followed by an eighth, in every key so far on all four strings.' }),
+  bass(STAGE_6),
+  bass(STAGE_7),
   bass(STAGE_8),
   bass(STAGE_9),
-  bass(STAGE_10),
-  bass(STAGE_11),
+  bass(STAGE_10, { summary: 'Pairs of beamed eighths on a beat, in every major key, on all four strings.' }),
+  bass(STAGE_11, { summary: 'Whole notes, and a dotted quarter followed by an eighth, in every major key on all four strings.' }),
   bass(STAGE_12, { summary: 'Frets 5 to 9 on all four strings, in any major key. Reading away from the nut, up to the ledger lines above.' }),
   bass(STAGE_13, { summary: 'Frets 9 to 12 on all four strings. Fret 12 is the octave of the open string; the top notes sit three ledger lines above.' }),
   bass(STAGE_14),

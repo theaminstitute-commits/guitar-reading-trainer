@@ -20,8 +20,8 @@ describe('stage guide', () => {
     const g = stageGuide(byNumber(2), byNumber(1));
     // Fret 4 adds no new in-key pitch in C on strings 1-3 (G#, C#, F#), so nothing is new.
     expect(g.pitches.filter((p) => p.isNew)).toHaveLength(0);
-    // Stage 6 brings strings 5 and 6, shown in its first key, A major: the open low E up to C♯ on the fifth string.
-    const low = stageGuide(byNumber(6), byNumber(5));
+    // Stage 5 brings strings 5 and 6, shown in its first key, A major: the open low E up to C♯ on the fifth string.
+    const low = stageGuide(byNumber(5), byNumber(4));
     expect(keyId(low.key)).toBe('A');
     expect(low.pitches[0]!.name).toBe('E3');
     expect(low.pitches.filter((p) => p.isNew).map((p) => p.name)).toEqual(['E3', 'F♯3', 'G♯3', 'A3', 'B3', 'C♯4']);

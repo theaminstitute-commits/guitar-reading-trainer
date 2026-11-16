@@ -39,7 +39,7 @@ export default function PlacementScreen({ leftHanded, onPlaced, onTutorial, onBa
           <span className="eyebrow">Placement test</span>
           <h2>Find your starting stage</h2>
           <p>
-            Quick questions in the order the stages teach them: notes on the staff, key signatures, rhythm, ledger lines and minor keys. Each group has {QUESTIONS_PER_TIER} questions; {PASS_MARK} right moves you on to the next group.
+            Quick questions in the order the stages teach them: notes on the staff, key signatures, ledger lines, eighth notes and minor keys. Each group has {QUESTIONS_PER_TIER} questions; {PASS_MARK} right moves you on to the next group.
           </p>
           <p className="muted">The test stops at the first group you miss, and you start at the stage that teaches it. Every stage before it opens. It takes two to five minutes.</p>
           <div className="controls">

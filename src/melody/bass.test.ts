@@ -27,8 +27,8 @@ describe('the bass ladder (R41)', () => {
     });
   });
 
-  it('uses the G, D and A strings up to stage 5 and all four strings from stage 6', () => {
-    for (const s of BASS_STAGES) expect(s.strings).toEqual(s.number < 6 ? [1, 2, 3] : [1, 2, 3, 4]);
+  it('uses the G, D and A strings up to stage 4 and all four strings from stage 5', () => {
+    for (const s of BASS_STAGES) expect(s.strings).toEqual(s.number < 5 ? [1, 2, 3] : [1, 2, 3, 4]);
   });
 
   it('writes stage 1 between A2 and A3, on the bass staff with no ledger lines', () => {
@@ -60,8 +60,8 @@ describe('the bass ladder (R41)', () => {
     }
   });
 
-  it('brings the low E string in at stage 6', () => {
-    const six = BASS_STAGES[5]!;
+  it('brings the low E string in at stage 5', () => {
+    const six = BASS_STAGES[4]!;
     expect(six.introduces?.every((p) => p.string === 4)).toBe(true);
     expect(SEEDS.some((seed) => generateMelody(six, seed).notes.some((n) => n.string === 4))).toBe(true);
   });

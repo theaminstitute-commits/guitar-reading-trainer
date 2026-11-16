@@ -66,9 +66,9 @@ function raisedSevenths(rng: Rng, count: number, cases: readonly [string, string
 export const TIERS: readonly Tier[] = [
   { id: 'staff', skill: 'Notes on the staff', failStage: 1, make: (rng) => nameNotes(naturalsBetween('D4', 'G5'), QUESTIONS_PER_TIER, rng) },
   { id: 'signatures', skill: 'One and two sharps or flats', failStage: 3, make: (rng) => signatureNotes(K('G', 'F', 'D', 'Bb'), naturalsBetween('D4', 'G5'), QUESTIONS_PER_TIER, rng) },
-  { id: 'rhythm', skill: 'Eighth notes', failStage: 5, make: (rng) => rhythms(['q', 'h', 'e'], QUESTIONS_PER_TIER, rng) },
-  { id: 'ledger-low', skill: 'Ledger lines below the staff', failStage: 6, make: (rng) => nameNotes(naturalsBetween('E3', 'C4'), QUESTIONS_PER_TIER, rng) },
-  { id: 'signatures-more', skill: 'Three to six sharps or flats', failStage: 8, make: (rng) => signatureNotes(K('A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'), naturalsBetween('D4', 'G5'), QUESTIONS_PER_TIER, rng) },
+  { id: 'ledger-low', skill: 'Ledger lines below the staff', failStage: 5, make: (rng) => nameNotes(naturalsBetween('E3', 'C4'), QUESTIONS_PER_TIER, rng) },
+  { id: 'signatures-more', skill: 'Three to six sharps or flats', failStage: 6, make: (rng) => signatureNotes(K('A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'), naturalsBetween('D4', 'G5'), QUESTIONS_PER_TIER, rng) },
+  { id: 'rhythm', skill: 'Eighth notes', failStage: 10, make: (rng) => rhythms(['q', 'h', 'e'], QUESTIONS_PER_TIER, rng) },
   { id: 'ledger-high', skill: 'Ledger lines above the staff', failStage: 12, make: (rng) => nameNotes(naturalsBetween('A5', 'E6'), QUESTIONS_PER_TIER, rng) },
   { id: 'minor', skill: 'Raised notes in minor keys', failStage: 14, make: (rng) => raisedSevenths(rng, QUESTIONS_PER_TIER) },
 ];
@@ -82,9 +82,9 @@ const BASS_STAFF = naturalsBetween('A2', 'B3');
 export const BASS_TIERS: readonly Tier[] = [
   { id: 'staff', skill: 'Notes on the staff', failStage: 1, make: (rng) => nameNotes(BASS_STAFF, QUESTIONS_PER_TIER, rng) },
   { id: 'signatures', skill: 'One and two sharps or flats', failStage: 3, make: (rng) => signatureNotes(K('G', 'F', 'D', 'Bb'), BASS_STAFF, QUESTIONS_PER_TIER, rng) },
-  { id: 'rhythm', skill: 'Eighth notes', failStage: 5, make: (rng) => rhythms(['q', 'h', 'e'], QUESTIONS_PER_TIER, rng) },
-  { id: 'ledger-low', skill: 'The low E string, below the staff', failStage: 6, make: (rng) => nameNotes(naturalsBetween('E2', 'A2'), QUESTIONS_PER_TIER, rng) },
-  { id: 'signatures-more', skill: 'Three to six sharps or flats', failStage: 8, make: (rng) => signatureNotes(K('A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'), BASS_STAFF, QUESTIONS_PER_TIER, rng) },
+  { id: 'ledger-low', skill: 'The low E string, below the staff', failStage: 5, make: (rng) => nameNotes(naturalsBetween('E2', 'A2'), QUESTIONS_PER_TIER, rng) },
+  { id: 'signatures-more', skill: 'Three to six sharps or flats', failStage: 6, make: (rng) => signatureNotes(K('A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb'), BASS_STAFF, QUESTIONS_PER_TIER, rng) },
+  { id: 'rhythm', skill: 'Eighth notes', failStage: 10, make: (rng) => rhythms(['q', 'h', 'e'], QUESTIONS_PER_TIER, rng) },
   { id: 'ledger-high', skill: 'Ledger lines above the staff', failStage: 12, make: (rng) => nameNotes(naturalsBetween('B3', 'G4'), QUESTIONS_PER_TIER, rng) },
   { id: 'minor', skill: 'Raised notes in minor keys', failStage: 14, make: (rng) => raisedSevenths(rng, QUESTIONS_PER_TIER, BASS_SEVENTHS) },
 ];

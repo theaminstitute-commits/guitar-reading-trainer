@@ -208,7 +208,7 @@ export const PART_0: readonly Lesson[] = [
         kind: 'explain',
         title: 'The six open strings on the staff',
         body: [
-          'Here are the open strings, from the thickest (6th, low E) to the thinnest (1st, high E). The low three need short extra lines under the staff, called ledger lines; you meet those at stage 6.',
+          'Here are the open strings, from the thickest (6th, low E) to the thinnest (1st, high E). The low three need short extra lines under the staff, called ledger lines; you meet those at stage 5.',
           'Stage 1 uses the four thinnest strings: D, G, B and the high E.',
         ],
         staff: { notes: [n('E3', 'E 6th', 'w'), n('A3', 'A 5th', 'w'), n('D4', 'D 4th', 'w'), n('G4', 'G 3rd', 'w'), n('B4', 'B 2nd', 'w'), n('E5', 'E 1st', 'w')] },
@@ -353,7 +353,7 @@ export function openStringQuestions(rng: Rng, count: number): StaffToFretQuestio
 }
 
 /** Short lessons before the stages that bring something new; each runs before that stage's guide page. */
-export const STAGE_LESSONS: readonly Lesson[] = [
+export const STAGE_LESSONS: readonly Lesson[] = ([
   {
     id: 'stage-3',
     stage: 3,
@@ -381,10 +381,10 @@ export const STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'stage-5',
-    stage: 5,
+    id: 'stage-10',
+    stage: 10,
     title: 'Eighth notes',
-    summary: 'Before stage 5.',
+    summary: 'Before stage 10.',
     steps: [
       {
         kind: 'explain',
@@ -399,17 +399,17 @@ export const STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'stage-6',
-    stage: 6,
+    id: 'stage-5',
+    stage: 5,
     title: 'Ledger lines and the low strings',
-    summary: 'Before stage 6.',
+    summary: 'Before stage 5.',
     steps: [
       {
         kind: 'explain',
         title: 'Below the staff',
         body: [
           'Notes lower than D need ledger lines: short lines added under the staff, spaced like the staff lines. The letters keep counting down: the first ledger line is C, the space under it B, the second line A, then G, F, and the third line is the open low E.',
-          'From stage 6 all six strings are used, so these notes come up in every melody.',
+          'From stage 5 all six strings are used, so these notes come up in every melody.',
         ],
         staff: { notes: [n('C4', 'C', 'w'), n('A3', 'A', 'w'), n('F3', 'F', 'w'), n('E3', 'E', 'w')] },
         fretboard: { frets: [0, 4], dots: [at(5, 3), at(5, 0), at(6, 1), at(6, 0)], labels: ['C', 'A', 'F', 'E'] },
@@ -420,10 +420,10 @@ export const STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'stage-7',
-    stage: 7,
+    id: 'stage-11',
+    stage: 11,
     title: 'Whole notes and dotted notes',
-    summary: 'Before stage 7.',
+    summary: 'Before stage 11.',
     steps: [
       {
         kind: 'explain',
@@ -495,7 +495,7 @@ export const STAGE_LESSONS: readonly Lesson[] = [
       { kind: 'drill', title: 'How many notes?', intro: 'Count the notes in each chord, bottom to top.', make: (rng) => chordCountQuestions(rng, 4) },
     ],
   },
-];
+] as Lesson[]).sort((a, b) => (a.stage ?? 0) - (b.stage ?? 0));
 
 /** "How many notes are in this chord?" over stacks of two to four notes. */
 function chordCountQuestions(rng: Rng, count: number): NameQuestion[] {

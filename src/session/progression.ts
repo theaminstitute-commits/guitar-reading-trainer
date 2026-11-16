@@ -68,7 +68,7 @@ export interface Lane {
 }
 
 export interface Progress {
-  version: 8;
+  version: 9;
   /** The instrument being learnt: guitar (treble staff, six strings) or bass (bass staff, four strings). */
   instrument: InstrumentId;
   /** The lane of the instrument not in use, kept for when it is chosen again; null until it has been used. */
@@ -108,7 +108,7 @@ export function initialTrack(stages: readonly Stage[]): Track {
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
-  return { version: 8, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true, buttonSounds: true };
+  return { version: 9, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: initialTrack(stages), tutorial: [], tutorialSkipped: false, hints: true, buttonSounds: true };
 }
 
 /** Anything a reset would clear: melodies, a stage reached or chosen, guides seen, lessons, or the tutorial skipped (R32), on the instrument in use. */

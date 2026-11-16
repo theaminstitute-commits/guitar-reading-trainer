@@ -42,13 +42,14 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
   it('moves free reading and the bonus stages up by 29 and leaves stages 1 to 17 alone', () => {
     localStorage.setItem(KEY, JSON.stringify({ version: 6, mode: 'listen', handedness: 'left', theme: 'dark', metronome: true, seenGuides: [1, 17, 18, 19], write: track(17, 20, { '18': ['C|60q'], '19': ['G|67h'], '5': ['C|62q'] }) }));
     const p = localProgressStore.load(STAGES);
-    expect(p.version).toBe(8);
+    expect(p.version).toBe(9);
     expect(p.mode).toBe('listen');
     expect(p.write.stage).toBe(46);
     expect(p.write.unlocked).toBe(49);
     expect(p.write.tally).toBe(3);
     expect(p.seenGuides).toEqual([1, 17, 47, 48]);
-    expect(Object.keys(p.write.melodies).sort()).toEqual(['47', '48', '5']);
+    // Melodies heard on the old eighth-note stage (5) move with it to stage 10 (R45).
+    expect(Object.keys(p.write.melodies).sort()).toEqual(['10', '47', '48']);
     expect(STAGES[46]!.name).toBe('Free reading');
   });
 
@@ -62,7 +63,7 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
   it('still reads a version 4 record through both renumberings and drops its playing track', () => {
     localStorage.setItem(KEY, JSON.stringify({ version: 4, mode: 'play', handedness: 'right', theme: 'light', metronome: false, seenGuides: [1, 21], write: { ...track(20, 20), tally: undefined }, play: track(2, 2) }));
     const p = localProgressStore.load(STAGES);
-    expect(p.version).toBe(8);
+    expect(p.version).toBe(9);
     expect(p.mode).toBe('watch');
     // Old stage index 20 (free reading on the 21-stage ladder) became 17 at version 5 and 46 now.
     expect(p.write.stage).toBe(46);
@@ -107,7 +108,8 @@ describe('guitar and bass keep their own progress (R41)', () => {
     const p = localProgressStore.load(STAGES);
     expect(p.instrument).toBe('guitar');
     expect(p.other).toBeNull();
-    expect(p.write.stage).toBe(5);
+    // Old stage 6 (A and E♭ major with the low strings) is stage 5 since R45.
+    expect(p.write.stage).toBe(4);
   });
 
   it('switches to bass with a fresh ladder and back to guitar with the guitar ladder intact', () => {
@@ -120,7 +122,7 @@ describe('guitar and bass keep their own progress (R41)', () => {
     expect(bass.seenGuides).toEqual([]);
     expect([bass.handedness, bass.theme]).toEqual(['left', 'frost']);
     const back = withInstrument({ ...bass, write: { ...bass.write, stage: 2, unlocked: 2 } }, 'guitar');
-    expect(back.write.stage).toBe(5);
+    expect(back.write.stage).toBe(4);
     expect(back.seenGuides).toEqual([3]);
     expect(back.other?.write.stage).toBe(2);
   });
@@ -146,5 +148,37 @@ describe('guitar and bass keep their own progress (R41)', () => {
     expect(reset.tutorial).toEqual(['staff', 'octave']);
     expect(reset.other?.write.stage).toBe(4);
     expect(hasProgress(reset)).toBe(false);
+  });
+});
+
+describe('eighth notes later (R45, version 9)', () => {
+  beforeEach(() => {
+    globalThis.localStorage = fakeStorage();
+  });
+
+  it('keeps every learner on the pitch ladder and moves what belongs to the rhythm stages with them', () => {
+    // Old stage 5 (eighths) and 6 (A and E♭ major) both land on the new stage 5; old 7 (whole and dotted) and 8 (E and A♭) on 6.
+    const at = (stage: number) => {
+      localStorage.setItem(KEY, JSON.stringify({ version: 8, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [], write: track(stage, stage) }));
+      return localProgressStore.load(STAGES).write.stage + 1;
+    };
+    expect([0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 30].map(at)).toEqual([1, 4, 5, 5, 6, 6, 7, 8, 9, 12, 17, 31]);
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ version: 8, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [4, 5, 6, 7, 8], write: track(7, 7, { '5': ['C|60e'], '7': ['C|60w'] }), tutorial: ['staff', 'stage-5', 'stage-6', 'stage-7', 'bass-stage-6'] }),
+    );
+    const p = localProgressStore.load(STAGES);
+    expect(p.version).toBe(9);
+    expect([...p.seenGuides].sort((a, b) => a - b)).toEqual([4, 5, 6, 10, 11]);
+    expect(Object.keys(p.write.melodies).sort()).toEqual(['10', '11']);
+    expect(p.tutorial).toEqual(['staff', 'stage-10', 'stage-5', 'stage-11', 'bass-stage-5']);
+  });
+
+  it('leaves a version 9 record as it is', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 9, instrument: 'guitar', other: null, mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [5, 10], write: track(9, 10), tutorial: ['stage-5'] }));
+    const p = localProgressStore.load(STAGES);
+    expect(p.write.stage).toBe(9);
+    expect(p.seenGuides).toEqual([5, 10]);
+    expect(p.tutorial).toEqual(['stage-5']);
   });
 });

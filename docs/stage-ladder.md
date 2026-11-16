@@ -18,10 +18,11 @@ The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 - **Move up a stage**: ten flawless melodies on the stage, every note and every length right (decided 2026-10-05). A melody with any mistake does not count and takes nothing away. Reaching free reading takes 460 flawless melodies (since Part D, chords, 2026-10-26), the last bonus stage 580. (History: clean-round streaks at growing lengths, then a points tally where imperfect rounds also counted; the user rejected both: only flawless melodies count.)
 - **Move down a stage**: two weak rounds in a row; the learner lands on the previous stage with the flawless count at zero.
 - **Length on the main ladder** is one bar of 4/4 on every stage, 1 to 47. There is no length control anywhere. Every bar starts on a chord tone of the key.
-- **New frets and strings are used at once**: a stage that adds frets or strings (2, 6, 12 and 13) puts at least one note on a newly added position in every melody.
+- **New frets and strings are used at once**: a stage that adds frets or strings (2, 5, 12 and 13) puts at least one note on a newly added position in every melody.
 - **Chords (Part D, R23)**: stages 18 to 46 teach chords from power chords to chord melody; the learner writes every note of each chord. Chord tones are spelled from the chord's root. Free reading and the bonus stages mix chords under the melody.
 - **A stage that introduces keys uses only those keys** (R18); the other stages draw from every key introduced so far.
-- **Strings 5 and 6 arrive at stage 6** with A and E♭ major (R19) and stay for every stage after it.
+- **Strings 5 and 6 arrive at stage 5** with A and E♭ major (R19) and stay for every stage after it.
+- **Eighth notes come late (R45, 2026-11-16)**: stages 1 to 9 use quarter and half notes only, so the key signatures are learnt on simple rhythms. Eighths arrive at stage 10 and whole notes and dotted quarters at stage 11, both in every major key.
 - **Bonus stages** come after free reading (stages 19 to 30). Each adds one count, so every length beyond one bar lives here: bonus 1 is 5 counts (4/4 + 1/4), bonus 2 is 6 (4/4 + 2/4), bonus 4 is two bars, up to bonus 12 at 16 counts (four bars of 4/4). The length is fixed within a bonus stage. Keys come from all majors and all minor forms, positions from all six strings between the nut and fret 12. The time signature changes before the short bar.
 - **Keys are random within the unlocked set**, so the key signature must be read every time. New keys come in cycle-of-fifths order, one sharp key and one flat key per stage.
 - **Tonal reference**: from stage 3 on, the tonic note (or tonic chord) sounds before the count-in. The key name and key signature are always shown.
@@ -35,13 +36,13 @@ The full, numbered rule set with its conflict log is in [rules.md](rules.md).
 | 2 | One more fret, leaps up to a 4th | C | quarter, half | strings 1-4, frets 0-4 | Same pitch in two places; wider leaps |
 | 3 | First key signatures | G, F only | quarter, half | same | Reading one sharp or one flat |
 | 4 | Two accidentals | D, Bb only | quarter, half | same | Key signature order of sharps and flats |
-| 5 | Eighth notes (beamed pairs) | C, G, F, D, Bb | + eighths | same | Subdividing the beat |
-| 6 | Three accidentals and the low strings | A, Eb only | quarter, half, eighths | strings 1-6, frets 0-4 (written from E3, three ledger lines below) | Reading below the staff; the open low E |
-| 7 | Whole notes and dotted quarter + eighth | C, G, F, D, Bb, A, Eb | + whole, dotted quarter | same | Ties of attention across beats, dots |
-| 8 | Four accidentals | E, Ab only | all so far | same | More remote keys |
-| 9 | Five accidentals | B, Db only | all so far | same | Keys with many accidentals |
-| 10 | Six accidentals, enharmonic pair | F#, Gb only | all so far | same | Same sound, two spellings; strict spelling decides |
-| 11 | Seven accidentals | C#, Cb only | all so far | same | E#, B#, Fb, Cb as ordinary notes |
+| 5 | Three accidentals and the low strings | A, Eb only | quarter, half | strings 1-6, frets 0-4 (written from E3, three ledger lines below) | Reading below the staff; the open low E |
+| 6 | Four accidentals | E, Ab only | quarter, half | same | More remote keys |
+| 7 | Five accidentals | B, Db only | quarter, half | same | Keys with many accidentals |
+| 8 | Six accidentals, enharmonic pair | F#, Gb only | quarter, half | same | Same sound, two spellings; strict spelling decides |
+| 9 | Seven accidentals | C#, Cb only | quarter, half | same | E#, B#, Fb, Cb as ordinary notes |
+| 10 | Eighth notes (beamed pairs) | all 15 majors | + eighths | same | Subdividing the beat |
+| 11 | Whole notes and dotted quarter + eighth | all 15 majors | + whole, dotted quarter | same | Ties of attention across beats, dots |
 
 ## Part B: up the neck
 
@@ -119,6 +120,6 @@ Every chord stage is one bar of 4/4 with one or two chords (two to four for the 
 1. The key signature is always given; the learner never has to write it.
 2. Tonal reference: the tonic note, played twice, before the count-in (from stage 3).
 3. Listens drop from 3 to 2 in Part B.
-4. Eighth notes arrive early (stage 5) so rhythm and keys grow together and sessions stay varied.
+4. Eighth notes arrived early (stage 5) until 2026-11-16, so rhythm and keys grew together. The user moved them later (R45): the keys are now learnt on quarter and half notes, and the two rhythm stages follow the last major keys.
 5. Stage 11 (seven accidentals) was optional until 2026-10-05; it is now an ordinary stage and the opt-in checkbox is gone.
 6. Every stage has a guide page (2026-10-05) that opens by itself the first time the stage is met and from a Stage guide button on the start screen: the stage's pitches named on the staff (new ones in blue), the same pitches dotted on the fretboard, keys, note lengths, range and listens. A metronome can be switched on under the Play buttons; it clicks on every beat during playback, off by default.

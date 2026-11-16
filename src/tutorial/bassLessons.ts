@@ -121,7 +121,7 @@ export const BASS_PART_0: readonly Lesson[] = [
         title: 'Just above and below',
         body: [
           'The staff carries on one step past its lines. The space just below the bottom line is F, and the space just above the top line is B.',
-          'Stage 1 stays on the staff, from the A in the bottom space to the A on the top line. The B above comes in at stage 2, and the F below, with the open low E under it, at stage 6.',
+          'Stage 1 stays on the staff, from the A in the bottom space to the A on the top line. The B above comes in at stage 2, and the F below, with the open low E under it, at stage 5.',
         ],
         staff: { notes: [n('F2', 'F', 'w'), n('A2', 'A', 'w'), n('A3', 'A', 'w'), n('B3', 'B', 'w')] },
       },
@@ -150,7 +150,7 @@ export const BASS_PART_0: readonly Lesson[] = [
         kind: 'explain',
         title: 'The four open strings on the staff',
         body: [
-          'Here are the open strings, from the thickest (4th, low E) to the thinnest (1st, G). The low E sits on a short extra line under the staff, called a ledger line; you meet it at stage 6.',
+          'Here are the open strings, from the thickest (4th, low E) to the thinnest (1st, G). The low E sits on a short extra line under the staff, called a ledger line; you meet it at stage 5.',
           'Stage 1 uses the three thinner strings: A, D and G.',
         ],
         staff: { notes: [n('E2', 'E 4th', 'w'), n('A2', 'A 3rd', 'w'), n('D3', 'D 2nd', 'w'), n('G3', 'G 1st', 'w')] },
@@ -273,7 +273,7 @@ export const BASS_PART_0: readonly Lesson[] = [
 ];
 
 /** Short lessons before the bass stages that bring something new (the guitar's, less the chord lesson). */
-export const BASS_STAGE_LESSONS: readonly Lesson[] = [
+export const BASS_STAGE_LESSONS: readonly Lesson[] = ([
   {
     id: 'bass-stage-3',
     stage: 3,
@@ -301,10 +301,10 @@ export const BASS_STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'bass-stage-5',
-    stage: 5,
+    id: 'bass-stage-10',
+    stage: 10,
     title: 'Eighth notes',
-    summary: 'Before stage 5.',
+    summary: 'Before stage 10.',
     steps: [
       {
         kind: 'explain',
@@ -317,17 +317,17 @@ export const BASS_STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'bass-stage-6',
-    stage: 6,
+    id: 'bass-stage-5',
+    stage: 5,
     title: 'The low E string and its ledger line',
-    summary: 'Before stage 6.',
+    summary: 'Before stage 5.',
     steps: [
       {
         kind: 'explain',
         title: 'Below the staff',
         body: [
           'Notes lower than the bottom line, G, go under the staff. The space just below it is F, and the next note down sits on a ledger line: a short line added under the staff, spaced like the staff lines. That is E, the open low E string.',
-          'From stage 6 all four strings are used, so the low E string comes up in every melody: E open, F on fret 1, G on fret 3.',
+          'From stage 5 all four strings are used, so the low E string comes up in every melody: E open, F on fret 1, G on fret 3.',
         ],
         staff: { notes: [n('G2', 'G', 'w'), n('F2', 'F', 'w'), n('E2', 'E', 'w')] },
         fretboard: { frets: [0, 4], dots: [at(4, 3), at(4, 1), at(4, 0)], labels: ['G', 'F', 'E'] },
@@ -338,10 +338,10 @@ export const BASS_STAGE_LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'bass-stage-7',
-    stage: 7,
+    id: 'bass-stage-11',
+    stage: 11,
     title: 'Whole notes and dotted notes',
-    summary: 'Before stage 7.',
+    summary: 'Before stage 11.',
     steps: [
       {
         kind: 'explain',
@@ -394,4 +394,4 @@ export const BASS_STAGE_LESSONS: readonly Lesson[] = [
       { kind: 'drill', title: 'Read the signature', intro: 'What is the note, once the key signature is applied?', make: (rng) => signatureNotes([K('Em'), K('Dm'), K('Bm'), K('Gm')], STAGE3, 5, rng) },
     ],
   },
-];
+] as Lesson[]).sort((a, b) => (a.stage ?? 0) - (b.stage ?? 0));
