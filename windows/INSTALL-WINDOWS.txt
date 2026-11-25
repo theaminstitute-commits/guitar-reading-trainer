@@ -1,7 +1,7 @@
 STAFF & STRINGS for Windows 10 and 11
 =====================================
 
-GuitarReadingTrainer-Setup-v<version>.exe
+StaffAndStrings-Setup-v<version>.exe
 
 1) Download the setup file and double-click it.
 2) Windows may say "Windows protected your PC", because the file is not signed
@@ -20,7 +20,7 @@ Removing: Settings > Apps > Installed apps > Staff & Strings > Uninstall. It
 asks whether to delete your progress as well; by default it is kept, so a later
 install carries on where you left off.
 
-For IT: "GuitarReadingTrainer-Setup-v<version>.exe /S" installs silently (with a
+For IT: "StaffAndStrings-Setup-v<version>.exe /S" installs silently (with a
 desktop shortcut). The uninstaller is listed in Settings > Apps;
 "%LOCALAPPDATA%\Programs\StaffAndStrings\uninstall.exe /uninstall /S" removes it
 silently, and adding /purge deletes the progress too.

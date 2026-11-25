@@ -1,6 +1,6 @@
 # Builds the Staff & Strings APK without Gradle, using Android Studio's bundled JDK and the SDK build tools.
 # Usage (PowerShell, from anywhere):  .\android\build-apk.ps1 -Version 0.16.1
-# Output: dist\GuitarReadingTrainer-v<Version>.apk, signed with the local debug key (~\.android\debug.keystore).
+# Output: dist\StaffAndStrings-v<Version>.apk, signed with the local debug key (~\.android\debug.keystore).
 # The versionCode is derived from the version (major*10000 + minor*100 + patch), so it rises with every release
 # and phones accept each new build as an update.
 param(
@@ -53,7 +53,7 @@ Push-Location "$B\dex"; & "$Jdk\bin\jar.exe" -uf "$B\unaligned.apk" classes.dex;
 # 4. Align and sign. (apksigner prints harmless Java warnings on stderr, so it runs through cmd.)
 & "$BuildTools\zipalign.exe" -f -p 4 "$B\unaligned.apk" "$B\aligned.apk"; Check 'zipalign'
 New-Item -ItemType Directory -Force "$Root\dist" | Out-Null
-$Apk = "$Root\dist\GuitarReadingTrainer-v$Version.apk"
+$Apk = "$Root\dist\StaffAndStrings-v$Version.apk"
 cmd /c "`"$BuildTools\apksigner.bat`" sign --ks `"%USERPROFILE%\.android\debug.keystore`" --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out `"$Apk`" `"$B\aligned.apk`" 2>nul"
 Check 'apksigner sign'
 cmd /c "`"$BuildTools\apksigner.bat`" verify `"$Apk`" 2>nul"; Check 'apksigner verify'

@@ -1,7 +1,7 @@
 STAFF & STRINGS for Android
 ==================================
 
-GuitarReadingTrainer-v<version>.apk
+StaffAndStrings-v<version>.apk
 
 1) Copy the .apk to the phone (Drive app, USB, or open the Drive link on the phone).
 2) Tap it. Android asks to allow installs from this source the first time; allow it.

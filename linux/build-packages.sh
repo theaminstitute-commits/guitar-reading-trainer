@@ -2,8 +2,9 @@
 # Builds the Linux Mint / Ubuntu packages from dist/guitar-reading-trainer.html
 # (run `npm run build && node tools/single-file.mjs` first).
 # Run on Linux (or WSL):  VERSION=0.1.0 sh linux/build-packages.sh
-#   dist/guitar-reading-trainer_<version>_all.deb  double-click to install (menu entry + icon)
-#   dist/GuitarReadingTrainer.run                  single file, runs without installing
+#   dist/staff-and-strings_<version>_all.deb  double-click to install (menu entry + icon)
+#   dist/StaffAndStrings.run                  single file, runs without installing
+# The Debian package itself stays "guitar-reading-trainer", so a new .deb upgrades an older install.
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${VERSION:-0.1.0}"
@@ -47,10 +48,10 @@ Description: Learn to read guitar and bass notation by ear
  write it on a treble or bass staff, and get every mistake graded and explained.
  Melodies start at one bar and grow as you improve.
 CONTROL
-dpkg-deb --root-owner-group --build "$PKG" "$ROOT/dist/guitar-reading-trainer_${VERSION}_all.deb" >/dev/null
+dpkg-deb --root-owner-group --build "$PKG" "$ROOT/dist/staff-and-strings_${VERSION}_all.deb" >/dev/null
 
 # ---- single-file .run ----
-RUN="$ROOT/dist/GuitarReadingTrainer.run"
+RUN="$ROOT/dist/StaffAndStrings.run"
 {
   cat <<'HEADER'
 #!/bin/sh
@@ -66,4 +67,4 @@ HEADER
   cat "$HTML"
 } > "$RUN"
 chmod 755 "$RUN"
-echo "Built dist/guitar-reading-trainer_${VERSION}_all.deb and dist/GuitarReadingTrainer.run (version $VERSION)"
+echo "Built dist/staff-and-strings_${VERSION}_all.deb and dist/StaffAndStrings.run (version $VERSION)"

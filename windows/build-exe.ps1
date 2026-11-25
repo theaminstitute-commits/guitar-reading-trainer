@@ -1,7 +1,7 @@
 # Builds the Windows installer for Staff & Strings with the C# compiler that ships with Windows
 # (.NET Framework 4), so nothing extra needs installing.
 # Usage (PowerShell, from anywhere):  .\windows\build-exe.ps1 -Version 0.22.0 [-SkipWebBuild]
-# Output: dist\GuitarReadingTrainer-Setup-v<Version>.exe, one file (about 2 MB) holding the launcher,
+# Output: dist\StaffAndStrings-Setup-v<Version>.exe, one file (about 2 MB) holding the launcher,
 # the single-file app, the icon and the licence. See windows\Setup.cs for what it installs.
 param(
   [Parameter(Mandatory = $true)][string]$Version,
@@ -62,7 +62,7 @@ $Common = @('/nologo', '/target:winexe', '/codepage:65001', '/optimize+', '/plat
 
 # 4. The setup, with the launcher, the app, the icon and the licence inside it.
 New-Item -ItemType Directory -Force "$Root\dist" | Out-Null
-$Out = "$Root\dist\GuitarReadingTrainer-Setup-v$Version.exe"
+$Out = "$Root\dist\StaffAndStrings-Setup-v$Version.exe"
 & $Csc @Common '/r:System.Management.dll' "/out:$Out" `
   "/resource:$B\launcher.exe,launcher.exe" "/resource:$Html,app.html" "/resource:$Root\LICENSE.md,LICENSE.md" `
   "/resource:$B\app.ico,app.ico" "/resource:$B\icon-256.png,icon-256.png" `
