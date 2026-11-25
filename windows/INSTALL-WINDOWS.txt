@@ -1,0 +1,33 @@
+STAFF & STRINGS for Windows 10 and 11
+=====================================
+
+GuitarReadingTrainer-Setup-v<version>.exe
+
+1) Download the setup file and double-click it.
+2) Windows may say "Windows protected your PC", because the file is not signed
+   with a paid certificate. Click "More info", then "Run anyway".
+3) Click Install. No administrator rights are needed: it installs for you only.
+
+Staff & Strings then opens from the Start menu (and the desktop, if you kept that
+box ticked). It runs in its own window, using Microsoft Edge, which every
+Windows 10 and 11 PC has (Chrome is used if Edge is missing). It works offline:
+the sounds and music fonts are inside it, and nothing leaves the PC.
+
+Updating: run the setup of a newer version. Your stages, lessons and settings
+are kept.
+
+Removing: Settings > Apps > Installed apps > Staff & Strings > Uninstall. It
+asks whether to delete your progress as well; by default it is kept, so a later
+install carries on where you left off.
+
+For IT: "GuitarReadingTrainer-Setup-v<version>.exe /S" installs silently (with a
+desktop shortcut). The uninstaller is listed in Settings > Apps;
+"%LOCALAPPDATA%\Programs\StaffAndStrings\uninstall.exe /uninstall /S" removes it
+silently, and adding /purge deletes the progress too.
+
+Where things go:
+  App:       %LOCALAPPDATA%\Programs\StaffAndStrings
+  Progress:  %LOCALAPPDATA%\StaffAndStrings (the app's own browser profile)
+
+The same app runs in any browser at
+https://theaminstitute-commits.github.io/guitar-reading-trainer/

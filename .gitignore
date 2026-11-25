@@ -6,3 +6,4 @@ dev-dist
 *.tsbuildinfo
 android/build
 android/assets
+windows/build

@@ -23,11 +23,16 @@ html = html.replace(
   /<link rel="stylesheet" crossorigin href="\.\/(assets\/[^"]+)">/,
   (_, path) => `<style>${readFileSync(join(dist, path), 'utf8')}</style>`,
 );
+// The page icon (browser tab, and the app window on Windows and Linux), inlined as a data URI.
+html = html.replace(
+  /<link rel="icon" type="image\/png" href="\.\/(icons\/[^"]+)"\s*\/?>/,
+  (_, path) => `<link rel="icon" type="image/png" href="data:image/png;base64,${readFileSync(join(dist, path)).toString('base64')}" />`,
+);
 // The single file has no service worker or manifest next to it.
 html = html.replace(/<link rel="manifest"[^>]*>/, '');
 html = html.replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/, '');
 
-if (/src="\.\/assets|href="\.\/assets/.test(html)) {
+if (/src="\.\/assets|href="\.\/assets|href="\.\/icons/.test(html)) {
   throw new Error('Some assets are still referenced externally');
 }
 
