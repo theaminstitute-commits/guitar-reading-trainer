@@ -2450,7 +2450,36 @@ html.theme-fade *::after {
 
 .play-problems {
   margin: 8px 0 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 4px;
+  gap: 8px;
+}
+
+/* Each problem says what kind it is, so a timing slip never reads as a wrong note. */
+.play-kind {
+  display: inline-block;
+  padding: 1px 8px;
+  margin-right: 4px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.play-kind.timing {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.play-kind.pitch {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.play-kind.missing {
+  background: var(--surface-2);
+  color: var(--muted);
 }

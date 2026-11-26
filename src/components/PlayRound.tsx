@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { sharedPlayer } from '../audio/player';
-import { gradePlaying, playTargets, verdictText, type PlayGrade, type PlayTap } from '../grading/playTiming';
+import { describePlay, gradePlaying, playTargets, type PlayGrade, type PlayTap } from '../grading/playTiming';
 import { groupEvents, splitIntoBars, totalBeats } from '../melody/bars';
 import type { LevelConfig } from '../melody/levelConfig';
 import { timeSignaturesFor } from '../melody/meter';
@@ -148,7 +148,7 @@ export default function PlayRound({ melody, level, leftHanded, noteNames, writte
     const end = begin + (targets[targets.length - 1]!.beat + lastLength) * spb;
     timers.current.push(
       setTimeout(() => {
-        const g = gradePlaying(targets, taps.current, begin, spb, lastLength);
+        const g = gradePlaying(targets, taps.current, begin, spb);
         first.current ??= g;
         setGrade(g);
         setTakes((n) => n + 1);
@@ -183,13 +183,9 @@ export default function PlayRound({ melody, level, leftHanded, noteNames, writte
     return PAPER.ink;
   };
 
-  const firstProblem = grade ? grade.events.findIndex((e) => e.verdict !== 'good') : -1;
-  const problemText =
-    grade && firstProblem >= 0
-      ? `${events[firstProblem]!.length > 1 ? 'Chord' : 'Note'} ${firstProblem + 1}: ${verdictText(grade.events[firstProblem]!, events[firstProblem]!.length > 1)}.`
-      : grade && grade.stray > 0
-        ? `${grade.stray} ${grade.stray === 1 ? 'tap' : 'taps'} outside the melody.`
-        : '';
+  /** The first thing to fix, as on the results page: timing called timing, a wrong pitch a wrong note. */
+  const firstProblem = grade && !grade.passed ? describePlay(grade, melody)[0] : undefined;
+  const problemText = firstProblem ? `${firstProblem.title}: ${firstProblem.text}` : '';
 
   return (
     <section className="exercise play-round">

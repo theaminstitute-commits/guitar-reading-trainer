@@ -12,10 +12,7 @@ import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
 import { EarIcon, PlayIcon, StopIcon } from './icons';
 import Ring from './Ring';
-import { verdictText, type PlayGrade } from '../grading/playTiming';
-import { groupEvents } from '../melody/bars';
-import { spellInKey } from '../music/key';
-import { spelledName, writtenFromSounding } from '../music/pitch';
+import { describePlay, type PlayGrade } from '../grading/playTiming';
 
 interface FeedbackScreenProps {
   melody: Melody;
@@ -101,23 +98,8 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
   const writtenRight = result.mistakes.length === 0;
   const playedRight = !play || play.passed;
   const perfect = writtenRight && playedRight;
-  const events = groupEvents(melody.notes);
-  /** The play round's problems, one line each: which note, and what happened. */
-  const playProblems = play
-    ? [
-        ...play.events.flatMap((e, i) => {
-          if (e.verdict === 'good') return [];
-          const group = events[i]!;
-          const name = group.length > 1 ? `Chord ${i + 1}` : `Note ${i + 1}, ${(() => {
-            const n = group[0]!;
-            const s = n.spelled ?? spellInKey(writtenFromSounding(n.midi), melody.key);
-            return `${spelledName(s)}${s.octave}`;
-          })()}`;
-          return [{ name, text: verdictText(e, group.length > 1) }];
-        }),
-        ...(play.stray > 0 ? [{ name: 'Outside the melody', text: `${play.stray} ${play.stray === 1 ? 'tap' : 'taps'} before the first note or after the last` }] : []),
-      ]
-    : [];
+  /** The play round's problems, one line each, timing kept apart from wrong notes. */
+  const playProblems = play ? describePlay(play, melody) : [];
   const thingCount = result.mistakes.length + playProblems.length;
   const rightNotes = result.targetCount - result.missingCount - result.pairs.filter((p) => p.target && p.answer && p.mistakes.length > 0).length;
 
@@ -206,7 +188,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
             <ul className="play-problems">
               {playProblems.map((p, i) => (
                 <li key={i}>
-                  <strong>{p.name}</strong>: {p.text}
+                  <span className={`play-kind ${p.kind}`}>{p.kind === 'timing' ? 'Timing' : p.kind === 'pitch' ? 'Wrong note' : 'Missed'}</span> <strong>{p.title}</strong>: {p.text}
                 </li>
               ))}
             </ul>
