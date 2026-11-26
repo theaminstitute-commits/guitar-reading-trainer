@@ -122,6 +122,8 @@ export default function App() {
   const track = trackOf(progress);
   const [exercise, setExercise] = useState<Exercise>(() => makeExercise(track, stages).exercise);
   const [checked, setChecked] = useState<Checked | null>(null);
+  /** A play round under way (R46): its melody and the track before the written answer was recorded. */
+  const [round, setRound] = useState<{ melody: Melody; before: Track } | null>(null);
   const [explainer, setExplainer] = useState<ExplainerId | null>(null);
   const [lesson, setLesson] = useState<{ lesson: Lesson; then: LessonThen } | null>(null);
 
@@ -140,16 +142,36 @@ export default function App() {
     updateProgress(withTrack(current, made.track));
     setExercise(made.exercise);
     setChecked(null);
+    setRound(null);
     setScreen('exercise');
   };
 
-  const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null, play: PlayGrade | null) => {
-    const { track: nextTrack, change } = applyResult(track, result, stages, play ? play.passed : true);
+  /** The progress after a result, worked out from the track as it was before the melody was checked. */
+  const progressAfter = (before: Track, result: GradeResult, played: boolean) => {
+    const { track: nextTrack, change } = applyResult(before, result, stages, played);
     // R17: a stage lost through demotion shows its guide again when it is won back.
-    const lost = change === 'stage-down' ? stages[track.stage]!.number : null;
+    const lost = change === 'stage-down' ? stages[before.stage]!.number : null;
     const seenGuides = lost === null ? progress.seenGuides : progress.seenGuides.filter((n) => n !== lost);
-    updateProgress(withTrack({ ...progress, seenGuides }, nextTrack));
+    return { next: withTrack({ ...progress, seenGuides }, nextTrack), nextTrack, change };
+  };
+
+  /**
+   * R46: the written answer counts the moment the play round begins, as a melody not played right.
+   * Leaving the round (Back, closing the app) keeps that record; finishing it settles the result.
+   */
+  const onRoundStart = (answerBars: AnswerNote[][]) => {
+    const result = gradeAnswer(melody, answerBars, melody.key);
+    setRound({ melody, before: track });
+    updateProgress(progressAfter(track, result, false).next);
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
+  };
+
+  const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null, play: PlayGrade | null) => {
+    const open = round && round.melody === melody ? round : null;
+    const { next, nextTrack, change } = progressAfter(open ? open.before : track, result, play ? play.passed : true);
+    updateProgress(next);
+    if (!open) setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
+    setRound(null);
     setChecked({ result, change, stageAfter: stages[nextTrack.stage]!, yours, hearMine, play });
     setScreen('feedback');
   };
@@ -315,7 +337,7 @@ export default function App() {
                 ? 'About and licences'
                 : screen === 'start' || screen === 'guide'
                 ? level.title
-                : `Melody ${session.exercises + (screen === 'exercise' ? 1 : 0)} · ${keyName(melody.key)} · ${melody.counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
+                : `Melody ${session.exercises + (screen === 'exercise' && !round ? 1 : 0)} · ${keyName(melody.key)} · ${melody.counts} counts (${describeMeter(melody.barBeats)})${MODE_LABEL[progress.mode]}`}
             </p>
           </div>
         </div>
@@ -366,6 +388,7 @@ export default function App() {
           onMetronome={onMetronome}
           onCheck={onCheck}
           playRound
+          onRoundStart={onRoundStart}
           {...(progress.hints && exercise.level.number === 1 ? { noteNames: true, firstPlayRate: 0.85 } : {})}
         />
       )}

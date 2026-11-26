@@ -47,6 +47,8 @@ interface ExerciseScreenProps {
   onCheck: (answerBars: AnswerNote[][], play?: PlayGrade) => void;
   /** After Check, the staff and fretboard swap and the learner plays the melody in time (R46). */
   playRound?: boolean;
+  /** The written answer as the play round begins: it is recorded at once as not played, so leaving the round does not undo it. */
+  onRoundStart?: (answerBars: AnswerNote[][]) => void;
   /** Beginner help (R26): a coach checks each note as it is written and names it after this many wrong tries. */
   coach?: { revealAfter: number };
   /** No listen limit (the coached lesson). */
@@ -62,7 +64,7 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate, playRound = false }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate, playRound = false, onRoundStart }: ExerciseScreenProps) {
   /** The play round, once the written answer is in. */
   const [round, setRound] = useState<{ bars: AnswerNote[][]; from: SwapFrom; writtenMistakes: number } | null>(null);
   const topPanel = useRef<HTMLDivElement>(null);
@@ -220,6 +222,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       onCheck(bars);
       return;
     }
+    onRoundStart?.(bars);
     const pageTop = (el: HTMLElement | null) => (el ? el.getBoundingClientRect().top + window.scrollY : null);
     setRound({ bars, from: { board: pageTop(topPanel.current), staff: pageTop(staffPanel.current) }, writtenMistakes: gradeAnswer(melody, bars, melody.key).mistakes.length });
   };
