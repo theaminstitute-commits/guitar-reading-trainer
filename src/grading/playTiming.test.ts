@@ -31,10 +31,10 @@ describe('play round timing (R46)', () => {
     ]);
   });
 
-  it('passes every right note within 10% of a beat, on any string', () => {
+  it('passes every right note within 20% of a beat, on any string', () => {
     const taps = [
-      { time: at(0, 0.09), midi: 48 },
-      { time: at(1, -0.1), midi: 52 },
+      { time: at(0, 0.19), midi: 48 },
+      { time: at(1, -0.2), midi: 52 },
       { time: at(2), midi: 55 },
       { time: at(3, 0.05), midi: 60 },
     ];
@@ -45,23 +45,23 @@ describe('play round timing (R46)', () => {
 
   it('marks a tap just past the window early or late, with how far', () => {
     const taps = [
-      { time: at(0, -0.15), midi: 48 },
-      { time: at(1, 0.12), midi: 52 },
+      { time: at(0, -0.25), midi: 48 },
+      { time: at(1, 0.22), midi: 52 },
       { time: at(2), midi: 55 },
       { time: at(3), midi: 60 },
     ];
     const g = gradePlaying(LINE, taps, START, SPB, 2);
     expect(g.passed).toBe(false);
     expect(g.events.map((e) => e.verdict)).toEqual(['early', 'late', 'good', 'good']);
-    expect(verdictText(g.events[0]!, false)).toBe('early by 15% of a beat');
-    expect(TIMING_WINDOW).toBe(0.1);
+    expect(verdictText(g.events[0]!, false)).toBe('early by 25% of a beat');
+    expect(TIMING_WINDOW).toBe(0.2);
   });
 
   it('a wrong pitch, a missing note and a doubled note all fail', () => {
     const taps = [
       { time: at(0), midi: 49 },
       { time: at(2), midi: 55 },
-      { time: at(2, 0.2), midi: 55 },
+      { time: at(2, 0.3), midi: 55 },
       { time: at(3), midi: 60 },
     ];
     const g = gradePlaying(LINE, taps, START, SPB, 2);

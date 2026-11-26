@@ -1,6 +1,6 @@
 /**
  * The play round (R46): after Check, the learner plays the melody on the fretboard in time.
- * A note counts when the right pitch is tapped (on any string) within ±10% of a beat of its
+ * A note counts when the right pitch is tapped (on any string) within ±20% of a beat of its
  * time. A chord counts when its first tap lands in that window and every chord note is tapped
  * before the next note is due, with nothing wrong in between (a strum, or several fingers at once).
  *
@@ -11,8 +11,8 @@ import type { Melody } from '../melody/types';
 import { beatsOf } from '../music/duration';
 import type { Midi } from '../music/pitch';
 
-/** The timing window either side of a note, as a fraction of a beat (the user, 2026-11-26: 10%). */
-export const TIMING_WINDOW = 0.1;
+/** The timing window either side of a note, as a fraction of a beat (the user, 2026-11-26: 10%, doubled to 20% the same day). */
+export const TIMING_WINDOW = 0.2;
 
 /** One note or chord to play: when it is due, in beats from the first beat, and its sounding pitches. */
 export interface PlayTarget {

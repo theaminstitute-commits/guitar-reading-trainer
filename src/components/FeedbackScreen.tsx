@@ -198,7 +198,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
 
       {play && (
         <div className={`panel play-summary${play.passed ? ' good' : ''}`}>
-          <span className="eyebrow">Your playing · within a tenth of a beat</span>
+          <span className="eyebrow">Your playing · within a fifth of a beat</span>
           <p className="play-summary-line">
             {play.passed ? `All ${play.total} played right and in time.` : `${play.good} of ${play.total} played right and in time.`}
           </p>

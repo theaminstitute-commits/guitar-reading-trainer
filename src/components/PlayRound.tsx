@@ -42,7 +42,7 @@ const SWAP_MS = 650;
 /**
  * The play round (R46): after Check the staff and the fretboard swap places, the staff now showing the
  * melody as written, and the learner plays it on the fretboard to a click: one bar of count-in, then
- * every note within a tenth of a beat. The first take is graded; more takes are practice.
+ * every note within a fifth of a beat. The first take is graded; more takes are practice.
  */
 export default function PlayRound({ melody, level, leftHanded, noteNames, writtenMistakes, from, onDone }: PlayRoundProps) {
   const instrument = instrumentOf(melody.instrument);
@@ -195,7 +195,7 @@ export default function PlayRound({ melody, level, leftHanded, noteNames, writte
     <section className="exercise play-round">
       <div className="panel tight status-card">
         <div className="status-line" aria-live="polite">
-          {phase === 'ready' && !note && 'Your turn: play it on the fretboard. One bar of clicks counts you in, then each note must land within a tenth of a beat. Any string will do.'}
+          {phase === 'ready' && !note && 'Your turn: play it on the fretboard. One bar of clicks counts you in, then each note must land within a fifth of a beat. Any string will do.'}
           {phase === 'ready' && note}
           {phase === 'counting' && (
             <span className="count-in">
