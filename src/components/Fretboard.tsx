@@ -17,8 +17,8 @@ interface FretboardProps {
    * lesson staff, `plain` a dark grey like its black notes. Without it every dot has the accent colour.
    */
   tones?: readonly ('mark' | 'plain' | undefined)[];
-  /** Makes every string and fret tappable (lesson drills). */
-  onPick?: (position: FretPosition) => void;
+  /** Makes every string and fret tappable (lesson drills, the play round). `timeStamp` is the pointer event's, for timing taps. */
+  onPick?: (position: FretPosition, timeStamp: number) => void;
   /** Answer marks for drills: a green or red ring at a position. */
   /** `also`: another place that is right too, in a lighter green. */
   marks?: readonly { position: FretPosition; tone: 'good' | 'bad' | 'also' }[];
@@ -272,7 +272,7 @@ export default function Fretboard({ frets = [0, 4], active: activeProp, played =
                 width={w}
                 height={stringGap}
                 className="fb-tap"
-                onPointerDown={() => onPick({ string, fret })}
+                onPointerDown={(e) => onPick({ string, fret }, e.timeStamp)}
               />
             );
           });

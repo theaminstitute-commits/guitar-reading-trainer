@@ -46,6 +46,7 @@ import {
 } from './session/progression';
 import { hearWrittenAnswer, yoursFromAnswer, type HearMine } from './session/yours';
 import { localProgressStore } from './storage/progress';
+import type { PlayGrade } from './grading/playTiming';
 
 function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000_000);
@@ -69,6 +70,8 @@ interface Checked {
   stageAfter: Stage;
   yours: YoursStaff;
   hearMine: HearMine | null;
+  /** The play round's first take (R46). */
+  play: PlayGrade | null;
 }
 
 /** `?key=G` (or Bb, F#, Am-h, ...) forces every melody into that key, for trying key signatures out. */
@@ -140,20 +143,20 @@ export default function App() {
     setScreen('exercise');
   };
 
-  const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null) => {
-    const { track: nextTrack, change } = applyResult(track, result, stages);
+  const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null, play: PlayGrade | null) => {
+    const { track: nextTrack, change } = applyResult(track, result, stages, play ? play.passed : true);
     // R17: a stage lost through demotion shows its guide again when it is won back.
     const lost = change === 'stage-down' ? stages[track.stage]!.number : null;
     const seenGuides = lost === null ? progress.seenGuides : progress.seenGuides.filter((n) => n !== lost);
     updateProgress(withTrack({ ...progress, seenGuides }, nextTrack));
     setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
-    setChecked({ result, change, stageAfter: stages[nextTrack.stage]!, yours, hearMine });
+    setChecked({ result, change, stageAfter: stages[nextTrack.stage]!, yours, hearMine, play });
     setScreen('feedback');
   };
 
-  const onCheck = (answerBars: AnswerNote[][]) => {
+  const onCheck = (answerBars: AnswerNote[][], play?: PlayGrade) => {
     const result = gradeAnswer(melody, answerBars, melody.key);
-    record(result, yoursFromAnswer(answerBars, melody, melody.key), hearWrittenAnswer(answerBars, melody, melody.key));
+    record(result, yoursFromAnswer(answerBars, melody, melody.key), hearWrittenAnswer(answerBars, melody, melody.key), play ?? null);
   };
 
   const onStage = (i: number) => updateProgress(withTrack(progress, withStage(track, i, stages)));
@@ -362,6 +365,7 @@ export default function App() {
           metronome={progress.metronome}
           onMetronome={onMetronome}
           onCheck={onCheck}
+          playRound
           {...(progress.hints && exercise.level.number === 1 ? { noteNames: true, firstPlayRate: 0.85 } : {})}
         />
       )}
@@ -417,6 +421,7 @@ export default function App() {
           nextTally={track.tally}
           yours={checked.yours}
           hearMine={checked.hearMine}
+          play={checked.play}
           onNext={() => begin()}
           onExplainer={setExplainer}
         />

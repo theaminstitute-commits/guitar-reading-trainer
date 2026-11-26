@@ -172,7 +172,7 @@ export default function StartScreen({
       </div>
       {next ? (
         <p className="muted small-note hint">
-          <LockIcon size={14} /> Stage {next.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right.
+          <LockIcon size={14} /> Stage {next.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right, and played in time.
         </p>
       ) : (
         <p className="muted small-note hint">

@@ -19,6 +19,9 @@ import {
   type AnswerState,
 } from '../notation/answer';
 import Fretboard from './Fretboard';
+import PlayRound, { type SwapFrom } from './PlayRound';
+import type { PlayGrade } from '../grading/playTiming';
+import { gradeAnswer } from '../grading/grade';
 import { CheckIcon, PlayIcon, SlowIcon, StopIcon } from './icons';
 import StaffInput from './StaffInput';
 import StartNote from './StartNote';
@@ -40,7 +43,10 @@ interface ExerciseScreenProps {
   onMetronome: (on: boolean) => void;
   /** Mirror the fretboard for left-handed players. */
   leftHanded: boolean;
-  onCheck: (answerBars: AnswerNote[][]) => void;
+  /** `play`: the graded first take of the play round, when there is one. */
+  onCheck: (answerBars: AnswerNote[][], play?: PlayGrade) => void;
+  /** After Check, the staff and fretboard swap and the learner plays the melody in time (R46). */
+  playRound?: boolean;
   /** Beginner help (R26): a coach checks each note as it is written and names it after this many wrong tries. */
   coach?: { revealAfter: number };
   /** No listen limit (the coached lesson). */
@@ -56,7 +62,11 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
 /**
  * One exercise: hear the melody on the fretboard, write it on the staff, check.
  */
-export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate }: ExerciseScreenProps) {
+export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate, playRound = false }: ExerciseScreenProps) {
+  /** The play round, once the written answer is in. */
+  const [round, setRound] = useState<{ bars: AnswerNote[][]; from: SwapFrom; writtenMistakes: number } | null>(null);
+  const topPanel = useRef<HTMLDivElement>(null);
+  const staffPanel = useRef<HTMLDivElement>(null);
   const [coachSays, setCoachSays] = useState<CoachVerdict | null>(null);
   /** Wrong tries per note position, for when the coach names a note. */
   const wrongTries = useRef(new Map<number, number>());
@@ -92,6 +102,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       melodyRef.current = melody;
       wrongTries.current = new Map();
       setCoachSays(null);
+      setRound(null);
       dispatchAnswer({ type: 'reset', bars: melody.bars });
     }
   }, [melody]);
@@ -188,6 +199,31 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
     setCoachSays(coachVerdict(melody, next.bars, id, wrongTries.current.get(index) ?? 0, coach.revealAfter));
   };
 
+  if (round) {
+    return (
+      <PlayRound
+        melody={melody}
+        level={level}
+        leftHanded={leftHanded}
+        noteNames={noteNames}
+        writtenMistakes={round.writtenMistakes}
+        from={round.from}
+        onDone={(play) => onCheck(round.bars, play)}
+      />
+    );
+  }
+
+  const check = () => {
+    stop();
+    const bars = answer.bars.map((b) => [...b]);
+    if (!playRound) {
+      onCheck(bars);
+      return;
+    }
+    const pageTop = (el: HTMLElement | null) => (el ? el.getBoundingClientRect().top + window.scrollY : null);
+    setRound({ bars, from: { board: pageTop(topPanel.current), staff: pageTop(staffPanel.current) }, writtenMistakes: gradeAnswer(melody, bars, melody.key).mistakes.length });
+  };
+
   return (
     <section className="exercise">
       <div className="panel tight status-card">
@@ -219,11 +255,11 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       </div>
 
       {showFretboard ? (
-        <div className="panel board">
+        <div ref={topPanel} className="panel board">
           <Fretboard active={active} played={played} frets={level.fretRange} mirrored={leftHanded} labels={dotLabels} ringing={active} ringKey={activeIndex ?? undefined} />
         </div>
       ) : (
-        <div className="listen-only">
+        <div ref={topPanel} className="listen-only">
           <span className="eyebrow">Starting note · the melody begins here</span>
           <StartNote melody={melody} />
           <span className={`ear${status === 'playing' ? ' on' : ''}`} aria-hidden="true">
@@ -256,7 +292,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         <input type="checkbox" checked={metronome} onChange={(e) => onMetronome(e.target.checked)} /> Metronome during playback
       </label>
 
-      <div className="panel">
+      <div ref={staffPanel} className="panel">
         <span className="eyebrow">{showFretboard ? 'Write what you see' : 'Write what you heard'} · {keyName(melody.key)}</span>
         {coach && (
           <div className={`coach-line ${coachSays?.tone ?? 'idle'}`} aria-live="polite">
@@ -269,10 +305,7 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
       <div className="sticky-cta">
         <button
           className="btn primary big"
-          onClick={() => {
-            stop();
-            onCheck(answer.bars.map((b) => [...b]));
-          }}
+          onClick={check}
           disabled={written === 0}
         >
           <CheckIcon size={22} /> Check my answer

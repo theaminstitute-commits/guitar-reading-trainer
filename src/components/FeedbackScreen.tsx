@@ -12,6 +12,10 @@ import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
 import { EarIcon, PlayIcon, StopIcon } from './icons';
 import Ring from './Ring';
+import { verdictText, type PlayGrade } from '../grading/playTiming';
+import { groupEvents } from '../melody/bars';
+import { spellInKey } from '../music/key';
+import { spelledName, writtenFromSounding } from '../music/pitch';
 
 interface FeedbackScreenProps {
   melody: Melody;
@@ -27,6 +31,8 @@ interface FeedbackScreenProps {
   hearMine: HearMine | null;
   onNext: () => void;
   onExplainer: (id: ExplainerId) => void;
+  /** The play round's graded take (R46), when there was one. */
+  play?: PlayGrade | null;
   /** Practice outside the ladder (the coached lesson): no tally, no stage change, and the button says Continue. */
   practice?: boolean;
 }
@@ -42,7 +48,7 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, yours, hearMine, onNext, onExplainer, practice = false }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, yours, hearMine, onNext, onExplainer, practice = false, play = null }: FeedbackScreenProps) {
   const nextMeter = describeMeter(barBeatsForCounts(nextCounts));
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeTarget, setActiveTarget] = useState<number | null>(null);
@@ -92,7 +98,27 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
   const targetBars = splitIntoBars(melody.notes, melody.barBeats);
   const notesInBar = (bar: number) => targetBars[bar]?.notes.length ?? 0;
   const explanations = result.mistakes.map((m) => explainMistake(m, result.pairs[m.pairIndex]!, melody.key, notesInBar, instrumentOf(melody.instrument)));
-  const perfect = result.mistakes.length === 0;
+  const writtenRight = result.mistakes.length === 0;
+  const playedRight = !play || play.passed;
+  const perfect = writtenRight && playedRight;
+  const events = groupEvents(melody.notes);
+  /** The play round's problems, one line each: which note, and what happened. */
+  const playProblems = play
+    ? [
+        ...play.events.flatMap((e, i) => {
+          if (e.verdict === 'good') return [];
+          const group = events[i]!;
+          const name = group.length > 1 ? `Chord ${i + 1}` : `Note ${i + 1}, ${(() => {
+            const n = group[0]!;
+            const s = n.spelled ?? spellInKey(writtenFromSounding(n.midi), melody.key);
+            return `${spelledName(s)}${s.octave}`;
+          })()}`;
+          return [{ name, text: verdictText(e, group.length > 1) }];
+        }),
+        ...(play.stray > 0 ? [{ name: 'Outside the melody', text: `${play.stray} ${play.stray === 1 ? 'tap' : 'taps'} before the first note or after the last` }] : []),
+      ]
+    : [];
+  const thingCount = result.mistakes.length + playProblems.length;
   const rightNotes = result.targetCount - result.missingCount - result.pairs.filter((p) => p.target && p.answer && p.mistakes.length > 0).length;
 
   const tone = (v: number) => (v >= 0.9 ? 'var(--good)' : v < 0.6 ? 'var(--bad)' : 'var(--accent)');
@@ -103,15 +129,20 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
         <div className="result-rings">
           <Ring value={result.pitchScore} color={tone(result.pitchScore)} label={pct(result.pitchScore)} sub={result.timingGraded ? 'pitch' : 'tones'} />
           {result.timingGraded && <Ring value={result.rhythmScore} color={tone(result.rhythmScore)} label={pct(result.rhythmScore)} sub="rhythm" />}
+          {play && <Ring value={play.good / play.total} color={tone(play.passed ? 1 : play.good / play.total)} label={pct(play.good / play.total)} sub="played" />}
         </div>
         <div className="result-text">
-          <h2 className="result-title">{perfect ? 'Flawless' : `${result.mistakes.length} ${result.mistakes.length === 1 ? 'thing' : 'things'} to look at`}</h2>
+          <h2 className="result-title">{perfect ? 'Flawless' : `${thingCount} ${thingCount === 1 ? 'thing' : 'things'} to look at`}</h2>
           <p className="verdict">
             {perfect
-              ? result.timingGraded
-                ? 'Every note and every length right. Well read.'
-                : 'Every tone right, and the right number of them. Well played.'
-              : 'Play each version and watch its staff, then read the notes below.'}
+              ? play
+                ? 'Every note and every length right, and played in time. Well read.'
+                : result.timingGraded
+                  ? 'Every note and every length right. Well read.'
+                  : 'Every tone right, and the right number of them. Well played.'
+              : writtenRight
+                ? 'Written right, but the playing was not all in time: see below. A melody counts when both are right.'
+                : 'Play each version and watch its staff, then read the notes below.'}
           </p>
           <span className="notes-count">
             {rightNotes}/{result.targetCount} notes right
@@ -127,7 +158,7 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
             ))}
           </div>
           <span className="tally-text muted">
-            {nextTally} of {nextStage.unlockAfter} flawless{isPerfect(result) ? ' · +1' : ''}
+            {nextTally} of {nextStage.unlockAfter} flawless{isPerfect(result) && playedRight ? ' · +1' : ''}
           </span>
         </div>
       )}
@@ -164,6 +195,24 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
           {practice ? 'Continue' : 'Next melody'}
         </button>
       </div>
+
+      {play && (
+        <div className={`panel play-summary${play.passed ? ' good' : ''}`}>
+          <span className="eyebrow">Your playing · within a tenth of a beat</span>
+          <p className="play-summary-line">
+            {play.passed ? `All ${play.total} played right and in time.` : `${play.good} of ${play.total} played right and in time.`}
+          </p>
+          {playProblems.length > 0 && (
+            <ul className="play-problems">
+              {playProblems.map((p, i) => (
+                <li key={i}>
+                  <strong>{p.name}</strong>: {p.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {explanations.length > 0 && (
         <ol className="mistakes">

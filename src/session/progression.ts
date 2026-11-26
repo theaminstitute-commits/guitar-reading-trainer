@@ -198,13 +198,17 @@ export function neighbourStage(track: Track, stages: readonly Stage[], direction
 
 export type ProgressChange = 'stage-up' | 'stage-down' | null;
 
-export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>, stages: readonly Stage[]): { track: Track; change: ProgressChange } {
+/**
+ * `played`: whether the play round (R46) was passed. A melody is flawless only when it is written
+ * right and played in time; a missed play round alone never counts as weak.
+ */
+export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>, stages: readonly Stage[], played = true): { track: Track; change: ProgressChange } {
   const stage = stages[track.stage]!;
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
   let { stage: stageIndex, tally, weakStreak } = track;
   let change: ProgressChange = null;
 
-  if (isPerfect(result)) {
+  if (isPerfect(result) && played) {
     tally += 1;
     weakStreak = 0;
     const next = neighbourStage(track, stages, 1);

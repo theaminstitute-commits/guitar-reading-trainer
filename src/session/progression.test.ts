@@ -178,3 +178,13 @@ describe('reset progress (R32)', () => {
     expect([reset.mode, reset.handedness, reset.theme, reset.metronome, reset.hints, reset.buttonSounds]).toEqual(['listen', 'left', 'frost', true, false, false]);
   });
 });
+
+describe('the play round (R46)', () => {
+  it('a melody written right but not played in time neither counts nor costs', () => {
+    const t = initialTrack(STAGES);
+    const missed = applyResult(t, perfect, STAGES, false).track;
+    expect(missed.tally).toBe(0);
+    expect(missed.weakStreak).toBe(0);
+    expect(applyResult(t, perfect, STAGES, true).track.tally).toBe(1);
+  });
+});

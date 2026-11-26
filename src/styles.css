@@ -1414,6 +1414,7 @@ button.link.subtle {
 .staff-input .staff-canvas,
 .feedback-staffs .staff-wrap,
 .melody-staff .staff-canvas,
+.play-staff .staff-canvas,
 .card-example .staff-canvas,
 .guide-staff {
   background: var(--paper);
@@ -2402,4 +2403,54 @@ html.theme-fade *::after {
   /* The F clef's ink sits a little below the middle: raised to match. */
   position: relative;
   top: -0.1em;
+}
+
+/* The play round (R46): staff and fretboard swap places, then the melody is played on the fretboard. */
+.swap-panel {
+  position: relative;
+  will-change: transform;
+}
+
+.written-line {
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.written-line.good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.written-line.try {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.play-round .fretboard {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.play-staff {
+  margin: 14px 10px 10px;
+}
+
+.play-summary-line {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
+.play-summary.good .play-summary-line {
+  color: var(--good);
+}
+
+.play-problems {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
 }

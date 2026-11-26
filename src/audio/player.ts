@@ -82,6 +82,10 @@ export class GuitarPlayer {
   private clickGain: Tone.Gain | null = null;
   private loading: Promise<void> | null = null;
   private scheduledIds: number[] = [];
+  /** Clicks of a click track not yet played, so Stop can silence them. */
+  private liveClicks = new Set<Tone.ToneBufferSource>();
+  /** Timers of a click track's UI callbacks, cleared by Stop. */
+  private clickTimers: ReturnType<typeof setTimeout>[] = [];
   private currentEvents: PlayerEvents | null = null;
   private _isPlaying = false;
 
@@ -249,21 +253,67 @@ export class GuitarPlayer {
       this.tick(time, false);
       if (i >= countIn) graded.push(time);
       const index = i;
-      uiAt(() => onTick?.(index), time);
+      const ms = (time - this.now()) * 1000;
+      this.clickTimers.push(setTimeout(() => onTick?.(index), Math.max(0, ms)));
     }
     return graded;
+  }
+
+  /**
+   * One note at once, for a tap on the fretboard (the play round, R46). Played at the audio clock's
+   * present, past Tone's scheduling look-ahead, so the sound follows the finger without delay.
+   */
+  pluck(midi: Midi, seconds = 1.4): void {
+    unlockAudio();
+    if (!this.isLoaded) return;
+    this.main.triggerAttackRelease(Tone.Frequency(midi, 'midi').toNote(), seconds, Tone.immediate());
+  }
+
+  /**
+   * The audio time the learner was hearing at a pointer event's time stamp: what they tap along to.
+   * The browser's own output timestamp takes out the speaker and Bluetooth delay; where it is
+   * missing, the reported output latency does.
+   */
+  heardAt(eventTimeStamp: number): number {
+    const ctx = Tone.getContext().rawContext as AudioContext;
+    const stamp = typeof ctx.getOutputTimestamp === 'function' ? ctx.getOutputTimestamp() : null;
+    if (stamp && stamp.contextTime && stamp.performanceTime) return stamp.contextTime + (eventTimeStamp - stamp.performanceTime) / 1000;
+    const late = (performance.now() - eventTimeStamp) / 1000;
+    return ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0) - Math.max(0, late);
   }
 
   /** One click at an audio-context time: one uniform click, like Tempus, with no accent (the `accent` flag is kept for callers and ignored). */
   private tick(time: number, accent: boolean): void {
     if (!this.click || !this.clickGain) return;
-    const source = new Tone.ToneBufferSource({ url: this.click, onended: () => source.dispose() }).connect(this.clickGain);
+    const source = new Tone.ToneBufferSource({
+      url: this.click,
+      onended: () => {
+        this.liveClicks.delete(source);
+        source.dispose();
+      },
+    }).connect(this.clickGain);
     void accent;
+    this.liveClicks.add(source);
     source.start(time);
   }
 
   stop(): void {
     if (this._isPlaying) this.finish(false);
+    this.stopClicks();
+  }
+
+  /** Silences a click track and its callbacks. */
+  stopClicks(): void {
+    for (const t of this.clickTimers) clearTimeout(t);
+    this.clickTimers = [];
+    for (const s of this.liveClicks) {
+      try {
+        s.stop();
+      } catch {
+        // Already ended.
+      }
+    }
+    this.liveClicks.clear();
   }
 
   private finish(completed: boolean): void {
