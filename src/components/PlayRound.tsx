@@ -29,8 +29,6 @@ interface PlayRoundProps {
   leftHanded: boolean;
   /** Beginner hints: the tapped dot shows its letter (R26). */
   noteNames: boolean;
-  /** Mistakes in what was written, to say so before the playing. */
-  writtenMistakes: number;
   from: SwapFrom;
   onDone: (play: PlayGrade) => void;
 }
@@ -44,7 +42,7 @@ const SWAP_MS = 650;
  * melody as written, and the learner plays it on the fretboard to a click: one bar of count-in, then
  * every note within a fifth of a beat. The first take is graded; more takes are practice.
  */
-export default function PlayRound({ melody, level, leftHanded, noteNames, writtenMistakes, from, onDone }: PlayRoundProps) {
+export default function PlayRound({ melody, level, leftHanded, noteNames, from, onDone }: PlayRoundProps) {
   const instrument = instrumentOf(melody.instrument);
   const targets = useMemo(() => playTargets(melody), [melody]);
   const events = useMemo(() => groupEvents(melody.notes), [melody]);
@@ -214,11 +212,7 @@ export default function PlayRound({ melody, level, leftHanded, noteNames, writte
 
       <div ref={staffPanel} className="panel swap-panel">
         <span className="eyebrow">Play what you read · {keyName(melody.key)}</span>
-        <p className={`written-line ${writtenMistakes === 0 ? 'good' : 'try'}`}>
-          {writtenMistakes === 0
-            ? 'Written right: +1 point. Play it in time for +2 more.'
-            : `Your writing has ${writtenMistakes} ${writtenMistakes === 1 ? 'thing' : 'things'} to look at, shown next. This is the melody as written: play it.`}
-        </p>
+        <p className="written-line good">Written right: +1 point. Play it in time for +2 more.</p>
         <PlayStaff melody={melody} eventColor={eventColor} />
       </div>
 

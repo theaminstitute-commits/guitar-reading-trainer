@@ -22,6 +22,7 @@ import Fretboard from './Fretboard';
 import PlayRound, { type SwapFrom } from './PlayRound';
 import type { PlayGrade } from '../grading/playTiming';
 import { gradeAnswer } from '../grading/grade';
+import { isPerfect } from '../session/progression';
 import { CheckIcon, PlayIcon, SlowIcon, StopIcon } from './icons';
 import StaffInput from './StaffInput';
 import StartNote from './StartNote';
@@ -45,7 +46,7 @@ interface ExerciseScreenProps {
   leftHanded: boolean;
   /** `play`: the graded first take of the play round, when there is one. */
   onCheck: (answerBars: AnswerNote[][], play?: PlayGrade) => void;
-  /** After Check, the staff and fretboard swap and the learner plays the melody in time (R46). */
+  /** After Check, when the melody is written right, the staff and fretboard swap and the learner plays it in time (R46). */
   playRound?: boolean;
   /** The written answer as the play round begins: it is recorded at once as not played, so leaving the round does not undo it. */
   onRoundStart?: (answerBars: AnswerNote[][]) => void;
@@ -66,7 +67,7 @@ type Status = 'idle' | 'loading' | 'reference' | 'counting' | 'playing';
  */
 export default function ExerciseScreen({ melody, level, showFretboard, leftHanded, metronome, onMetronome, onCheck, coach, unlimitedListens = false, noteNames = false, firstPlayRate, playRound = false, onRoundStart }: ExerciseScreenProps) {
   /** The play round, once the written answer is in. */
-  const [round, setRound] = useState<{ bars: AnswerNote[][]; from: SwapFrom; writtenMistakes: number } | null>(null);
+  const [round, setRound] = useState<{ bars: AnswerNote[][]; from: SwapFrom } | null>(null);
   const topPanel = useRef<HTMLDivElement>(null);
   const staffPanel = useRef<HTMLDivElement>(null);
   const [coachSays, setCoachSays] = useState<CoachVerdict | null>(null);
@@ -208,7 +209,6 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
         level={level}
         leftHanded={leftHanded}
         noteNames={noteNames}
-        writtenMistakes={round.writtenMistakes}
         from={round.from}
         onDone={(play) => onCheck(round.bars, play)}
       />
@@ -218,13 +218,14 @@ export default function ExerciseScreen({ melody, level, showFretboard, leftHande
   const check = () => {
     stop();
     const bars = answer.bars.map((b) => [...b]);
-    if (!playRound) {
+    // R46: the play round only follows a melody written right; with any written mistake the results come straight away.
+    if (!playRound || !isPerfect(gradeAnswer(melody, bars, melody.key))) {
       onCheck(bars);
       return;
     }
     onRoundStart?.(bars);
     const pageTop = (el: HTMLElement | null) => (el ? el.getBoundingClientRect().top + window.scrollY : null);
-    setRound({ bars, from: { board: pageTop(topPanel.current), staff: pageTop(staffPanel.current) }, writtenMistakes: gradeAnswer(melody, bars, melody.key).mistakes.length });
+    setRound({ bars, from: { board: pageTop(topPanel.current), staff: pageTop(staffPanel.current) } });
   };
 
   return (

@@ -2606,11 +2606,6 @@ html.theme-fade *::after {
   color: var(--good);
 }
 
-.written-line.try {
-  background: var(--bad-soft);
-  color: var(--bad);
-}
-
 .play-round .fretboard {
   touch-action: manipulation;
   user-select: none;
