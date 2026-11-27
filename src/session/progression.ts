@@ -27,8 +27,10 @@ export interface Track {
   unlocked: number;
   /** Melody length in counts (beats); fixed by the stage. */
   counts: number;
-  /** Flawless melodies on the current stage so far. */
+  /** Points on the current stage so far (R47): 1 for a melody written right, 2 more when it is then played in time. */
   tally: number;
+  /** The points of each counted melody on this stage, in order (1 or 3), for the points bar. Points from before R47 are not listed. */
+  earned: number[];
   weakStreak: number;
   /** Lifetime counters. */
   exercises: number;
@@ -104,7 +106,7 @@ export function isClean(result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>)
 }
 
 export function initialTrack(stages: readonly Stage[]): Track {
-  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, tally: 0, weakStreak: 0, exercises: 0, accuracySum: 0, melodies: {} };
+  return { stage: 0, unlocked: 0, counts: stages[0]!.startCounts, tally: 0, earned: [], weakStreak: 0, exercises: 0, accuracySum: 0, melodies: {} };
 }
 
 export function initialProgress(stages: readonly Stage[]): Progress {
@@ -198,23 +200,31 @@ export function neighbourStage(track: Track, stages: readonly Stage[], direction
 
 export type ProgressChange = 'stage-up' | 'stage-down' | null;
 
+/** Points for a melody written right, and the extra for then playing it in time on the fretboard (R47, the user 2026-11-27). */
+export const WRITE_POINTS = 1;
+export const PLAY_POINTS = 2;
+
 /**
- * `played`: whether the play round (R46) was passed. A melody is flawless only when it is written
- * right and played in time; a missed play round alone never counts as weak.
+ * `played`: whether the play round (R46) was passed. A melody written right earns WRITE_POINTS;
+ * played in time as well, PLAY_POINTS more (R47). Playing never counts without the writing, and a
+ * missed play round alone never counts as weak.
  */
-export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>, stages: readonly Stage[], played = true): { track: Track; change: ProgressChange } {
+export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore' | 'rhythmScore'>, stages: readonly Stage[], played = false): { track: Track; change: ProgressChange } {
   const stage = stages[track.stage]!;
   const weak = accuracyOf(result) < WEAK_THRESHOLD;
-  let { stage: stageIndex, tally, weakStreak } = track;
+  let { stage: stageIndex, tally, earned, weakStreak } = track;
   let change: ProgressChange = null;
 
-  if (isPerfect(result) && played) {
-    tally += 1;
+  if (isPerfect(result)) {
+    const points = WRITE_POINTS + (played ? PLAY_POINTS : 0);
+    tally += points;
+    earned = [...earned, points];
     weakStreak = 0;
     const next = neighbourStage(track, stages, 1);
     if (tally >= stage.unlockAfter && next !== null) {
       stageIndex = next;
       tally = 0;
+      earned = [];
       change = 'stage-up';
     }
   } else if (weak) {
@@ -223,6 +233,7 @@ export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore'
     if (weakStreak >= stage.demoteAfter && previous !== null) {
       stageIndex = previous;
       tally = 0;
+      earned = [];
       weakStreak = 0;
       change = 'stage-down';
     }
@@ -237,6 +248,7 @@ export function applyResult(track: Track, result: Pick<GradeResult, 'pitchScore'
       unlocked: Math.max(track.unlocked, stageIndex),
       counts: stages[stageIndex]!.startCounts,
       tally,
+      earned,
       weakStreak,
       exercises: track.exercises + 1,
       accuracySum: track.accuracySum + accuracyOf(result),
@@ -251,8 +263,8 @@ export function withUnlocked(track: Track, stageIndex: number, stages: readonly 
   return { ...track, unlocked: index };
 }
 
-/** Manually chosen stage, limited to stages already unlocked: that stage's length, with a fresh count of flawless melodies. */
+/** Manually chosen stage, limited to stages already unlocked: that stage's length, with its points starting from nothing. */
 export function withStage(track: Track, stageIndex: number, stages: readonly Stage[]): Track {
   const index = Math.max(0, Math.min(stages.length - 1, track.unlocked, Math.round(stageIndex)));
-  return { ...track, stage: index, counts: stages[index]!.startCounts, tally: 0, weakStreak: 0 };
+  return { ...track, stage: index, counts: stages[index]!.startCounts, tally: 0, earned: [], weakStreak: 0 };
 }

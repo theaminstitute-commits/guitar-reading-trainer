@@ -216,7 +216,7 @@ export default function PlayRound({ melody, level, leftHanded, noteNames, writte
         <span className="eyebrow">Play what you read · {keyName(melody.key)}</span>
         <p className={`written-line ${writtenMistakes === 0 ? 'good' : 'try'}`}>
           {writtenMistakes === 0
-            ? 'Written right. Now play what you wrote.'
+            ? 'Written right: +1 point. Play it in time for +2 more.'
             : `Your writing has ${writtenMistakes} ${writtenMistakes === 1 ? 'thing' : 'things'} to look at, shown next. This is the melody as written: play it.`}
         </p>
         <PlayStaff melody={melody} eventColor={eventColor} />

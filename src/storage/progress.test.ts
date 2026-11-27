@@ -46,11 +46,20 @@ describe('progress migration to version 7 (Part D inserted before free reading)'
     expect(p.mode).toBe('listen');
     expect(p.write.stage).toBe(46);
     expect(p.write.unlocked).toBe(49);
-    expect(p.write.tally).toBe(3);
+    // Three flawless melodies towards ten before R47 are nine points towards thirty.
+    expect(p.write.tally).toBe(9);
+    expect(p.write.earned).toEqual([]);
     expect(p.seenGuides).toEqual([1, 17, 47, 48]);
     // Melodies heard on the old eighth-note stage (5) move with it to stage 10 (R45).
     expect(Object.keys(p.write.melodies).sort()).toEqual(['10', '47', '48']);
     expect(STAGES[46]!.name).toBe('Free reading');
+  });
+
+  it('keeps the points of a record made since R47', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 9, instrument: 'guitar', mode: 'watch', handedness: 'right', theme: 'system', metronome: false, seenGuides: [1], write: { ...track(0, 0), tally: 7, earned: [1, 3, 3, 'x'] } }));
+    const p = localProgressStore.load(STAGES);
+    expect(p.write.tally).toBe(7);
+    expect(p.write.earned).toEqual([1, 3, 3]);
   });
 
   it('keeps a learner inside Part A to C exactly where they were', () => {

@@ -53,7 +53,8 @@ export const LEVEL_1: LevelConfig = {
   keys: [C_MAJOR],
   maxCounts: MIN_COUNTS,
   startCounts: MIN_COUNTS,
-  unlockAfter: 10,
+  /** Points to unlock the next stage (R47): ten melodies written and played, or thirty written only. */
+  unlockAfter: 30,
   demoteAfter: 2,
   tempo: 72,
   maxListens: 3,

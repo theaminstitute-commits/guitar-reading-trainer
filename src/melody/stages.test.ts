@@ -28,7 +28,7 @@ describe('stage ladder configs', () => {
       expect(s.keys.length).toBeGreaterThan(30);
     });
     expect(STAGES[STAGES.length - 1]!.startCounts).toBe(MAX_COUNTS);
-    expect(STAGES.every((s) => s.unlockAfter === 10)).toBe(true);
+    expect(STAGES.every((s) => s.unlockAfter === 30)).toBe(true);
   });
 
   it('uses newly added frets or strings in every melody of the stage that adds them', () => {

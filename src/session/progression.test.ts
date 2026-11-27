@@ -33,10 +33,10 @@ describe('stage ladder progression', () => {
     expect(t.exercises).toBe(8);
   });
 
-  it('unlocks the next stage after ten flawless melodies, not nine', () => {
-    expect(STAGES.every((s) => s.unlockAfter === 10)).toBe(true);
-    expect(run(initialTrack(STAGES), perfect, 9).t.stage).toBe(0);
-    const { t, change } = run(initialTrack(STAGES), perfect, 10);
+  it('unlocks the next stage at thirty points: thirty melodies written right, not twenty-nine (R47)', () => {
+    expect(STAGES.every((s) => s.unlockAfter === 30)).toBe(true);
+    expect(run(initialTrack(STAGES), perfect, 29).t.stage).toBe(0);
+    const { t, change } = run(initialTrack(STAGES), perfect, 30);
     expect(change).toBe('stage-up');
     expect(t.stage).toBe(1);
     expect(t.unlocked).toBe(1);
@@ -86,11 +86,12 @@ describe('stage ladder progression', () => {
     let t = initialTrack(STAGES);
     let rounds = 0;
     while (t.stage < last && rounds < 5000) {
-      t = applyResult(t, perfect, STAGES).track;
+      t = applyResult(t, perfect, STAGES, true).track;
       rounds++;
     }
     expect(t.stage).toBe(last);
     expect(rounds).toBe(10 * last);
+    // Played in time every time: ten melodies a stage.
     // 46 stages before free reading since Part D (chords) arrived: 460 flawless melodies to free reading, 580 to the last bonus stage.
     expect(10 * (MAIN_STAGE_COUNT - 1)).toBe(460);
     expect(10 * last).toBe(580);
@@ -128,7 +129,7 @@ describe('stage ladder progression', () => {
   it('locks stages until they are reached; unlocking never lowers what was earned', () => {
     const t = initialTrack(STAGES);
     expect(withStage(t, 5, STAGES).stage).toBe(0);
-    let q = run(t, perfect, 10).t;
+    let q = run(t, perfect, 30).t;
     expect(q.unlocked).toBe(1);
     q = run(q, weak, 2).t;
     expect(q.stage).toBe(0);
@@ -149,7 +150,7 @@ describe('stage ladder progression', () => {
   it('both modes share one track', () => {
     let p = initialProgress(STAGES);
     expect(trackOf(p)).toBe(p.write);
-    p = withTrack(p, run(p.write, perfect, 10).t);
+    p = withTrack(p, run(p.write, perfect, 30).t);
     expect(p.write.stage).toBe(1);
     p = { ...p, mode: 'listen' };
     expect(trackOf(p)).toBe(p.write);
@@ -180,11 +181,22 @@ describe('reset progress (R32)', () => {
 });
 
 describe('the play round (R46)', () => {
-  it('a melody written right but not played in time neither counts nor costs', () => {
+  it('written right earns 1 point, played in time as well 3; playing never counts without the writing (R47)', () => {
     const t = initialTrack(STAGES);
     const missed = applyResult(t, perfect, STAGES, false).track;
-    expect(missed.tally).toBe(0);
-    expect(missed.weakStreak).toBe(0);
-    expect(applyResult(t, perfect, STAGES, true).track.tally).toBe(1);
+    expect([missed.tally, missed.earned, missed.weakStreak]).toEqual([1, [1], 0]);
+    const played = applyResult(missed, perfect, STAGES, true).track;
+    expect([played.tally, played.earned]).toEqual([4, [1, 3]]);
+    expect(applyResult(t, clean, STAGES, true).track.tally).toBe(0);
+  });
+
+  it('ten melodies written and played unlock a stage; nine and two written only fall one point short', () => {
+    let t = initialTrack(STAGES);
+    for (let i = 0; i < 9; i++) t = applyResult(t, perfect, STAGES, true).track;
+    t = run(t, perfect, 2).t;
+    expect([t.stage, t.tally]).toEqual([0, 29]);
+    const up = applyResult(t, perfect, STAGES, false);
+    expect(up.change).toBe('stage-up');
+    expect([up.track.tally, up.track.earned]).toEqual([0, []]);
   });
 });

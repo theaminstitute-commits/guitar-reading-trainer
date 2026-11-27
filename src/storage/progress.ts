@@ -87,6 +87,17 @@ function renameLesson(id: string): string {
   return renamed ? (bass ? `bass-${renamed}` : renamed) : id;
 }
 
+/**
+ * The stage's points. Records before R47 (no `earned` list) counted flawless melodies towards ten;
+ * each becomes 3 points towards thirty, so the bar stands where it stood. Records before the tally
+ * rule carried a clean streak instead and start from nothing.
+ */
+function migrateTally(value: Record<string, unknown>): { tally: number; earned: number[] } {
+  const tally = typeof value.tally === 'number' ? Math.max(0, Math.round(value.tally)) : 0;
+  if (!Array.isArray(value.earned)) return { tally: tally * 3, earned: [] };
+  return { tally, earned: value.earned.filter((n): n is number => n === 1 || n === 3) };
+}
+
 /** A track from any older or current record shape; null if it is not one. */
 function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: number) => number, contentRemap: (i: number) => number = remap): Track | null {
   if (!isRecord(value)) return null;
@@ -103,8 +114,7 @@ function migrateTrack(value: unknown, stages: readonly Stage[], remap: (i: numbe
     stage: stageIndex,
     unlocked: Math.max(stageIndex, Math.min(stages.length - 1, typeof value.unlocked === 'number' ? remap(Math.round(value.unlocked)) : stageIndex)),
     counts: Math.max(MIN_COUNTS, Math.min(maxCounts, Math.round(counts))),
-    // Records before the tally rule carried a clean streak instead; it starts the tally at zero.
-    tally: typeof value.tally === 'number' ? Math.max(0, Math.round(value.tally)) : 0,
+    ...migrateTally(value),
     melodies: migrateMelodies(value.melodies, contentRemap),
     weakStreak: value.weakStreak as number,
     exercises: value.exercises as number,

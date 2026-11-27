@@ -3,9 +3,10 @@ import { INSTRUMENTS, type InstrumentId } from '../music/instrument';
 import { useInstrument } from './InstrumentContext';
 import type { ExplainerId } from '../grading/explain';
 import { MAIN_STAGE_COUNT, type Stage } from '../melody/stages';
-import { hasProgress, lessonsDone, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
+import { hasProgress, lessonsDone, PLAY_POINTS, WRITE_POINTS, type ExerciseMode, type Handedness, type Progress, type Theme, type Track } from '../session/progression';
 import { BookIcon, CheckIcon, EarIcon, EyeIcon, LockIcon, PlayIcon, QuillIcon, RefreshIcon, SparkIcon } from './icons';
 import Ring from './Ring';
+import PointsBar from './PointsBar';
 import ConfirmDialog from './ConfirmDialog';
 import { useEffect, useState } from 'react';
 import { ensureNotationFonts } from '../notation/fonts';
@@ -167,12 +168,13 @@ export default function StartScreen({
             <span className="hero-number">{level.number}</span> {level.name}
           </h2>
           <p className="hero-summary">{level.summary}</p>
+          {onTop && next && <PointsBar tally={track.tally} earned={track.earned} target={level.unlockAfter} />}
         </div>
-        <Ring value={onTop ? track.tally / level.unlockAfter : 1} label={onTop ? `${track.tally}/${level.unlockAfter}` : '✓'} sub={onTop ? undefined : 'reached'} />
+        {!(onTop && next) && <Ring value={1} label="✓" sub={onTop ? 'all open' : 'reached'} />}
       </div>
       {next ? (
         <p className="muted small-note hint">
-          <LockIcon size={14} /> Stage {next.number} unlocks after {stages[track.unlocked]!.unlockAfter} flawless melodies on stage {stages[track.unlocked]!.number}: every note and every length right, and played in time.
+          <LockIcon size={14} /> Stage {next.number} unlocks at {stages[track.unlocked]!.unlockAfter} points on stage {stages[track.unlocked]!.number}: {WRITE_POINTS} for each melody written right (every note and every length), {PLAY_POINTS} more when you then play it in time on the fretboard.
         </p>
       ) : (
         <p className="muted small-note hint">
@@ -320,7 +322,7 @@ export default function StartScreen({
                           <span className="node-name">
                             {s.number}. {s.name}
                           </span>
-                          <span className="node-sub">{state === 'current' ? (onTop ? `${track.tally} of ${s.unlockAfter} flawless` : 'practising') : state === 'reached' ? 'reached' : 'locked'}</span>
+                          <span className="node-sub">{state === 'current' ? (onTop ? `${track.tally} of ${s.unlockAfter} points` : 'practising') : state === 'reached' ? 'reached' : 'locked'}</span>
                         </span>
                       </button>
                     </li>

@@ -168,7 +168,7 @@ export default function App() {
 
   const record = (result: GradeResult, yours: YoursStaff, hearMine: HearMine | null, play: PlayGrade | null) => {
     const open = round && round.melody === melody ? round : null;
-    const { next, nextTrack, change } = progressAfter(open ? open.before : track, result, play ? play.passed : true);
+    const { next, nextTrack, change } = progressAfter(open ? open.before : track, result, play?.passed ?? false);
     updateProgress(next);
     if (!open) setSession((s) => ({ exercises: s.exercises + 1, accuracySum: s.accuracySum + accuracyOf(result) }));
     setRound(null);
@@ -442,6 +442,7 @@ export default function App() {
           nextStage={checked.stageAfter}
           nextCounts={track.counts}
           nextTally={track.tally}
+          nextEarned={track.earned}
           yours={checked.yours}
           hearMine={checked.hearMine}
           play={checked.play}

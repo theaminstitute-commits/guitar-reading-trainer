@@ -12,6 +12,8 @@ import type { HearMine } from '../session/yours';
 import FeedbackStaff, { type YoursStaff } from './FeedbackStaff';
 import { EarIcon, PlayIcon, StopIcon } from './icons';
 import Ring from './Ring';
+import PointsBar from './PointsBar';
+import { PLAY_POINTS, WRITE_POINTS } from '../session/progression';
 import { describePlay, type PlayGrade } from '../grading/playTiming';
 
 interface FeedbackScreenProps {
@@ -21,8 +23,10 @@ interface FeedbackScreenProps {
   nextStage: Stage;
   /** Melody length after this result, in counts. */
   nextCounts: number;
-  /** Tally towards the next stage after this result. */
+  /** Points towards the next stage after this result (R47). */
   nextTally: number;
+  /** The points of each melody counted on the stage, for the points bar. */
+  nextEarned?: readonly number[];
   yours: YoursStaff;
   /** Playback of the learner's version, or null when there is nothing to play. */
   hearMine: HearMine | null;
@@ -45,7 +49,7 @@ const EXPLAINER_LABEL: Record<ExplainerId, string> = {
 
 type Playing = 'correct' | 'mine' | null;
 
-export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, yours, hearMine, onNext, onExplainer, practice = false, play = null }: FeedbackScreenProps) {
+export default function FeedbackScreen({ melody, result, change, nextStage, nextCounts, nextTally, nextEarned = [], yours, hearMine, onNext, onExplainer, practice = false, play = null }: FeedbackScreenProps) {
   const nextMeter = describeMeter(barBeatsForCounts(nextCounts));
   const [playing, setPlaying] = useState<Playing>(null);
   const [activeTarget, setActiveTarget] = useState<number | null>(null);
@@ -98,6 +102,8 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
   const writtenRight = result.mistakes.length === 0;
   const playedRight = !play || play.passed;
   const perfect = writtenRight && playedRight;
+  /** This melody's points (R47): 1 for the writing, 2 more for the playing. */
+  const gained = isPerfect(result) ? WRITE_POINTS + (play?.passed ? PLAY_POINTS : 0) : 0;
   /** The play round's problems, one line each, timing kept apart from wrong notes. */
   const playProblems = play ? describePlay(play, melody) : [];
   const thingCount = result.mistakes.length + playProblems.length;
@@ -118,12 +124,12 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
           <p className="verdict">
             {perfect
               ? play
-                ? 'Every note and every length right, and played in time. Well read.'
+                ? `Every note and every length right, and played in time: +${WRITE_POINTS + PLAY_POINTS} points. Well read.`
                 : result.timingGraded
                   ? 'Every note and every length right. Well read.'
                   : 'Every tone right, and the right number of them. Well played.'
               : writtenRight
-                ? 'Written right, but the playing was not all in time: see below. A melody counts when both are right.'
+                ? `Written right: +${WRITE_POINTS} point. The playing was not all in time (see below); played in time it earns +${PLAY_POINTS} more.`
                 : 'Play each version and watch its staff, then read the notes below.'}
           </p>
           <span className="notes-count">
@@ -133,15 +139,8 @@ export default function FeedbackScreen({ melody, result, change, nextStage, next
       </div>
 
       {change === null && !practice && (
-        <div className="tally-strip" aria-label={`${nextTally} of ${nextStage.unlockAfter} flawless melodies on this stage`}>
-          <div className="tally-dots" aria-hidden="true">
-            {Array.from({ length: nextStage.unlockAfter }, (_, i) => (
-              <span key={i} className={i < nextTally ? 'on' : ''} />
-            ))}
-          </div>
-          <span className="tally-text muted">
-            {nextTally} of {nextStage.unlockAfter} flawless{isPerfect(result) && playedRight ? ' · +1' : ''}
-          </span>
+        <div className="panel tight points-panel">
+          <PointsBar tally={nextTally} earned={nextEarned} target={nextStage.unlockAfter} fresh={gained} />
         </div>
       )}
 
